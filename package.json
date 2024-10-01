@@ -8,12 +8,6 @@
     "lint": "eslint",
     "commitlint": "commitlint --edit"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "pnpm dlx commitlint --edit "
-    }
-  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --cache --fix",
