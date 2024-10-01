@@ -1,0 +1,32 @@
+{
+  "name": "@danuni/ext-dan-puller",
+  "version": "0.0.1",
+  "description": "A tool to pull and sync danmaku from 3rd platform.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage",
+    "bench": "vitest bench",
+    "lint": "eslint",
+    "build": "",
+    "build:types": "tsc",
+    "dev": ""
+  },
+  "keywords": [
+    "bangumi",
+    "danmaku"
+  ],
+  "author": "rinne",
+  "license": "LGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ani-uni/dan-uni.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ani-uni/dan-uni/issues"
+  },
+  "homepage": "https://github.com/ani-uni/dan-uni/packages/ext-dan-puller#readme",
+  "devDependencies": {},
+  "dependencies": {}
+}
