@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+enum Mode {
+  Normal = 0;
+  Bottom = 1;
+  Top = 2;
+  Reverse = 3;
+  Ext = 4;
+}
+
+enum Pool {
+  Def = 0;
+  Sub = 1;
+  Adv = 2;
+  Ix = 3;
+}
+
+message Danmaku {
+  string FCID = 1;
+  string DMID = 2;
+  int32 progress = 3;
+  Mode mode = 4;
+  int32 fontsize = 5;
+  int32 color = 6;
+  string senderID = 7;
+  string content = 8;
+  int64 ctime = 9;
+  int32 weight = 10;
+  Pool pool = 11;
+  repeated string attr = 12;
+  string platform = 13;
+  optional string SPMO = 14;
+  optional string extra = 15;
+}
+
+message DanmakuReply {
+  repeated Danmaku danmakus = 1;
+}
