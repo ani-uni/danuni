@@ -1,5 +1,9 @@
 syntax = "proto3";
 
+package danuni.danmaku.v1;
+
+import public "google/protobuf/timestamp.proto";
+
 enum Mode {
   Normal = 0;
   Bottom = 1;
@@ -24,7 +28,7 @@ message Danmaku {
   int32 color = 6;
   string senderID = 7;
   string content = 8;
-  int64 ctime = 9;
+  google.protobuf.Timestamp ctime = 9;
   int32 weight = 10;
   Pool pool = 11;
   repeated string attr = 12;

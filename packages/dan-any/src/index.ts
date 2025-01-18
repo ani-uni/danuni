@@ -1,9 +1,20 @@
 import { XMLParser } from 'fast-xml-parser'
+import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 // import type * as UniDMType from './utils/dm-gen'
 import type { platfrom } from './utils/id-gen'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
+import {
+  timestampDate,
+  timestampFromDate,
+  timestampNow,
+} from '@bufbuild/protobuf/wkt'
 
+import {
+  // DanmakuElem as DM_JSON_BiliGrpc,
+  DmSegMobileReplySchema,
+  DmWebViewReplySchema,
+} from './proto/gen/bili/dm_pb'
 import { DanmakuReplySchema } from './proto/gen/danuni_pb'
 // import type * as UniIDType from './utils/id-gen'
 
@@ -25,244 +36,6 @@ export interface DM_XML_Bili {
       '@_p': string
     }[]
   }
-}
-export enum DmColorfulType {
-  /**
-   * 无
-   *
-   * @generated from enum value: NoneType = 0;
-   */
-  NoneType = 0,
-
-  /**
-   * 渐变色
-   *
-   * @generated from enum value: VipGradualColor = 60001;
-   */
-  VipGradualColor = 60001,
-}
-export interface DM_JSON_BiliGrpc {
-  /**
-   * 弹幕dmid
-   *
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint
-
-  /**
-   * 弹幕出现位置(单位ms)
-   *
-   * @generated from field: int32 progress = 2;
-   */
-  progress: number
-
-  /**
-   * 弹幕类型 1 2 3:普通弹幕 4:底部弹幕 5:顶部弹幕 6:逆向弹幕 7:高级弹幕 8:代码弹幕 9:BAS弹幕(pool必须为2)
-   *
-   * @generated from field: int32 mode = 3;
-   */
-  mode: number
-
-  /**
-   * 弹幕字号
-   *
-   * @generated from field: int32 fontsize = 4;
-   */
-  fontsize: number
-
-  /**
-   * 弹幕颜色
-   *
-   * @generated from field: bilibili.community.service.dm.v1.DmColorfulType color = 5;
-   */
-  color: DmColorfulType
-
-  /**
-   * 发送者mid hash
-   *
-   * @generated from field: string mid_hash = 6;
-   */
-  midHash: string
-
-  /**
-   * 弹幕正文
-   *
-   * @generated from field: string content = 7;
-   */
-  content: string
-
-  /**
-   * 发送时间
-   *
-   * @generated from field: int64 ctime = 8;
-   */
-  ctime: bigint
-
-  /**
-   * 权重 用于屏蔽等级 区间:[1,10]
-   *
-   * @generated from field: int32 weight = 9;
-   */
-  weight: number
-
-  /**
-   * 动作
-   *
-   * @generated from field: string action = 10;
-   */
-  action: string
-
-  /**
-   * 弹幕池 0:普通池 1:字幕池 2:特殊池(代码/BAS弹幕)
-   *
-   * @generated from field: int32 pool = 11;
-   */
-  pool: number
-
-  /**
-   * 弹幕dmid str
-   *
-   * @generated from field: string id_str = 12;
-   */
-  idStr: string
-
-  /**
-   * 弹幕属性位(bin求AND)
-   * bit0:保护 bit1:直播 bit2:高赞
-   *
-   * @generated from field: int32 attr = 13;
-   */
-  attr: number
-
-  /**
-   * @generated from field: string animation = 22;
-   */
-  animation: string
-
-  /**
-   * @generated from field: string extra = 23;
-   */
-  extra: string
-
-  /**
-   * 大会员专属颜色
-   *
-   * @generated from field: bilibili.community.service.dm.v1.DmColorfulType colorful = 24;
-   */
-  colorful: DmColorfulType
-
-  /**
-   *
-   *
-   * @generated from field: int32 type = 25;
-   */
-  type: number
-
-  /**
-   *
-   *
-   * @generated from field: int64 oid = 26;
-   */
-  oid: bigint
-}
-export interface DM_JSON_BiliCommandGrpc {
-  /**
-   * 弹幕id
-   *
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint
-
-  /**
-   * 对象视频cid
-   *
-   * @generated from field: int64 oid = 2;
-   */
-  oid: bigint
-
-  /**
-   * 发送者mid
-   *
-   * @generated from field: int64 mid = 3;
-   */
-  mid: bigint
-
-  /**
-   * 互动弹幕指令
-   *
-   * @generated from field: string command = 4;
-   */
-  command: string
-
-  /**
-   * 互动弹幕正文
-   *
-   * @generated from field: string content = 5;
-   */
-  content: string
-
-  /**
-   * 出现时间
-   *
-   * @generated from field: int32 progress = 6;
-   */
-  progress: number
-
-  /**
-   * 创建时间
-   *
-   * @generated from field: string ctime = 7;
-   */
-  ctime: string
-
-  /**
-   * 发布时间
-   *
-   * @generated from field: string mtime = 8;
-   */
-  mtime: string
-
-  /**
-   * 扩展json数据
-   *
-   * @generated from field: string extra = 9;
-   */
-  extra: string
-
-  /**
-   * 弹幕id str类型
-   *
-   * @generated from field: string idStr = 10;
-   */
-  idStr: string
-
-  /**
-   *
-   *
-   * @generated from field: int32 type = 11;
-   */
-  type: number
-
-  /**
-   *
-   *
-   * @generated from field: bool auto_create = 12;
-   */
-  autoCreate: boolean
-
-  /**
-   *
-   *
-   * @generated from field: int32 count_down = 13;
-   */
-  countDown: number
-
-  /**
-   *
-   *
-   * @generated from field: int32 attr = 14;
-   */
-  attr: number
 }
 export interface DM_JSON_Dplayer {
   code: 0
@@ -302,7 +75,7 @@ export class UniPool {
             d.color,
             d.senderID,
             d.content,
-            UniDM.transCtime(d.ctime),
+            timestampDate(d.ctime || timestampNow()),
             d.weight,
             d.pool as number,
             d.attr as UniDMTools.DMAttr[],
@@ -331,7 +104,7 @@ export class UniPool {
             color: d.color,
             senderID: d.senderID,
             content: d.content,
-            ctime: BigInt(Number(d.ctime)),
+            ctime: timestampFromDate(d.ctime),
             weight: d.weight,
             pool: d.pool as number,
             attr: d.attr,
@@ -370,14 +143,24 @@ export class UniPool {
       }),
     )
   }
-  static fromBiliGrpc(json: DM_JSON_BiliGrpc[], SPMO?: string) {
+  static fromBiliGrpc(bin: Uint8Array | ArrayBuffer, SPMO?: string) {
+    const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin)),
+      json = data.elems
     return new UniPool(
       json.map((d) => {
         return UniDM.fromBili(d, SPMO)
       }),
     )
   }
-  static fromBiliCommandGrpc(json: DM_JSON_BiliCommandGrpc[], SPMO?: string) {
+  /**
+   *
+   * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
+   * @param SPMO
+   * @returns
+   */
+  static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer, SPMO?: string) {
+    const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin)),
+      json = data.commandDms
     return new UniPool(
       json.map((d) => {
         return UniDM.fromBiliCommand(d, SPMO)
@@ -493,6 +276,7 @@ export {
   UniDM,
   UniDMTools,
   UniIDTools,
+  type DM_JSON_BiliCommandGrpc,
   type platfrom,
   // type UniDMType,
   // type UniIDType,
