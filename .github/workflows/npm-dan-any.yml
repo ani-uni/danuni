@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - 'packages/dan-any/**'
+      - 'packages/dan-any/package.json'
   workflow_dispatch:
 jobs:
   build:
