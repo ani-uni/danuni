@@ -21,3 +21,8 @@
 
 - [ ] ASS格式转换
 - [ ] 反向转换bili弹幕格式
+
+## License 许可证
+
+Released under the GNU LESSER GENERAL PUBLIC LICENSE (LGPL) 3.0.  
+本库采用 LGPL 3.0 许可证发布。  
