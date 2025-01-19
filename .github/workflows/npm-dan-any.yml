@@ -1,4 +1,4 @@
-name: Publish @danuni/dan-any
+name: Publish @dan-uni/dan-any
 on:
   push:
     branches:
