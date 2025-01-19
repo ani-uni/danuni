@@ -30,7 +30,10 @@ jobs:
           pnpm run lint
           pnpm run build
           pnpm run test
-      - run: npm publish --provenance --access public
+      - run: |
+          cd ${{ github.workspace }}
+          cd ./packages/dan-any/
+          npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Release
