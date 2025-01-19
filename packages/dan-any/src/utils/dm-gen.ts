@@ -387,7 +387,7 @@ export class UniDM {
   static transMode(
     oriMode: number,
     fmt: 'bili' | 'dplayer' | 'artplayer' | 'ddplay',
-  ) {
+  ): Modes {
     let mode = Modes.Normal
     switch (fmt) {
       case 'bili':
@@ -416,15 +416,18 @@ export class UniDM {
       case 'dplayer':
         if (oriMode === 1) mode = Modes.Top
         else if (oriMode === 2) mode = Modes.Bottom
+        break
 
       case 'artplayer':
         if (oriMode === 1) mode = Modes.Top
         else if (oriMode === 2) mode = Modes.Bottom
+        break
 
       case 'ddplay':
         // 弹幕模式：1-普通弹幕，4-底部弹幕，5-顶部弹幕
         // 其适配为bili格式子集
         mode = this.transMode(oriMode, 'bili')
+        break
 
       default:
         mode = Modes.Normal

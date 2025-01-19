@@ -156,7 +156,6 @@ export class UniPool {
    *
    * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
    * @param SPMO
-   * @returns
    */
   static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer, SPMO?: string) {
     const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin)),

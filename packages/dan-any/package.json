@@ -2,6 +2,20 @@
   "name": "@danuni/dan-any",
   "version": "0.0.1",
   "description": "The toolbox of dan-uni.",
+  "keywords": [
+    "bangumi",
+    "danmaku"
+  ],
+  "license": "LGPL-3.0-or-later",
+  "homepage": "https://github.com/ani-uni/danuni/tree/master/packages/dan-any#readme",
+  "bugs": {
+    "url": "https://github.com/ani-uni/danuni/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ani-uni/danuni.git"
+  },
+  "author": "rinne",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,20 +31,6 @@
     "dev": "pnpm build && node bundle.js",
     "buf": "buf generate"
   },
-  "keywords": [
-    "bangumi",
-    "danmaku"
-  ],
-  "author": "rinne",
-  "license": "LGPL-3.0-or-later",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ani-uni/danuni.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ani-uni/danuni/issues"
-  },
-  "homepage": "https://github.com/ani-uni/danuni/tree/master/packages/dan-any#readme",
   "dependencies": {
     "fast-xml-parser": "^4.5.1",
     "jssha": "^3.3.1"
