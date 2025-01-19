@@ -1,5 +1,7 @@
 # Dan-Any 弹幕随心转
 
+[![Publish @danuni/dan-any](https://github.com/ani-uni/danuni/actions/workflows/npm-dan-any.yml/badge.svg)](https://github.com/ani-uni/danuni/actions/workflows/npm-dan-any.yml)
+
 ## Features
 
 - 多种弹幕格式之间互相转换
