@@ -14,22 +14,19 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - run: |
           pnpm install --frozen-lockfile
-          cd packages/
       - name: Build @danuni/dan-any
         run: |
-          cd dan-any/
-          echo ${{ github.workspace }}
-          pnpx conventional-changelog -p angular -i CHANGELOG.md -s
+          cd ${{ github.workspace }}
+          cd ./packages/dan-any/
+          pnpx conventional-changelog-cli -p angular -i CHANGELOG.md -s
           pnpm run lint
           pnpm run test
           pnpm run build
