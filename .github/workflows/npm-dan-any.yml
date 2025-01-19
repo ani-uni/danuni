@@ -2,7 +2,7 @@ name: Publish @danuni/dan-any
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'packages/dan-any/**'
   workflow_dispatch:
