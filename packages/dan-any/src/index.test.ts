@@ -30,8 +30,8 @@ describe('转化自', () => {
 <d p="13.499,1,25,16777215,1686301548,3,2848bf1c,1335553202649003264">不喜欢</d>
 </i>`,
       pool = UniPool.fromBiliXML(xml)
-    console.log(xml)
-    console.log(pool)
+    console.info(xml)
+    console.info(pool)
   })
   it('bili(json)', () => {
     const json = [
@@ -45,7 +45,7 @@ describe('转化自', () => {
         },
       ],
       pool = UniPool.fromArtplayer(json, 'playerid-test', 'acfun')
-    console.log(json)
-    console.log(pool)
+    console.info(json)
+    console.info(pool)
   })
 })
