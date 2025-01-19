@@ -1,10 +1,10 @@
-name: Build and Publish Package
+name: Publish @danuni/dan-any
 on:
-  release:
-    types: [created]
   push:
     branches:
       - main
+    paths:
+      - 'packages/dan-any/**'
   workflow_dispatch:
 jobs:
   build:
