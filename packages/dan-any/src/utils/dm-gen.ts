@@ -342,6 +342,43 @@ export class UniDM {
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()
   }
+  static create(
+    args: Partial<{
+      FCID: string
+      progress: number
+      mode: Modes
+      fontsize: number
+      color: number
+      senderID: string
+      content: string
+      ctime: Date
+      weight: number
+      pool: Pools
+      attr: DMAttr[]
+      platform: platfrom | string
+      SPMO: string
+      extra: string
+      DMID: string
+    }>,
+  ) {
+    return new UniDM(
+      args.FCID || ID.fromNull().toString(),
+      args.progress,
+      args.mode,
+      args.fontsize,
+      args.color,
+      args.senderID,
+      args.content,
+      args.ctime,
+      args.weight,
+      args.pool,
+      args.attr,
+      args.platform,
+      args.SPMO,
+      args.extra,
+      args.DMID,
+    )
+  }
   get extra() {
     const extra = JSON.parse(this.extraStr || '{}')
     return (typeof extra === 'object' ? extra : {}) as Extra
@@ -476,46 +513,48 @@ export class UniDM {
     // if (args.mode === 7) extra.bili.adv = args.content
     // else if (args.mode === 8) extra.bili.code = args.content
     // else if (args.mode === 9) extra.bili.bas = args.content
-    return new UniDM(
-      FCID.toString(),
-      args.progress,
+    return this.create({
+      ...args,
+      FCID: FCID.toString(),
+      // progress: args.progress,
       mode,
-      args.fontsize,
-      args.color,
-      senderID.toString(),
-      args.content,
-      this.transCtime(args.ctime),
-      args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
+      // fontsize: args.fontsize,
+      // color: args.color,
+      senderID: senderID.toString(),
+      // content: args.content,
+      ctime: this.transCtime(args.ctime),
+      weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
       pool,
-      DMAttrUtils.fromBin(args.attr, 'bili'),
-      domainPreset.bili,
+      attr: DMAttrUtils.fromBin(args.attr, 'bili'),
+      platform: domainPreset.bili,
       SPMO,
       // 需改进，7=>advanced 8=>code 9=>bas 互动=>command
       // 同时塞进无法/无需直接解析的数据
       // 另开一个解析器，为大部分播放器（无法解析该类dm）做文本类型降级处理
-      args.mode >= 7 ? JSON.stringify(extra, BigIntSerializer) : undefined,
-    )
+      extra:
+        args.mode >= 7 ? JSON.stringify(extra, BigIntSerializer) : undefined,
+    })
   }
   static fromBiliCommand(args: DMBiliCommand, SPMO?: string, cid?: bigint) {
     if (args.oid && !cid) cid = args.oid
     const FCID = ID.fromBili({ cid }),
       senderID = ID.fromBili({ mid: args.mid })
-    return new UniDM(
-      FCID.toString(),
-      args.progress,
-      Modes.Ext,
-      0,
-      0,
-      senderID.toString(),
-      args.content,
-      // BigInt(Date.parse(args.ctime + ' GMT+0800')), // 无视本地时区，按照B站的东8区计算时间
-      new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
-      10,
-      Pools.Adv,
-      ['Protect'],
-      domainPreset.bili,
+    return this.create({
+      ...args,
+      FCID: FCID.toString(),
+      // progress: args.progress,
+      mode: Modes.Ext,
+      // fontsize: args.fontsize,
+      // color: args.color,
+      senderID: senderID.toString(),
+      // content: args.content,
+      ctime: new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
+      weight: 10,
+      pool: Pools.Adv,
+      attr: ['Protect'],
+      platform: domainPreset.bili,
       SPMO,
-      JSON.stringify(
+      extra: JSON.stringify(
         {
           bili: {
             command: args,
@@ -523,25 +562,22 @@ export class UniDM {
         },
         BigIntSerializer,
       ),
-    )
+    })
   }
   static fromDplayer(args: DMDplayer, playerID: string, domain: string) {
     const FCID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown(args.midHash, domain)
-    return new UniDM(
-      FCID.toString(),
-      args.progress,
-      this.transMode(args.mode, 'dplayer'),
-      0,
-      args.color,
-      senderID.toString(),
-      args.content,
-      new Date(),
-      0,
-      0,
-      [],
-      domain,
-    )
+    return this.create({
+      ...args,
+      FCID: FCID.toString(),
+      // progress: args.progress,
+      mode: this.transMode(args.mode, 'dplayer'),
+      // fontsize: 25,
+      // color: args.color,
+      senderID: senderID.toString(),
+      // content: args.content,
+      platform: domain,
+    })
   }
   toDplayer(): DMDplayer {
     let mode = 0
@@ -569,22 +605,18 @@ export class UniDM {
         }
       else extra = { artplayer: { style: args.style } }
     }
-    return new UniDM(
-      FCID.toString(),
-      args.progress,
-      this.transMode(args.mode, 'artplayer'),
-      0,
-      args.color,
-      senderID.toString(),
-      args.content,
-      new Date(),
-      0,
-      0,
-      [],
-      domain,
-      undefined,
-      JSON.stringify(extra),
-    )
+    return this.create({
+      ...args,
+      FCID: FCID.toString(),
+      // progress: args.progress,
+      mode: this.transMode(args.mode, 'artplayer'),
+      // fontsize: 25,
+      // color: args.color,
+      senderID: senderID.toString(),
+      // content: args.content,
+      platform: domain,
+      extra: JSON.stringify(extra, BigIntSerializer), //optional BigINt parser
+    })
   }
   toArtplayer(): DMArtplayer {
     let mode = 0
@@ -604,23 +636,18 @@ export class UniDM {
     domain = domainPreset.ddplay,
   ) {
     const FCID = ID.fromUnknown(episodeId, domain)
-    return new UniDM(
-      FCID.toString(),
-      args.progress,
-      this.transMode(args.mode, 'ddplay'),
-      0,
-      args.color,
-      args.uid,
-      args.m,
-      new Date(),
-      0,
-      0,
-      [],
-      domain,
-      undefined,
-      undefined,
-      args.cid.toString(), //无需 new ID() 获取带suffix的ID
-    )
+    return this.create({
+      ...args,
+      FCID: FCID.toString(),
+      // progress: args.progress,
+      mode: this.transMode(args.mode, 'ddplay'),
+      // fontsize: 25,
+      // color: args.color,
+      senderID: args.uid,
+      content: args.m,
+      platform: domain,
+      DMID: args.cid.toString(), //无需 new ID() 获取带suffix的ID
+    })
   }
   toDDplay(): DMDDplay {
     let mode = 1
