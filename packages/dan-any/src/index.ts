@@ -60,8 +60,42 @@ export interface DM_JSON_DDPlay {
     m: string
   }[]
 }
+
+export type DM_format =
+  | 'danuni.json'
+  | 'danuni.bin'
+  | 'danuni.pb.zst'
+  | 'bili.xml'
+  | 'bili.bin'
+  | 'bili.cmd.bin'
+  | 'dplayer.json'
+  | 'artplayer.json'
+  | 'ddplay.json'
+
 export class UniPool {
   constructor(public dans: UniDM[]) {}
+  convert2(format: DM_format) {
+    switch (format) {
+      case 'danuni.json':
+        return JSON.stringify(this.dans)
+      case 'danuni.bin':
+        return this.toPb()
+      // case 'bili.xml':
+      //   return this.toBiliXML()
+      // case 'bili.bin':
+      //   return this.toBiliBin()
+      // case 'bili.cmd.bin':
+      //   return this.toBiliCmdBin()
+      case 'dplayer.json':
+        return this.toDplayer()
+      case 'artplayer.json':
+        return this.toArtplayer()
+      case 'ddplay.json':
+        return this.toDDplay()
+      default:
+        throw new Error('unknown format or unsupported now!')
+    }
+  }
   static fromPb(bin: Uint8Array | ArrayBuffer) {
     const data = fromBinary(DanmakuReplySchema, new Uint8Array(bin))
     return new UniPool(
