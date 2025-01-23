@@ -1,7 +1,7 @@
 {
   "name": "@dan-uni/dan-any",
   "version": "0.0.3",
-  "description": "The toolbox of dan-uni.",
+  "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
     "danmaku"
