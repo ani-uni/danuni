@@ -74,6 +74,18 @@ export type DM_format =
 
 export class UniPool {
   constructor(public dans: UniDM[]) {}
+  static create() {
+    return new UniPool([])
+  }
+  assign(dans: UniPool | UniDM | UniDM[]) {
+    if (dans instanceof UniPool) {
+      return new UniPool([...this.dans, ...dans.dans])
+    } else if (dans instanceof UniDM) {
+      return new UniPool([...this.dans, dans])
+    } else if (Array.isArray(dans) && dans.every((d) => d instanceof UniDM)) {
+      return new UniPool([...this.dans, ...dans])
+    } else return this
+  }
   convert2(format: DM_format) {
     switch (format) {
       case 'danuni.json':
