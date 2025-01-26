@@ -1,10 +1,8 @@
 name: Publish @dan-uni/dan-any
 on:
   push:
-    branches:
-      - master
-    paths:
-      - 'packages/dan-any/package.json'
+    tags:
+      - 'dan-any@*.*.*'
   workflow_dispatch:
 jobs:
   build:
