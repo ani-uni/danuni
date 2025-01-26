@@ -72,8 +72,26 @@ export type DM_format =
   | 'artplayer.json'
   | 'ddplay.json'
 
+type shareItems = Partial<
+  Pick<
+    UniDMTools.UniDMObj,
+    'FCID' | 'senderID' | 'platform' | 'SPMO' | 'pool' | 'mode'
+  >
+>
+
 export class UniPool {
-  constructor(public dans: UniDM[]) {}
+  readonly shared: shareItems = {}
+  constructor(public dans: UniDM[]) {
+    function isShared(key: keyof UniDMTools.UniDMObj) {
+      return new Set(dans.map((d) => d[key])).size === 1
+    }
+    if (isShared('FCID')) this.shared.FCID = dans[0].FCID
+    if (isShared('senderID')) this.shared.senderID = dans[0].senderID
+    if (isShared('platform')) this.shared.platform = dans[0].platform
+    if (isShared('SPMO')) this.shared.SPMO = dans[0].SPMO
+    if (isShared('pool')) this.shared.pool = dans[0].pool
+    if (isShared('mode')) this.shared.mode = dans[0].mode
+  }
   static create() {
     return new UniPool([])
   }

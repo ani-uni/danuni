@@ -242,6 +242,24 @@ export type ctime = string | number | bigint | Date
 //   dateStr = 'dateStr',
 // }
 
+export interface UniDMObj {
+  FCID: string
+  progress: number
+  mode: Modes
+  fontsize: number
+  color: number
+  senderID: string
+  content: string
+  ctime: Date
+  weight: number
+  pool: Pools
+  attr: DMAttr[]
+  platform: platfrom | string
+  SPMO: string
+  extra: string
+  DMID: string
+}
+
 /**
  * 所有 number/bigint 值设为0自动转换为默认
  */
@@ -342,25 +360,7 @@ export class UniDM {
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()
   }
-  static create(
-    args: Partial<{
-      FCID: string
-      progress: number
-      mode: Modes
-      fontsize: number
-      color: number
-      senderID: string
-      content: string
-      ctime: Date
-      weight: number
-      pool: Pools
-      attr: DMAttr[]
-      platform: platfrom | string
-      SPMO: string
-      extra: string
-      DMID: string
-    }>,
-  ) {
+  static create(args: Partial<UniDMObj>) {
     return new UniDM(
       args.FCID || ID.fromNull().toString(),
       args.progress,

@@ -3,9 +3,7 @@ import { describe, it } from 'vitest'
 
 import { UniPool } from './index'
 
-describe('转化自', () => {
-  it('bili(xml)', () => {
-    const xml = `<i>
+const xml = `<i>
 <chatserver>chat.bilibili.com</chatserver>
 <chatid>1156756312</chatid>
 <mission>0</mission>
@@ -28,8 +26,10 @@ describe('转化自', () => {
 <d p="13.462,1,25,16777215,1686302133,0,3cab672c,1335558106620590080">哈哈哈</d>
 <d p="13.481,1,25,16777215,1686297342,0,ce67fafd,1335517923728804864">？</d>
 <d p="13.499,1,25,16777215,1686301548,3,2848bf1c,1335553202649003264">不喜欢</d>
-</i>`,
-      pool = UniPool.fromBiliXML(xml)
+</i>`
+describe('转化自', () => {
+  it('bili(xml)', () => {
+    const pool = UniPool.fromBiliXML(xml)
     console.info(xml)
     console.info(pool)
   })
@@ -47,5 +47,12 @@ describe('转化自', () => {
       pool = UniPool.fromArtplayer(json, 'playerid-test', 'acfun')
     console.info(json)
     console.info(pool)
+  })
+})
+
+describe('共通值', () => {
+  const pool = UniPool.fromBiliXML(xml)
+  it('获取shared', () => {
+    console.info(pool.shared)
   })
 })
