@@ -104,6 +104,13 @@ export class UniPool {
       return new UniPool([...this.dans, ...dans])
     } else return this
   }
+  split(key: keyof shareItems) {
+    if (this.shared[key]) return [this]
+    const set = new Set(this.dans.map((d) => d[key]))
+    return [...set].map((v) => {
+      return new UniPool(this.dans.filter((d) => d[key] === v))
+    })
+  }
   convert2(format: DM_format) {
     switch (format) {
       case 'danuni.json':

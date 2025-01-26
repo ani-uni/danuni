@@ -55,4 +55,7 @@ describe('共通值', () => {
   it('获取shared', () => {
     console.info(pool.shared)
   })
+  it('按pool分组', () => {
+    console.info(pool.split('pool'))
+  })
 })
