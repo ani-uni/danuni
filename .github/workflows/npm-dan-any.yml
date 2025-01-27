@@ -15,14 +15,35 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-pnpm-modules
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
       - run: |
           pnpm install --frozen-lockfile
+
       - name: Build @danuni/dan-any
         run: |
           cd ${{ github.workspace }}
@@ -31,13 +52,15 @@ jobs:
           pnpm run lint
           pnpm run build
           pnpm run test
-      - run: |
+
+      - name: Publish @danuni/dan-any
+        run: |
           cd ${{ github.workspace }}
           cd ./packages/dan-any/
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        # with:
-        #   body_path: ${{ github.workspace }}/packages/dan-any/CHANGELOG.txt
+
+      - run: pnpx changelogithub
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
