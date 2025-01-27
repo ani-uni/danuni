@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - 'dan-any@*.*.*'
+    paths:
+      - 'packages/dan-any/package.json'
   workflow_dispatch:
 jobs:
   build:
@@ -25,7 +27,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cd ./packages/dan-any/
-          pnpx conventional-changelog-cli -p angular -i CHANGELOG.md -s
+          # pnpx conventional-changelog-cli -p angular -i CHANGELOG.md -s
           pnpm run lint
           pnpm run build
           pnpm run test
@@ -37,5 +39,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Release
         uses: softprops/action-gh-release@v2
-        with:
-          body_path: ${{ github.workspace }}/packages/dan-any/CHANGELOG.txt
+        # with:
+        #   body_path: ${{ github.workspace }}/packages/dan-any/CHANGELOG.txt
