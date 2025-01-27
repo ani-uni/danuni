@@ -59,3 +59,10 @@ describe('共通值', () => {
     console.info(pool.split('pool'))
   })
 })
+
+describe('其它', () => {
+  const pool = UniPool.fromBiliXML(xml)
+  it('最小化', () => {
+    console.info(pool.minify())
+  })
+})

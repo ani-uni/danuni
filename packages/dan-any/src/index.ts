@@ -111,6 +111,9 @@ export class UniPool {
       return new UniPool(this.dans.filter((d) => d[key] === v))
     })
   }
+  minify() {
+    return this.dans.map((d) => d.minify())
+  }
   convert2(format: DM_format) {
     switch (format) {
       case 'danuni.json':

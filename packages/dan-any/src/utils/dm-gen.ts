@@ -256,7 +256,8 @@ export interface UniDMObj {
   attr: DMAttr[]
   platform: platfrom | string
   SPMO: string
-  extra: string
+  extra: string | Extra
+  extraStr: string
   DMID: string
 }
 
@@ -360,24 +361,28 @@ export class UniDM {
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()
   }
-  static create(args: Partial<UniDMObj>) {
-    return new UniDM(
-      args.FCID || ID.fromNull().toString(),
-      args.progress,
-      args.mode,
-      args.fontsize,
-      args.color,
-      args.senderID,
-      args.content,
-      args.ctime,
-      args.weight,
-      args.pool,
-      args.attr,
-      args.platform,
-      args.SPMO,
-      args.extra,
-      args.DMID,
-    )
+  static create(args?: Partial<UniDMObj>) {
+    return args
+      ? new UniDM(
+          args.FCID || ID.fromNull().toString(),
+          args.progress,
+          args.mode,
+          args.fontsize,
+          args.color,
+          args.senderID,
+          args.content,
+          args.ctime,
+          args.weight,
+          args.pool,
+          args.attr,
+          args.platform,
+          args.SPMO,
+          typeof args.extra === 'object'
+            ? JSON.stringify(args.extra)
+            : args.extra || args.extraStr,
+          args.DMID,
+        )
+      : new UniDM(ID.fromNull().toString())
   }
   get extra() {
     const extra = JSON.parse(this.extraStr || '{}')
@@ -395,6 +400,30 @@ export class UniDM {
    */
   toDMID() {
     return createDMID(this.content, this.senderID, this.ctime)
+  }
+  minify() {
+    //TODO 最小化：删去所有为默认值的项，返回为PlainObj
+    type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'FCID'>
+    // const dan: UObj = JSON.parse(JSON.stringify(this)),
+    //   def: UObj = JSON.parse(JSON.stringify(UniDM.create()))
+    const def = UniDM.create(),
+      dan = UniDM.create(this)
+    // const prototypes = Object.getOwnPropertyNames(this)
+    for (const key in dan) {
+      const k = key as keyof UniDM,
+        v = dan[k]
+      // if (key in prototypes) continue
+      if (key === 'FCID') continue
+      else if (!v) delete dan[k]
+      else if (v === def[k]) delete dan[k]
+      else {
+        // if (k === 'attr') {
+        if (Array.isArray(v) && v.length === 0) delete dan[k]
+        // }
+        if (k === 'extraStr' && v === '{}') delete dan[k]
+      }
+    }
+    return JSON.parse(JSON.stringify(dan)) as UObj
   }
   downgradeAdvcancedDan() {
     if (!this.extra) return this
