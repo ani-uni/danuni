@@ -402,24 +402,19 @@ export class UniDM {
     return createDMID(this.content, this.senderID, this.ctime)
   }
   minify() {
-    //TODO 最小化：删去所有为默认值的项，返回为PlainObj
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'FCID'>
-    // const dan: UObj = JSON.parse(JSON.stringify(this)),
-    //   def: UObj = JSON.parse(JSON.stringify(UniDM.create()))
-    const def = UniDM.create(),
-      dan = UniDM.create(this)
+    const def: UObj = UniDM.create(),
+      dan: UObj = UniDM.create(this)
     // const prototypes = Object.getOwnPropertyNames(this)
     for (const key in dan) {
-      const k = key as keyof UniDM,
+      const k = key as keyof UObj,
         v = dan[k]
       // if (key in prototypes) continue
       if (key === 'FCID') continue
       else if (!v) delete dan[k]
       else if (v === def[k]) delete dan[k]
       else {
-        // if (k === 'attr') {
-        if (Array.isArray(v) && v.length === 0) delete dan[k]
-        // }
+        if (k === 'attr' && Array.isArray(v) && v.length === 0) delete dan[k]
         if (k === 'extraStr' && v === '{}') delete dan[k]
       }
     }
