@@ -275,7 +275,7 @@ export class UniDM {
      */
     public FCID: string,
     /**
-     * 弹幕出现位置(单位ms)
+     * 弹幕出现位置(单位s;精度为ms,即保留三位小数)
      */
     public progress: number = 0,
     /**
@@ -360,6 +360,8 @@ export class UniDM {
     if (pool < Pools.Def || pool > Pools.Ix) this.pool = Pools.Def
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()
+
+    this.progress = Number.parseFloat(progress.toFixed(3))
   }
   static create(args?: Partial<UniDMObj>) {
     return args
@@ -426,9 +428,22 @@ export class UniDM {
       // TODO 分别对 mode7/8/9 command artplayer等正常播放器无法绘制的弹幕做降级处理
     }
   }
-  static transCtime(oriCtime: ctime) {
-    if (typeof oriCtime === 'number') return new Date(oriCtime)
-    else if (typeof oriCtime === 'bigint') return new Date(Number(oriCtime))
+  /**
+   * 将各种类型的时间进行格式化
+   * @param oriCtime
+   * @param tsUnit 当`oriCtime`为数字类型表时间戳时的单位;
+   * 为 毫秒(ms)/秒(s)
+   * @returns {Date}
+   */
+  static transCtime(oriCtime: ctime, tsUnit?: 'ms' | 's'): Date {
+    function isMsTs(ts: number | bigint) {
+      if (tsUnit === 'ms') return true
+      else if (tsUnit === 's') return false
+      else return ts < 100000000
+    }
+    if (typeof oriCtime === 'number' || typeof oriCtime === 'bigint')
+      if (isMsTs(oriCtime)) return new Date(Number(oriCtime))
+      else return new Date(Number(oriCtime) * 1000)
     else if (typeof oriCtime === 'string') {
       if (/^\d+n$/.test(oriCtime))
         return new Date(Number(oriCtime.slice(0, -1)))
@@ -546,7 +561,7 @@ export class UniDM {
       // color: args.color,
       senderID: senderID.toString(),
       // content: args.content,
-      ctime: this.transCtime(args.ctime),
+      ctime: this.transCtime(args.ctime, 's'),
       weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
       pool,
       attr: DMAttrUtils.fromBin(args.attr, 'bili'),
