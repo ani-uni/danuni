@@ -48,6 +48,12 @@ describe('转化自', () => {
     console.info(json)
     console.info(pool)
   })
+  it('ass(双向)', () => {
+    const pool = UniPool.fromBiliXML(xml)
+    const ass = pool.toASS()
+    console.info(ass)
+    console.info(UniPool.fromASS(ass))
+  })
 })
 
 describe('共通值', () => {

@@ -11,7 +11,7 @@ import {
   timestampNow,
 } from '@bufbuild/protobuf/wkt'
 
-import { generateASS } from './ass-gen'
+import { generateASS, parseAssRawField } from './ass-gen'
 import {
   // DanmakuElem as DM_JSON_BiliGrpc,
   DmSegMobileReplySchema,
@@ -447,7 +447,10 @@ export class UniPool {
       }),
     }
   }
-  toAss(options: Options = { substyle: {} }): string {
+  static fromASS(ass: string) {
+    return parseAssRawField(ass)
+  }
+  toASS(options: Options = { substyle: {} }): string {
     return generateASS(this, options)
   }
 }

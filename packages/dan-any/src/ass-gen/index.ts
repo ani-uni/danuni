@@ -1,10 +1,11 @@
-import type { UniPool } from '..'
 // import parse from './parse/bilibili'
 import type { SubtitleStyle } from './types'
 
+import { UniPool } from '..'
 import ass from './ass/create'
+import { deRaw } from './ass/raw'
 import getConfig from './config'
-import { layoutDanmaku } from './util'
+import { DanmakuList2UniPool, layoutDanmaku } from './util'
 
 export type Options = {
   filename?: string
@@ -42,4 +43,10 @@ export function generateASS(danmaku: UniPool, options: Options): string {
   })
 
   return content
+}
+
+export function parseAssRawField(ass: string): UniPool {
+  const raw = deRaw(ass)
+  if (!raw) return UniPool.create()
+  else return DanmakuList2UniPool(raw.list)
 }

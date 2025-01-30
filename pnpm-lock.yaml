@@ -98,6 +98,9 @@ importers:
 
   packages/dan-any:
     dependencies:
+      base16384:
+        specifier: ^1.0.0
+        version: 1.0.0
       canvas:
         specifier: ^3.1.0
         version: 3.1.0
@@ -1624,6 +1627,10 @@ packages:
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
+  base16384@1.0.0:
+    resolution: {integrity: sha512-BGR05r7TMU4bvYWZ/nnyDQgeTuqYpL2N7/Tq4KmQEIFui2hmjYlqIUr5E09kB4aynkcWYqUDr9FdJggpYrG3Qg==}
+    hasBin: true
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -5577,6 +5584,8 @@ snapshots:
       possible-typed-array-names: 1.0.0
 
   balanced-match@1.0.2: {}
+
+  base16384@1.0.0: {}
 
   base64-js@1.5.1: {}
 
