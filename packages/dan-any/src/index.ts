@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
+import type { Options } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 // import type * as UniDMType from './utils/dm-gen'
 import type { platfrom } from './utils/id-gen'
@@ -10,6 +11,7 @@ import {
   timestampNow,
 } from '@bufbuild/protobuf/wkt'
 
+import { generateASS } from './ass-gen'
 import {
   // DanmakuElem as DM_JSON_BiliGrpc,
   DmSegMobileReplySchema,
@@ -71,6 +73,7 @@ export type DM_format =
   | 'dplayer.json'
   | 'artplayer.json'
   | 'ddplay.json'
+  | 'common.ass'
 
 type shareItems = Partial<
   Pick<
@@ -443,6 +446,9 @@ export class UniPool {
         }
       }),
     }
+  }
+  toAss(options: Options = { substyle: {} }): string {
+    return generateASS(this, options)
   }
 }
 
