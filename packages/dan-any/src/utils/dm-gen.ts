@@ -513,7 +513,7 @@ export class UniDM {
    * @param oriCtime
    * @param tsUnit 当`oriCtime`为数字类型表时间戳时的单位;
    * 为 毫秒(ms)/秒(s)
-   * @returns {Date}
+   * @returns {Date} Date格式时间
    */
   static transCtime(oriCtime: ctime, tsUnit?: 'ms' | 's'): Date {
     function isMsTs(ts: number | bigint) {

@@ -28,7 +28,7 @@ describe('其它', () => {
     const a = pool.dans[0].isSameAs(pool.dans[1]),
       b = pool.dans[1].isSameAs(pool.dans[2]),
       c = pool.dans[1].isSameAs(pool.dans[3])
-    console.log(a, b, c)
+    console.info(a, b, c)
     expect(a).toBe(false)
     expect(b).toBe(true)
     expect(c).toBe(true)
@@ -55,8 +55,8 @@ describe('其它', () => {
       UniDM.create({ ...commonSample, extra: { artplayer: { border: true } } }),
     ]
     for (const pool of pool2) {
-      console.log(pool.extraStr)
-      console.log(pool2[0].isSameAs(pool))
+      console.info(pool.extraStr)
+      console.info(pool2[0].isSameAs(pool))
     }
     expect(pool2[0].isSameAs(pool2[1])).toBe(true)
     expect(pool2[0].isSameAs(pool2[2])).toBe(true)
