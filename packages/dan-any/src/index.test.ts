@@ -65,4 +65,7 @@ describe('其它', () => {
   it('最小化', () => {
     console.info(pool.minify())
   })
+  it('合并范围内重复', () => {
+    console.info(pool.merge(10).minify())
+  })
 })
