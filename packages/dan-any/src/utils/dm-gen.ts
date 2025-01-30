@@ -6,6 +6,29 @@ import { createDMID, domainPreset, UniID as ID, platforms } from './id-gen'
 const BigIntSerializer = (k: string, v: any) =>
   typeof v === 'bigint' ? v.toString() : v
 
+function cleanEmptyObjects(obj: object): object {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj
+  }
+  const cleaned: any = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const cleanedValue = cleanEmptyObjects(value)
+    if (
+      cleanedValue !== undefined &&
+      !(
+        typeof cleanedValue === 'object' &&
+        Object.keys(cleanedValue).length === 0
+      )
+    ) {
+      cleaned[key] = cleanedValue
+    }
+  }
+  return Object.keys(cleaned).length > 0 ? cleaned : {}
+}
+
 class SetBin {
   constructor(public bin: number) {}
   set1(bit: number) {
@@ -193,14 +216,21 @@ interface ExtraBili {
   command?: DMBiliCommand
 }
 export interface ExtraDanUni {
-  chapter?: {
-    // seg: {
-    //   st: number //开始时刻
-    // } //起止时间(ms)
-    duration: number //持续时间
-    type: ExtraDanUniChapterType
-    // action: ExtraDanUniChapterAction
-  }
+  chapter?: ExtraDanUniChapter
+  merge?: ExtraDanUniMerge
+}
+export interface ExtraDanUniChapter {
+  // seg: {
+  //   st: number //开始时刻
+  // } //起止时间(ms)
+  duration: number //持续时间
+  type: ExtraDanUniChapterType
+  // action: ExtraDanUniChapterAction
+}
+export interface ExtraDanUniMerge {
+  duration: number //持续时间(重复内容第一次出现时间开始到合并了的弹幕中最后一次出现的时间)
+  count: number //重复次数
+  senders: string[] //发送者
 }
 export enum ExtraDanUniChapterType {
   Chapter = 'ch', //其它片段(用于标记章节)
@@ -362,6 +392,9 @@ export class UniDM {
     if (!DMID) DMID = this.toDMID()
 
     this.progress = Number.parseFloat(progress.toFixed(3))
+    if (extraStr)
+      this.extraStr = JSON.stringify(cleanEmptyObjects(JSON.parse(extraStr)))
+    if (extraStr === '{}') this.extraStr = undefined
   }
   static create(args?: Partial<UniDMObj>) {
     return args
@@ -386,9 +419,11 @@ export class UniDM {
         )
       : new UniDM(ID.fromNull().toString())
   }
-  get extra() {
+  get extra(): Extra {
     const extra = JSON.parse(this.extraStr || '{}')
-    return (typeof extra === 'object' ? extra : {}) as Extra
+    // this.extraStr = JSON.stringify(cleanEmptyObjects(extra))
+    return extra
+    // return cleanEmptyObjects(extra) as Extra
   }
   get isFrom3rdPlatform() {
     if (this.platform && platforms.includes(this.platform as platfrom))
@@ -402,6 +437,51 @@ export class UniDM {
    */
   toDMID() {
     return createDMID(this.content, this.senderID, this.ctime)
+  }
+  isSameAs(dan: UniDM, _check2 = false): boolean {
+    const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
+      checks = (
+        [
+          'FCID',
+          'content',
+          'mode',
+          'platform',
+          'pool',
+          'SPMO',
+        ] satisfies (keyof UniDMObj)[]
+      ).every((k) => isSame(k))
+    // 如果两个对象的extra都是空对象，只检查基本字段
+    if (
+      JSON.stringify(this.extra) === '{}' &&
+      JSON.stringify(dan.extra) === '{}'
+    ) {
+      return checks
+    }
+    // 特殊情况：只包含danuni.merge的情况
+    const thisHasOnlyMerge =
+      this.extra.danuni?.merge &&
+      !this.extra.artplayer &&
+      !this.extra.bili &&
+      !this.extra.danuni.chapter
+    const danHasOnlyMerge =
+      dan.extra.danuni?.merge &&
+      !dan.extra.artplayer &&
+      !dan.extra.bili &&
+      !dan.extra.danuni.chapter
+    if (thisHasOnlyMerge && danHasOnlyMerge) {
+      return checks
+    }
+    if (_check2) {
+      return isSame('extraStr') && checks
+    }
+    const a = { ...this.extra }
+    const b = { ...dan.extra }
+    if (a.danuni) delete a.danuni.merge
+    if (b.danuni) delete b.danuni.merge
+    return UniDM.create({ ...a, extraStr: JSON.stringify(a) }).isSameAs(
+      UniDM.create({ ...b, extraStr: JSON.stringify(b) }),
+      true,
+    )
   }
   minify() {
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'FCID'>
