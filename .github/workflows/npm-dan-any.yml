@@ -4,12 +4,12 @@ on:
     tags:
       - 'dan-any@*.*.*'
     paths:
-      - 'packages/dan-any/package.json'
+      - packages/dan-any/package.json
   workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: 'npm publish'
+    environment: npm publish
     permissions:
       contents: read
       id-token: write
@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
 
       - uses: pnpm/action-setup@v4

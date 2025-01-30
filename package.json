@@ -1,6 +1,15 @@
 {
   "private": true,
   "packageManager": "pnpm@9.15.4",
+  "homepage": "https://github.com/ani-uni/danuni",
+  "bugs": {
+    "url": "https://github.com/ani-uni/danuni/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ani-uni/danuni.git"
+  },
+  "author": "rinne",
   "scripts": {
     "prepare": "husky",
     "test": "vitest",
@@ -8,21 +17,6 @@
     "lint": "eslint",
     "commitlint": "commitlint --edit"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --cache --fix",
-      "prettier --ignore-path ./.prettierignore --write "
-    ]
-  },
-  "author": "rinne",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ani-uni/danuni.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ani-uni/danuni/issues"
-  },
-  "homepage": "https://github.com/ani-uni/danuni",
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
@@ -47,6 +41,14 @@
     "tslib": "^2.8.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^7.18.0",
+    "unplugin-swc": "^1.5.1",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --cache --fix",
+      "prettier --ignore-path ./.prettierignore --write "
+    ]
   }
 }

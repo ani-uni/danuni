@@ -95,6 +95,9 @@ export class UniPool {
   static create() {
     return new UniPool([])
   }
+  /**
+   * 合并弹幕/弹幕库
+   */
   assign(dans: UniPool | UniDM | UniDM[]) {
     if (dans instanceof UniPool) {
       return new UniPool([...this.dans, ...dans.dans])
@@ -104,12 +107,111 @@ export class UniPool {
       return new UniPool([...this.dans, ...dans])
     } else return this
   }
+  /**
+   * 按共通属性拆分弹幕库
+   */
   split(key: keyof shareItems) {
     if (this.shared[key]) return [this]
     const set = new Set(this.dans.map((d) => d[key]))
     return [...set].map((v) => {
       return new UniPool(this.dans.filter((d) => d[key] === v))
     })
+  }
+  /**
+   * 合并一定时间段内的重复弹幕，防止同屏出现过多
+   * @param lifetime 查重时间区段，单位秒 (默认为0，表示不查重)
+   */
+  merge(lifetime = 0) {
+    if (!this.shared.FCID) {
+      console.error(
+        "本功能仅支持同弹幕库内使用，可先 .split('FCID') 在分别使用",
+      )
+      return this
+    }
+    if (lifetime <= 0) return this
+    const mergeContext = this.dans.reduce<
+      [
+        UniDM[],
+        Record<string, UniDM>,
+        Record<string, UniDMTools.ExtraDanUniMerge>,
+      ]
+    >(
+      ([result, cache, mergeObj], danmaku) => {
+        const key = ['content', 'mode', 'platform', 'pool', 'SPMO']
+          .map((k) => danmaku[k as keyof UniDM])
+          .join('|')
+        const cached = cache[key]
+        const lastAppearTime = cached?.progress || 0
+        if (
+          cached &&
+          danmaku.progress - lastAppearTime <= lifetime &&
+          danmaku.isSameAs(cached)
+        ) {
+          const senders = mergeObj[key].senders
+          senders.push(danmaku.senderID)
+          const extra = danmaku.extra
+          extra.danuni = extra.danuni || {}
+          extra.danuni.merge = {
+            count: senders.length,
+            duration: danmaku.progress - cached.progress,
+            senders,
+          }
+          danmaku.extraStr = JSON.stringify(extra)
+          cache[key] = danmaku
+          mergeObj[key] = extra.danuni.merge
+          return [result, cache, mergeObj]
+        } else {
+          mergeObj[key] = {
+            count: 1,
+            duration: 0,
+            senders: [danmaku.senderID],
+          }
+          cache[key] = danmaku
+          // 初始化merge信息，包含第一个sender
+          const extra = danmaku.extra
+          extra.danuni = extra.danuni || {}
+          extra.danuni.merge = mergeObj[key]
+          danmaku.extraStr = JSON.stringify(extra)
+          result.push(danmaku)
+          return [result, cache, mergeObj]
+        }
+      },
+      [[], {}, {}],
+    )
+    // 处理结果，删除senders<=1的merge字段
+    const [result, _cache, mergeObj] = mergeContext
+    result.forEach((danmaku, i) => {
+      const key = ['content', 'mode', 'platform', 'pool', 'SPMO']
+        .map((k) => danmaku[k as keyof UniDM])
+        .join('|')
+      const extra = result[i].extra,
+        mergeData = mergeObj[key]
+      result[i].extraStr = JSON.stringify({
+        ...extra,
+        danuni: {
+          ...extra.danuni,
+          merge: mergeData,
+        },
+      } satisfies UniDMTools.Extra)
+      if (mergeData?.count) {
+        if (mergeData.count <= 1) {
+          const updatedExtra = { ...extra }
+          if (updatedExtra.danuni) {
+            delete updatedExtra.danuni.merge
+            if (Object.keys(updatedExtra.danuni).length === 0) {
+              delete updatedExtra.danuni
+            }
+          }
+          result[i].extraStr =
+            Object.keys(updatedExtra).length > 0
+              ? JSON.stringify(updatedExtra)
+              : undefined
+        } else {
+          result[i].senderID = 'merge@bot'
+        }
+      }
+    })
+    return new UniPool(result)
   }
   minify() {
     return this.dans.map((d) => d.minify())
