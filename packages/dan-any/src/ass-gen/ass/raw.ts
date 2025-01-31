@@ -1,5 +1,5 @@
 import { brotliCompressSync, brotliDecompressSync, gzipSync } from 'node:zlib'
-import base16384 from 'base16384'
+import * as base16384 from 'base16384'
 import type { Context, Danmaku, SubtitleStyle } from '../types'
 
 type compressType = 'brotli' | 'gzip'

@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
-import type { Options } from './ass-gen'
+import type { Options as AssGenOptions } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 // import type * as UniDMType from './utils/dm-gen'
 import type { platfrom } from './utils/id-gen'
@@ -450,7 +450,7 @@ export class UniPool {
   static fromASS(ass: string) {
     return parseAssRawField(ass)
   }
-  toASS(options: Options = { substyle: {} }): string {
+  toASS(options: AssGenOptions = { substyle: {} }): string {
     return generateASS(this, options)
   }
 }
