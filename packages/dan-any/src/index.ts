@@ -219,7 +219,7 @@ export class UniPool {
   minify() {
     return this.dans.map((d) => d.minify())
   }
-  convert2(format: DM_format) {
+  convert2(format: DM_format, continue_on_error = false) {
     switch (format) {
       case 'danuni.json':
         return JSON.stringify(this.dans)
@@ -239,8 +239,11 @@ export class UniPool {
         return this.toDDplay()
       case 'common.ass':
         return this.toASS()
-      default:
-        throw new Error('unknown format or unsupported now!')
+      default: {
+        const message = 'unknown format or unsupported now!'
+        if (continue_on_error) return message
+        else throw new Error(message)
+      }
     }
   }
   static fromPb(bin: Uint8Array | ArrayBuffer) {
