@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
@@ -18,7 +18,7 @@
   "author": "rinne",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "browser": "dist/index.umd.min.js",
   "scripts": {
     "test": "vitest",
