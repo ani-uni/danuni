@@ -222,7 +222,7 @@ export class UniPool {
   convert2(format: DM_format, continue_on_error = false) {
     switch (format) {
       case 'danuni.json':
-        return JSON.stringify(this.dans)
+        return this.dans
       case 'danuni.bin':
         return this.toPb()
       // case 'bili.xml':
@@ -240,7 +240,7 @@ export class UniPool {
       case 'common.ass':
         return this.toASS()
       default: {
-        const message = 'unknown format or unsupported now!'
+        const message = '(err) Unknown format or unsupported now!'
         if (continue_on_error) return message
         else throw new Error(message)
       }
