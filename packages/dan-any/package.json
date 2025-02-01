@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
@@ -34,8 +34,7 @@
     "base16384": "^1.0.0",
     "canvas": "^3.1.0",
     "fast-xml-parser": "^4.5.1",
-    "jssha": "^3.3.1",
-    "pako": "^2.1.0"
+    "jssha": "^3.3.1"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.50.0",
