@@ -237,6 +237,8 @@ export class UniPool {
         return this.toArtplayer()
       case 'ddplay.json':
         return this.toDDplay()
+      case 'common.ass':
+        return this.toASS()
       default:
         throw new Error('unknown format or unsupported now!')
     }
@@ -451,7 +453,8 @@ export class UniPool {
     return parseAssRawField(ass)
   }
   toASS(options: AssGenOptions = { substyle: {} }): string {
-    return generateASS(this, options)
+    const fn = this.shared.FCID
+    return generateASS(this, { filename: fn, title: fn, ...options })
   }
 }
 
