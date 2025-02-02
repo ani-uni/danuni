@@ -1,3 +1,4 @@
+import TimeFormat from 'hh-mm-ss'
 import type { DM_JSON_BiliCommandGrpc } from '..'
 import type { platfrom } from './id-gen'
 
@@ -57,6 +58,7 @@ export type DMAttr =
   | 'HighLike'
   | 'Compatible'
   | 'Reported'
+  | 'Hide'
 const DMAttrUtils = {
   fromBin(bin: number = 0, format?: platfrom) {
     const array = toBits(bin),
@@ -208,8 +210,8 @@ interface ExtraArtplayer {
   border?: boolean
 }
 interface ExtraBili {
-  mode: number //原弹幕类型
-  pool: number //原弹幕池
+  mode?: number //原弹幕类型
+  pool?: number //原弹幕池
   adv?: string
   code?: string
   bas?: string
@@ -240,9 +242,23 @@ export enum ExtraDanUniChapterType {
   ED = 'ed', //片尾
   Preview = 'prvw', //预告
   Cut = 'cut', //删减(删减版中提供删减说明,提供开始位置、长度)
-  Duplicates = 'dup', //补档(完整版中指明其它平台中删减位置)
+  Duplicate = 'dup', //补档(完整版中指明其它平台中删减位置)
   AdBiz = 'biz', //商业广告
   AdUnpaid = 'promo', //推广(无偿/公益)广告
+}
+const ExtraDanUniChapterTypeDict = {
+  chs: {
+    ch: '其它片段',
+    rev: '回顾',
+    op: '片头',
+    int: '中场',
+    ed: '片尾',
+    prvw: '预告',
+    cut: '删减',
+    dup: '补档',
+    biz: '商业广告',
+    promo: '推广',
+  },
 }
 export enum ExtraDanUniChapterAction {
   Disabled = -1,
@@ -309,7 +325,7 @@ export class UniDM {
      */
     public progress: number = 0,
     /**
-     * 类型 1 2 3:普通弹幕 4:底部弹幕 5:顶部弹幕 6:逆向弹幕 7:高级弹幕 8:代码弹幕 9:BAS弹幕(pool必须为2)
+     * 弹幕类型
      */
     public mode: Modes = Modes.Normal,
     /**
@@ -502,10 +518,54 @@ export class UniDM {
     }
     return JSON.parse(JSON.stringify(dan)) as UObj
   }
-  downgradeAdvcancedDan() {
+  downgradeAdvcancedDan(
+    {
+      include,
+      exclude,
+      cleanExtra = false,
+    }: {
+      include?: (keyof Extra)[]
+      exclude?: (keyof Extra)[]
+      cleanExtra?: boolean
+    } = { include: [], exclude: [] },
+  ) {
     if (!this.extra) return this
     else {
+      if (!include) include = []
+      if (!exclude) exclude = []
+      const check = (k: keyof Extra) =>
+        include?.includes(k) || !exclude?.includes(k)
       // TODO 分别对 mode7/8/9 command artplayer等正常播放器无法绘制的弹幕做降级处理
+      const clone = UniDM.create(this)
+      clone.mode = Modes.Top
+      if (check('danuni') && clone.extra.danuni) {
+        const danuni = clone.extra.danuni
+        if (danuni.merge) {
+          const merge = danuni.merge
+          clone.content = `${this.content} x${merge.count}`
+        } else if (danuni.chapter) {
+          const chapter = danuni.chapter
+          if (chapter.type === ExtraDanUniChapterType.Cut)
+            clone.content = `[提示]${clone.platform}源${ExtraDanUniChapterTypeDict.chs[chapter.type]}了${chapter.duration}秒`
+          else if (chapter.type === ExtraDanUniChapterType.Duplicate)
+            clone.content = `[提示(${ExtraDanUniChapterTypeDict.chs[chapter.type]})]${clone.platform}源-${chapter.duration}秒`
+          else
+            clone.content = `[空降(${ExtraDanUniChapterTypeDict.chs[chapter.type]})]${TimeFormat.fromS(clone.progress + chapter.duration)}`
+        }
+      } else if (check('bili') && clone.extra.bili) {
+        const bili = clone.extra.bili
+        if (bili.mode === 7 && bili.adv) {
+          clone.content = `[B站高级弹幕]${JSON.parse(bili.adv)[4] || ''}`
+        } else if (bili.command) {
+          const command = bili.command
+          clone.content = `[B站指令弹幕]${command.content}`
+          clone.fontsize = 36
+        }
+      }
+      clone.senderID = 'compat@bot'
+      clone.attr.push('Compatible')
+      if (cleanExtra) clone.extraStr = undefined
+      return clone
     }
   }
   /**
@@ -547,6 +607,7 @@ export class UniDM {
     let mode = Modes.Normal
     switch (fmt) {
       case 'bili':
+        // 类型 1 2 3:普通弹幕 4:底部弹幕 5:顶部弹幕 6:逆向弹幕 7:高级弹幕 8:代码弹幕 9:BAS弹幕(pool必须为2)
         switch (oriMode) {
           case 4:
             mode = Modes.Bottom

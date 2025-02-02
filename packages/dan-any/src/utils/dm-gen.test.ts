@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { UniDMObj } from './dm-gen'
 
 import { UniDM, UniPool } from '..'
+import { ExtraDanUniChapterType } from './dm-gen'
 
 const xml = `<i>
 <chatserver>chat.bilibili.com</chatserver>
@@ -17,6 +18,56 @@ const xml = `<i>
 <d p="13.374,1,25,16777215,1686300770,3,647fe355,1335546672880933888">不喜欢</d>
 <d p="13.499,1,25,16777215,1686301548,3,2848bf1c,1335553202649003264">不喜欢</d>
 </i>`
+
+describe('弹幕降级', () => {
+  const dans = [
+    UniDM.create({
+      content: 'test',
+      extra: {
+        danuni: { merge: { count: 100, duration: 10, senders: [] } },
+      },
+    }),
+    UniDM.create({
+      platform: 'bili',
+      extra: {
+        danuni: { chapter: { type: ExtraDanUniChapterType.Cut, duration: 3 } },
+      },
+    }),
+    UniDM.create({
+      progress: 30,
+      extra: {
+        danuni: { chapter: { type: ExtraDanUniChapterType.OP, duration: 93 } },
+      },
+    }),
+    UniDM.create({
+      platform: 'bili',
+      extra: {
+        bili: {
+          mode: 7,
+          adv: '["0.355","0.27","0.8-0","0.6"," 真棒☺",0,0,"0.355",0,"500",0,0,"SimHei",1]',
+        },
+      },
+    }),
+  ]
+  it('danuni.merge', () => {
+    const d = dans[0].downgradeAdvcancedDan({ cleanExtra: true })
+    console.info(d)
+    expect(d.content).equal('test x100')
+  })
+  it('danuni.chapter', () => {
+    const d1 = dans[1].downgradeAdvcancedDan({ cleanExtra: true })
+    console.info(d1)
+    expect(d1.content).equal('[提示]bili源删减了3秒')
+    const d2 = dans[2].downgradeAdvcancedDan({ cleanExtra: true })
+    console.info(d2)
+    expect(d2.content).equal('[空降(片头)]02:03')
+  })
+  it('bili.adv', () => {
+    const d = dans[3].downgradeAdvcancedDan({ cleanExtra: true })
+    console.info(d)
+    expect(d.content).equal('[B站高级弹幕] 真棒☺')
+  })
+})
 
 describe('其它', () => {
   const pool = UniPool.fromBiliXML(xml)
