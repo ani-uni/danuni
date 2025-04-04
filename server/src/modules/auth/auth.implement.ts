@@ -7,11 +7,11 @@ import { IncomingMessage } from 'node:http'
 // } from '@mx-space/complied/auth'
 import { betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
-import {
-  APIError,
-  // createAuthMiddleware,
-  // getSessionFromCtx,
-} from 'better-auth/api'
+// import {
+//   APIError,
+//   // createAuthMiddleware,
+//   // getSessionFromCtx,
+// } from 'better-auth/api'
 import { toNodeHandler } from 'better-auth/node'
 // import { fromNodeHeaders, toNodeHandler } from 'better-auth/node'
 import {
@@ -208,7 +208,9 @@ export async function CreateAuth(
     appName: 'danuni',
     secret: SECURITY.jwtSecret,
     plugins: [
-      apiKey(),
+      apiKey({
+        defaultPrefix: 'danuni_',
+      }),
       // bearer(),
       admin(),
       openAPI(),
@@ -283,29 +285,30 @@ export async function CreateAuth(
 
   return {
     handler,
-    auth: {
-      options: auth.options,
-      api: {
-        getSession(params: Parameters<typeof auth.api.getSession>[0]) {
-          return auth.api.getSession(params)
-        },
-        getProviders() {
-          return Object.keys(auth.options.socialProviders || {})
-        },
-        async listUserAccounts(
-          params: Parameters<typeof auth.api.listUserAccounts>[0],
-        ) {
-          try {
-            const result = await auth.api.listUserAccounts(params)
-            return result
-          } catch (error) {
-            if (error instanceof APIError) {
-              return null
-            }
-            throw error
-          }
-        },
-      },
-    },
+    auth,
+    // auth: {
+    //   options: auth.options,
+    //   api: {
+    //     getSession(params: Parameters<typeof auth.api.getSession>[0]) {
+    //       return auth.api.getSession(params)
+    //     },
+    //     getProviders() {
+    //       return Object.keys(auth.options.socialProviders || {})
+    //     },
+    //     async listUserAccounts(
+    //       params: Parameters<typeof auth.api.listUserAccounts>[0],
+    //     ) {
+    //       try {
+    //         const result = await auth.api.listUserAccounts(params)
+    //         return result
+    //       } catch (error) {
+    //         if (error instanceof APIError) {
+    //           return null
+    //         }
+    //         throw error
+    //       }
+    //     },
+    //   },
+    // },
   }
 }

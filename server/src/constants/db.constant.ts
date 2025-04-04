@@ -21,7 +21,7 @@ export const DANMAKU_EVENT_COLLECTION_NAME = 'danmaku_events'
 // export const WEBHOOK_EVENT_COLLECTION_NAME = 'webhook_events'
 // export const AI_SUMMARY_COLLECTION_NAME = 'ai_summaries'
 
-export const USER_COLLECTION_NAME = 'users'
+// export const USER_COLLECTION_NAME = 'users'
 export enum CollectionRefTypes {
   // Post = POST_COLLECTION_NAME,
   // Note = NOTE_COLLECTION_NAME,

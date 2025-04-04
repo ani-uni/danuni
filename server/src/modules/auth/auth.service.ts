@@ -27,7 +27,7 @@ import { DatabaseService } from '~/processors/database/database.service'
 // import { InjectModel } from '~/transformers/model.transformer'
 
 import {
-  AUTH_JS_ACCOUNT_COLLECTION,
+  // AUTH_JS_ACCOUNT_COLLECTION,
   AUTH_JS_USER_COLLECTION,
   AuthInstanceInjectKey,
   // Oauth2Provider,
@@ -148,28 +148,38 @@ export class AuthService {
       throw new InternalServerErrorException('auth not found')
     }
 
-    const cookieHeader = new Headers()
-    if (!req.headers.cookie) {
-      return null
-    }
-    cookieHeader.set('cookie', req.headers.cookie)
+    const apiKeyHeader = req.headers['x-api-key'],
+      authHeader = new Headers()
+    if (apiKeyHeader) authHeader.set('x-api-key', apiKeyHeader)
+
+    // const cookieHeader = new Headers()
+    // if (!req.headers.cookie) {
+    //   return null
+    // }
+    // cookieHeader.set('cookie', req.headers.cookie)
+    if (req.headers.cookie) authHeader.set('cookie', req.headers.cookie)
     if (req.headers.origin) {
-      cookieHeader.set('origin', req.headers.origin)
+      // cookieHeader.set('origin', req.headers.origin)
+      authHeader.set('origin', req.headers.origin)
     }
+    if (!apiKeyHeader && !req.headers.cookie) return null
+
     const session = await auth.api.getSession({
       query: {
         disableCookieCache: true,
       },
-      headers: cookieHeader,
+      // headers: cookieHeader,
+      headers: authHeader,
     })
 
-    const accounts = await auth.api.listUserAccounts({
-      headers: cookieHeader,
-    })
+    const accounts = (await auth.api.listUserAccounts({
+      // headers: cookieHeader,
+      headers: authHeader,
+    })) || [{ id: '', provider: 'local', accountId: '' }]
 
-    if (!accounts) {
-      return null
-    }
+    // if (!accounts) {
+    //   return null
+    // }
 
     // const selected_provider =
     //   accounts.find(
@@ -185,7 +195,7 @@ export class AuthService {
       providerAccountId,
       provider,
       accounts,
-      user: session?.user,
+      // user: session?.user,
     }
   }
 
@@ -219,57 +229,57 @@ export class AuthService {
     return 'OK'
   }
 
-  async getOauthUserAccount(providerAccountId: string) {
-    const account = await this.databaseService.db
-      .collection(AUTH_JS_ACCOUNT_COLLECTION)
-      .findOne(
-        {
-          providerAccountId,
-        },
-        {
-          projection: {
-            providerAccountId: 1,
-            // authjs field
-            provider: 1,
-            providerId: 1,
-            type: 1,
-            userId: 1,
-          },
-        },
-      )
+  // async getOauthUserAccount(providerAccountId: string) {
+  //   const account = await this.databaseService.db
+  //     .collection(AUTH_JS_ACCOUNT_COLLECTION)
+  //     .findOne(
+  //       {
+  //         providerAccountId,
+  //       },
+  //       {
+  //         projection: {
+  //           providerAccountId: 1,
+  //           // authjs field
+  //           provider: 1,
+  //           providerId: 1,
+  //           type: 1,
+  //           userId: 1,
+  //         },
+  //       },
+  //     )
 
-    // transformer
-    if (account?.providerId && !account.provider) {
-      account.provider = account.providerId
-    }
+  //   // transformer
+  //   if (account?.providerId && !account.provider) {
+  //     account.provider = account.providerId
+  //   }
 
-    if (account?.userId) {
-      const user = await this.databaseService.db
-        .collection(AUTH_JS_USER_COLLECTION)
-        .findOne(
-          {
-            _id: account.userId,
-          },
-          {
-            projection: {
-              email: 1,
-              name: 1,
-              // image: 1,
-              isOwner: 1,
-              handle: 1,
-              _id: 1,
-            },
-          },
-        )
+  //   if (account?.userId) {
+  //     const user = await this.databaseService.db
+  //       .collection(AUTH_JS_USER_COLLECTION)
+  //       .findOne(
+  //         {
+  //           _id: account.userId,
+  //         },
+  //         {
+  //           projection: {
+  //             email: 1,
+  //             name: 1,
+  //             // image: 1,
+  //             isOwner: 1,
+  //             handle: 1,
+  //             _id: 1,
+  //           },
+  //         },
+  //       )
 
-      if (user) Object.assign(account, user)
-    }
+  //     if (user) Object.assign(account, user)
+  //   }
 
-    return {
-      ...account,
-      id: account?.userId.toString(),
-    }
-  }
+  //   return {
+  //     ...account,
+  //     id: account?.userId.toString(),
+  //   }
+  // }
   getOauthProviders() {
     return Object.keys(this.authInstance.get().options.socialProviders || {})
   }

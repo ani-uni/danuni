@@ -12,13 +12,14 @@ import {
 import {
   // Body,
   // Delete,
-  // Get,
+  Get,
   Inject,
   // NotFoundException,
   Patch,
   // Post,
   // Query,
-  // Req,
+  Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -26,13 +27,12 @@ import { EventEmitter2 } from '@nestjs/event-emitter'
 import { ApiController } from '~/common/decorators/api-controller.decorator'
 import { Authn } from '~/common/decorators/authn.decorator'
 // import { Auth } from '~/common/decorators/auth.decorator'
-// import { HttpCache } from '~/common/decorators/cache.decorator'
+import { HttpCache } from '~/common/decorators/cache.decorator'
 import { AuthnGuard } from '~/common/guards/authn.guard'
 import { Roles } from '~/constants/authn.constant'
-
 // import { EventBusEvents } from '~/constants/event-bus.constant'
 // import { MongoIdDto } from '~/shared/dto/id.dto'
-// import { FastifyBizRequest } from '~/transformers/get-req.transformer'
+import { FastifyBizRequest } from '~/transformers/get-req.transformer'
 
 import { AuthInstanceInjectKey } from './auth.constant'
 import { InjectAuthInstance } from './auth.interface'
@@ -123,29 +123,36 @@ export class AuthController {
     return this.authService.setCurrentOauthAsOwner()
   }
 
-  // @Get('session')
-  // @HttpCache({
-  //   disable: true,
-  // })
-  // async getSession(@Req() req: FastifyBizRequest) {
-  //   const session = await this.authService.getSessionUser(req.raw)
+  @Get('get-session')
+  @HttpCache({
+    disable: true,
+  })
+  async getSession(@Req() req: FastifyBizRequest) {
+    const session = await this.authService.getSessionUser(req.raw)
 
-  //   if (!session) {
-  //     return null
-  //   }
+    if (!session) {
+      throw new UnauthorizedException('未登录')
+      // return null
+    }
 
-  //   const account = await this.authService.getOauthUserAccount(
-  //     session.providerAccountId,
-  //   )
+    return session
 
-  //   return {
-  //     ...session.user,
-  //     ...account,
-  //     ...omit(session, ['session', 'user']),
+    // const account = await this.authService.getOauthUserAccount(
+    //   session.providerAccountId,
+    // )
 
-  //     id: session?.user?.id ?? session.providerAccountId,
-  //   }
-  // }
+    // return {
+    //   ...session,
+    //   account,
+    // }
+    // return {
+    //   ...session.user,
+    //   ...account,
+    //   ...omit(session, ['session', 'user']),
+
+    //   id: session?.user?.id ?? session.providerAccountId,
+    // }
+  }
 
   // @Get('providers')
   // @HttpCache({

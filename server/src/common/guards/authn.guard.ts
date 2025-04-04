@@ -152,7 +152,8 @@ export class AuthnGuard implements CanActivate {
       }
       let sid: string | undefined
       const getSid = (provider: string) => {
-        if (provider === 'email') return session.user?.email
+        if (provider === 'email' || session.accounts[0]?.provider === 'local')
+          return session.user?.email
         const selected_provider = session.accounts.find(
           (account) => account.provider === provider,
         )

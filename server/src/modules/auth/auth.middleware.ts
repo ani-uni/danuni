@@ -16,6 +16,10 @@ import { InjectAuthInstance } from './auth.interface'
 declare module 'http' {
   interface IncomingMessage {
     originalUrl: string
+    // headers: IncomingHttpHeaders & IncomingMessage['headers']
+  }
+  interface IncomingHttpHeaders extends NodeJS.Dict<string | string[]> {
+    'x-api-key'?: string
   }
 }
 
@@ -122,8 +126,11 @@ export class AuthMiddleware implements NestMiddleware, OnModuleInit {
       return
     }
 
-    const bypassPath = ['/token', '/session', '/providers']
+    //此处为controller中新建的endpoint
+    // 拦截默认的 get-session ，其似乎在有apikey时会崩溃
+    const bypassPath = ['/token', '/session', '/providers', '/get-session']
 
+    // if (req.originalUrl.includes('/get-session'))
     if (bypassPath.some((path) => req.originalUrl.includes(path))) {
       next()
       return
