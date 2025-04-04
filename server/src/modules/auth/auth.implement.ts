@@ -22,7 +22,7 @@ import {
   openAPI,
 } from 'better-auth/plugins'
 import { MongoClient } from 'mongodb'
-import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth'
+import type { BetterAuthOptions } from 'better-auth'
 import type { ServerResponse } from 'node:http'
 import type { Oauth2Providers } from './auth.constant'
 
@@ -215,70 +215,6 @@ export async function CreateAuth(
       genericOAuth({
         config: GOauth,
       }),
-      // @see https://gist.github.com/Bekacru/44cca7b3cf7dcdf1cee431a11d917b87
-      {
-        id: 'add-account-to-session',
-        hooks: {
-          after: [
-            {
-              matcher(context) {
-                return context.path.startsWith('/callback')
-              },
-              async handler(ctx) {
-                const provider =
-                  ctx.params?.id || ctx.path.split('/callback')[1]
-                if (!provider) {
-                  return
-                }
-
-                let finalSessionId = ''
-                const sessionCookie = ctx.responseHeader.get(
-                  ctx.context.authCookies.sessionToken.name,
-                )
-
-                if (sessionCookie) {
-                  const sessionId = sessionCookie.split('.')[0]
-                  if (sessionId) {
-                    finalSessionId = sessionId
-                  }
-                }
-
-                if (!finalSessionId) {
-                  const setSessionToken = ctx.responseHeader.get('set-cookie')
-
-                  if (setSessionToken) {
-                    const sessionId = setSessionToken
-                      .split(';')[0]
-                      .split('=')[1]
-                      .split('.')[0]
-
-                    if (sessionId) {
-                      finalSessionId = sessionId
-                    }
-                  }
-                }
-
-                await db.collection(AUTH_JS_SESSION_COLLECTION).updateOne(
-                  {
-                    token: finalSessionId,
-                  },
-                  { $set: { provider } },
-                )
-              },
-            },
-          ],
-        },
-        schema: {
-          session: {
-            fields: {
-              provider: {
-                type: 'string',
-                required: false,
-              },
-            },
-          },
-        },
-      } satisfies BetterAuthPlugin,
     ],
     user: {
       modelName: AUTH_JS_USER_COLLECTION,
