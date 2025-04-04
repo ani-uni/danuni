@@ -1,32 +1,38 @@
 import { Transform } from 'class-transformer'
 import {
   IsDate,
-  isMongoId,
+  // isMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator'
-import { omit } from 'lodash'
+
+// import { omit } from 'lodash'
 
 import {
-  Body,
-  Delete,
-  Get,
+  // Body,
+  // Delete,
+  // Get,
   Inject,
-  NotFoundException,
+  // NotFoundException,
   Patch,
-  Post,
-  Query,
-  Req,
+  // Post,
+  // Query,
+  // Req,
+  UseGuards,
 } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 
 import { ApiController } from '~/common/decorators/api-controller.decorator'
-import { Auth } from '~/common/decorators/auth.decorator'
-import { HttpCache } from '~/common/decorators/cache.decorator'
-import { EventBusEvents } from '~/constants/event-bus.constant'
-import { MongoIdDto } from '~/shared/dto/id.dto'
-import { FastifyBizRequest } from '~/transformers/get-req.transformer'
+import { Authn } from '~/common/decorators/authn.decorator'
+// import { Auth } from '~/common/decorators/auth.decorator'
+// import { HttpCache } from '~/common/decorators/cache.decorator'
+import { AuthnGuard } from '~/common/guards/authn.guard'
+import { Roles } from '~/constants/authn.constant'
+
+// import { EventBusEvents } from '~/constants/event-bus.constant'
+// import { MongoIdDto } from '~/shared/dto/id.dto'
+// import { FastifyBizRequest } from '~/transformers/get-req.transformer'
 
 import { AuthInstanceInjectKey } from './auth.constant'
 import { InjectAuthInstance } from './auth.interface'
@@ -45,6 +51,7 @@ export class TokenDto {
 @ApiController({
   path: 'auth',
 })
+@UseGuards(AuthnGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -53,96 +60,98 @@ export class AuthController {
     private readonly authInstance: InjectAuthInstance,
   ) {}
 
-  @Get('token')
-  @Auth()
-  async getOrVerifyToken(
-    @Query('token') token?: string,
-    @Query('id') id?: string,
-  ) {
-    if (typeof token === 'string') {
-      return await this.authService
-        .verifyCustomToken(token)
-        .then(([isValid]) => isValid)
-    }
-    if (id && typeof id === 'string' && isMongoId(id)) {
-      return await this.authService.getTokenSecret(id)
-    }
-    return await this.authService.getAllAccessToken()
-  }
+  // @Get('token')
+  // // @Auth()
+  // @Authn({ role: [Roles.admin] })
+  // async getOrVerifyToken(
+  //   @Query('token') token?: string,
+  //   @Query('id') id?: string,
+  // ) {
+  //   if (typeof token === 'string') {
+  //     return await this.authService
+  //       .verifyCustomToken(token)
+  //       .then(([isValid]) => isValid)
+  //   }
+  //   if (id && typeof id === 'string' && isMongoId(id)) {
+  //     return await this.authService.getTokenSecret(id)
+  //   }
+  //   return await this.authService.getAllAccessToken()
+  // }
 
-  @Post('token')
-  @Auth()
-  async generateToken(@Body() body: TokenDto) {
-    const { expired, name } = body
-    const token = await this.authService.generateAccessToken()
-    const model = {
-      expired,
-      token,
-      name,
-    }
-    await this.authService.saveToken(model)
-    return model
-  }
+  // @Post('token')
+  // @Auth()
+  // async generateToken(@Body() body: TokenDto) {
+  //   const { expired, name } = body
+  //   const token = await this.authService.generateAccessToken()
+  //   const model = {
+  //     expired,
+  //     token,
+  //     name,
+  //   }
+  //   await this.authService.saveToken(model)
+  //   return model
+  // }
 
-  @Delete('token')
-  @Auth()
-  async deleteToken(@Query() query: MongoIdDto) {
-    const { id } = query
-    const token = await this.authService
-      .getAllAccessToken()
-      .then((models) =>
-        models.find((model) => {
-          return (model as any).id === id
-        }),
-      )
-      .then((model) => {
-        return model?.token
-      })
+  // @Delete('token')
+  // @Auth()
+  // async deleteToken(@Query() query: MongoIdDto) {
+  //   const { id } = query
+  //   const token = await this.authService
+  //     .getAllAccessToken()
+  //     .then((models) =>
+  //       models.find((model) => {
+  //         return (model as any).id === id
+  //       }),
+  //     )
+  //     .then((model) => {
+  //       return model?.token
+  //     })
 
-    if (!token) {
-      throw new NotFoundException(`token ${id} is not found`)
-    }
-    await this.authService.deleteToken(id)
+  //   if (!token) {
+  //     throw new NotFoundException(`token ${id} is not found`)
+  //   }
+  //   await this.authService.deleteToken(id)
 
-    this.eventEmitter.emit(EventBusEvents.TokenExpired, token)
-    return 'OK'
-  }
+  //   this.eventEmitter.emit(EventBusEvents.TokenExpired, token)
+  //   return 'OK'
+  // }
 
   @Patch('as-owner')
-  @Auth()
+  // @Auth()
+  @Authn({ role: [Roles.admin] })
   async oauthAsOwner() {
     return this.authService.setCurrentOauthAsOwner()
   }
 
-  @Get('session')
-  @HttpCache({
-    disable: true,
-  })
-  async getSession(@Req() req: FastifyBizRequest) {
-    const session = await this.authService.getSessionUser(req.raw)
+  // @Get('session')
+  // @HttpCache({
+  //   disable: true,
+  // })
+  // async getSession(@Req() req: FastifyBizRequest) {
+  //   const session = await this.authService.getSessionUser(req.raw)
 
-    if (!session) {
-      return null
-    }
+  //   if (!session) {
+  //     return null
+  //   }
 
-    const account = await this.authService.getOauthUserAccount(
-      session.providerAccountId,
-    )
+  //   const account = await this.authService.getOauthUserAccount(
+  //     session.providerAccountId,
+  //   )
 
-    return {
-      ...session.user,
-      ...account,
-      ...omit(session, ['session', 'user']),
+  //   return {
+  //     ...session.user,
+  //     ...account,
+  //     ...omit(session, ['session', 'user']),
 
-      id: session?.user?.id ?? session.providerAccountId,
-    }
-  }
+  //     id: session?.user?.id ?? session.providerAccountId,
+  //   }
+  // }
 
-  @Get('providers')
-  @HttpCache({
-    disable: true,
-  })
-  async getProviders() {
-    return this.authInstance.get().api.getProviders()
-  }
+  // @Get('providers')
+  // @HttpCache({
+  //   disable: true,
+  // })
+  // async getProviders() {
+  //   return this.authInstance.get().api.getProviders()
+  // }
 }

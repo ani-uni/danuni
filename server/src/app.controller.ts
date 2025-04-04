@@ -1,21 +1,25 @@
 import dayjs from 'dayjs'
 
-import { Get, UseInterceptors } from '@nestjs/common'
+import { Get, UseGuards, UseInterceptors } from '@nestjs/common'
 
 import { ApiController } from '~/common/decorators/api-controller.decorator'
-import { Auth } from '~/common/decorators/auth.decorator'
+// import { Auth } from '~/common/decorators/auth.decorator'
 import { InjectModel } from '~/transformers/model.transformer'
 
 import PKG from '../package.json'
 import { DEMO_MODE } from './app.config'
+import { Authn } from './common/decorators/authn.decorator'
 import { HttpCache } from './common/decorators/cache.decorator'
 import { HTTPDecorators } from './common/decorators/http.decorator'
+import { AuthnGuard } from './common/guards/authn.guard'
 import { AllowAllCorsInterceptor } from './common/interceptors/allow-all-cors.interceptor'
+import { Roles } from './constants/authn.constant'
 import { OptionModel } from './modules/configs/configs.model'
 // import { CacheService } from './processors/redis/cache.service'
 import { RedisService } from './processors/redis/redis.service'
 
 @ApiController()
+@UseGuards(AuthnGuard)
 export class AppController {
   constructor(
     private readonly redisService: RedisService,
@@ -90,14 +94,16 @@ export class AppController {
 
   @Get('/clean_catch')
   @HttpCache.disable
-  @Auth()
+  // @Auth()
+  @Authn({ role: [Roles.admin] })
   async cleanCatch() {
     await this.redisService.cleanCatch()
   }
 
   @Get('/clean_redis')
   @HttpCache.disable
-  @Auth()
+  // @Auth()
+  @Authn({ role: [Roles.admin] })
   async cleanAllRedisKey() {
     await this.redisService.cleanAllRedisKey()
   }

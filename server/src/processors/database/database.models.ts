@@ -25,7 +25,7 @@ import { DanmakuEventModel } from '~/modules/danmaku/event.model'
 // import { WebhookEventModel } from '~/modules/webhook/webhook-event.model'
 // import { WebhookModel } from '~/modules/webhook/webhook.model'
 import { MetaModel } from '~/modules/meta/meta.model'
-import { UserModel } from '~/modules/user/user.model'
+// import { UserModel } from '~/modules/user/user.model'
 import { getProviderByTypegooseClass } from '~/transformers/model.transformer'
 
 export const databaseModels = [
@@ -50,7 +50,7 @@ export const databaseModels = [
   // SubscribeModel,
   // SyncUpdateModel,
   // TopicModel,
-  UserModel,
+  // UserModel,
   // WebhookEventModel,
   // WebhookModel,
   MetaModel,

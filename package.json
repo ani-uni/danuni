@@ -1,6 +1,6 @@
 {
   "private": true,
-  "packageManager": "pnpm@10.7.0",
+  "packageManager": "pnpm@10.7.1",
   "homepage": "https://github.com/ani-uni/danuni",
   "bugs": {
     "url": "https://github.com/ani-uni/danuni/issues"
@@ -27,7 +27,7 @@
     "@rslib/core": "^0.4.1",
     "@sxzz/eslint-config": "^4.6.0",
     "@types/eslint__js": "^8.42.3",
-    "@typescript-eslint/parser": "^8.28.0",
+    "@typescript-eslint/parser": "^8.29.0",
     "@vitest/ui": "^2.1.9",
     "eslint": "^9.23.0",
     "globals": "^15.15.0",

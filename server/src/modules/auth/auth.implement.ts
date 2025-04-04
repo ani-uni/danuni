@@ -288,11 +288,11 @@ export async function CreateAuth(
           defaultValue: false,
           input: false,
         },
-        level: {
-          type: 'number',
-          defaultValue: 3,
-          input: false,
-        },
+        // level: {
+        //   type: 'number',
+        //   defaultValue: 3,
+        //   input: false,
+        // },
         weight: {
           type: 'number',
           defaultValue: 5,

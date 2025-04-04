@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common'
 import { ExtendedValidationPipe } from '~/common/pipes/validation.pipe'
 import { VALIDATION_PIPE_INJECTION } from '~/constants/system.constant'
 
-import { UserModule } from '../user/user.module'
+// import { UserModule } from '../user/user.module'
 import { ConfigsService } from './configs.service'
 
 @Global()
@@ -15,7 +15,8 @@ import { ConfigsService } from './configs.service'
       useValue: ExtendedValidationPipe.shared,
     },
   ],
-  imports: [UserModule],
+  // imports: [UserModule],
+  imports: [],
   exports: [ConfigsService],
 })
 export class ConfigsModule {}

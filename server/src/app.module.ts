@@ -63,7 +63,7 @@ import { OptionModule } from './modules/option/option.module'
 // import { SubscribeModule } from './modules/subscribe/subscribe.module'
 // import { TopicModule } from './modules/topic/topic.module'
 // import { UpdateModule } from './modules/update/update.module'
-import { UserModule } from './modules/user/user.module'
+// import { UserModule } from './modules/user/user.module'
 import { DatabaseModule } from './processors/database/database.module'
 // import { GatewayModule } from './processors/gateway/gateway.module'
 import { HelperModule } from './processors/helper/helper.module'
@@ -112,7 +112,7 @@ import { RedisModule } from './processors/redis/redis.module'
     // SubscribeModule,
     // TopicModule,
     // UpdateModule,
-    UserModule,
+    // UserModule,
     // WebhookModule,
     MetaModule,
     DanmakuModule,

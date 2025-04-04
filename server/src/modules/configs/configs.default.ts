@@ -1,6 +1,6 @@
 import type { IConfig } from './configs.interface'
 
-import { Levels } from '../user/user.model'
+// import { Levels } from '../user/user.model'
 
 export const generateDefaultConfig: () => IConfig = () => ({
   // seo: {
@@ -113,7 +113,7 @@ export const generateDefaultConfig: () => IConfig = () => ({
     danmakuSendSubPassCheck: 0,
   },
   meta: {
-    createMinLv: Levels.Creator,
+    // createMinLv: Levels.Creator,
   },
   danmaku: {
     inBufferTime: 60 * 2,

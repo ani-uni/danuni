@@ -1,4 +1,4 @@
-export const AUTH_JS_USER_COLLECTION = 'bausers'
+export const AUTH_JS_USER_COLLECTION = 'users'
 export const AUTH_JS_ACCOUNT_COLLECTION = 'accounts'
 export const AUTH_JS_SESSION_COLLECTION = 'sessions'
 
