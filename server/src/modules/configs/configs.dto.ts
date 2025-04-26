@@ -17,6 +17,7 @@ import {
 } from 'class-validator'
 import { JSONSchema } from 'class-validator-jsonschema'
 
+// import { Scopes } from '~/constants/authn.constant'
 // import type { ChatModel } from 'openai/resources'
 
 import { IsAllowedUrl } from '~/decorators/dto/isAllowedUrl'
@@ -462,6 +463,33 @@ export class Oauth2Dto {
   @IsOptional()
   @JSONSchemaArrayField('Oauth2 单元')
   units: Oauth2UnitDto[]
+}
+
+@JSONSchema({ title: 'BotAuth单元设置' })
+export class BotAuthUnitDto {
+  @IsString()
+  @IsNotEmpty()
+  @JSONSchemaPlainField('BotAuth域')
+  domain: string
+
+  // @IsArray()
+  // @Type(() => BotAuthBotUnitDto)
+  // @IsNotEmpty()
+  // @JSONSchemaArrayField('BotAuth可用bot列表')
+  // bots: BotAuthBotUnitDto[]
+
+  @IsString()
+  @IsNotEmpty()
+  @JSONSchemaPlainField('BotAuth公钥')
+  publicKey: string
+}
+@JSONSchema({ title: 'BotAuth设置' })
+export class BotAuthDto {
+  @IsArray()
+  @Type(() => BotAuthUnitDto)
+  @IsOptional()
+  @JSONSchemaArrayField('BotAuth单元')
+  units: BotAuthUnitDto[]
 }
 
 @JSONSchema({ title: '基本设置' })

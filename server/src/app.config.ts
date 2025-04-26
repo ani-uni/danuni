@@ -89,7 +89,7 @@ export const DEMO_MODE = argv.demo || false
 export const CROSS_DOMAIN = {
   allowedOrigins: argv.allowed_origins
     ? argv.allowed_origins?.split?.(',')
-    : ['localhost:*', '127.0.0.1', '*.dev', 'myani.us.kg', '*.myani.us.kg'],
+    : ['localhost:*', '127.0.0.1', 'danuni.rinne.in'],
 }
 
 export const MONGO_DB = {

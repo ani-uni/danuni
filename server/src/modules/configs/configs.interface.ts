@@ -9,6 +9,7 @@ import type {
 
 import {
   BaseDto,
+  BotAuthDto,
   DanmakuDto,
   DanmakuEventDto,
   MetaDto,
@@ -79,6 +80,9 @@ export abstract class IConfig {
 
   @ConfigField(() => Oauth2Dto)
   oauth2: Oauth2Dto
+
+  @ConfigField(() => BotAuthDto)
+  botAuth: BotAuthDto
 
   @ConfigField(() => BaseDto)
   base: BaseDto

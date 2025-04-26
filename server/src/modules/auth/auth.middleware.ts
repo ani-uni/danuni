@@ -128,7 +128,8 @@ export class AuthMiddleware implements NestMiddleware, OnModuleInit {
 
     //此处为controller中新建的endpoint
     // 拦截默认的 get-session ，其似乎在有apikey时会崩溃
-    const bypassPath = ['/token', '/session', '/providers', '/get-session']
+    // const bypassPath = ['/token', '/session', '/providers']
+    const bypassPath = ['/get-session', '/api-key/create/bot-auth', '/bot-auth']
 
     // if (req.originalUrl.includes('/get-session'))
     if (bypassPath.some((path) => req.originalUrl.includes(path))) {

@@ -28,8 +28,9 @@ export class AppController {
   ) {}
 
   @Get('/uptime')
-  @HttpCache.disable
+  // @HttpCache.disable
   @HTTPDecorators.Bypass
+  @Authn({ role: [Roles.guest] })
   async getUptime() {
     const ts = (process.uptime() * 1000) | 0
     return {

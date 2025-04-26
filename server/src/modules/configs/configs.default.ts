@@ -88,6 +88,9 @@ export const generateDefaultConfig: () => IConfig = () => ({
   oauth2: {
     units: [],
   },
+  botAuth: {
+    units: [],
+  },
   base: {
     domain: 'localhost',
   },

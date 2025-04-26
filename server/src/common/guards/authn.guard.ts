@@ -1,8 +1,8 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
+  InternalServerErrorException,
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 
@@ -132,6 +132,8 @@ export class AuthnGuard implements CanActivate {
   }
 
   async refreshCtxAuthn(request: FastifyBizRequest, pass = false) {
+    // 这里写个apikey权限vertify，再在controller搓个带permissions(scopes)的新建key接口
+    // blog写个better-auth apikey get-session bug的解决方案
     const session = await this.authService.getSessionUser(request.raw)
     if (session) {
       const role: Roles = (session.user?.role as Roles) || Roles.guest
@@ -152,7 +154,10 @@ export class AuthnGuard implements CanActivate {
       }
       let sid: string | undefined
       const getSid = (provider: string) => {
-        if (provider === 'email' || session.accounts[0]?.provider === 'local')
+        if (
+          provider === 'email' ||
+          session.accounts[0]?.provider === 'credential'
+        )
           return session.user?.email
         const selected_provider = session.accounts.find(
           (account) => account.provider === provider,
@@ -160,7 +165,9 @@ export class AuthnGuard implements CanActivate {
         if (selected_provider)
           return `${selected_provider.accountId}@${selected_provider.provider}`
       }
-      if (session.user?.sidProvider) sid = getSid(session.user?.sidProvider)
+      if (session.user?.role === Roles.bot) sid = getSid('email')
+      else if (session.user?.sidProvider)
+        sid = getSid(session.user?.sidProvider)
       if (!sid)
         // 优先级由高到低
         for (const p of SidOrder) {
@@ -170,7 +177,8 @@ export class AuthnGuard implements CanActivate {
             break
           }
         }
-      if (!sid) throw new BadRequestException('无可用的sid，请联系管理员重置')
+      if (!sid)
+        throw new InternalServerErrorException('无可用的sid，请联系管理员重置')
       this.attachAuthn(request, {
         uid: session.user?.id,
         sid,

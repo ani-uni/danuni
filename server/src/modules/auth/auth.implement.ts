@@ -210,6 +210,7 @@ export async function CreateAuth(
     plugins: [
       apiKey({
         defaultPrefix: 'danuni_',
+        enableMetadata: true,
       }),
       // bearer(),
       admin(),
@@ -217,6 +218,8 @@ export async function CreateAuth(
       genericOAuth({
         config: GOauth,
       }),
+      // 写个plugin 把apiKey的info丢到session里
+      // authn里bot的sid由metadata决定
     ],
     user: {
       modelName: AUTH_JS_USER_COLLECTION,

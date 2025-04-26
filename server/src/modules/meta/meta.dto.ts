@@ -107,6 +107,7 @@ export class MetaDto {
   readonly thirdPlatforms?: thirdPlatformDto[]
 }
 
+// 是否为 非基本类型数组 Object[]
 export function IsNonPrimitiveArray(validationOptions?: ValidationOptions) {
   return (object: any, propertyName: string) => {
     registerDecorator({

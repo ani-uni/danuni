@@ -10,33 +10,39 @@ import {
 // import { omit } from 'lodash'
 
 import {
+  Body,
   // Body,
   // Delete,
   Get,
-  Inject,
+  Headers,
+  // Inject,
   // NotFoundException,
   Patch,
+  Post,
   // Post,
   // Query,
   Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
+
+// import { EventEmitter2 } from '@nestjs/event-emitter'
 
 import { ApiController } from '~/common/decorators/api-controller.decorator'
 import { Authn } from '~/common/decorators/authn.decorator'
 // import { Auth } from '~/common/decorators/auth.decorator'
 import { HttpCache } from '~/common/decorators/cache.decorator'
+import { HTTPDecorators } from '~/common/decorators/http.decorator'
 import { AuthnGuard } from '~/common/guards/authn.guard'
 import { Roles } from '~/constants/authn.constant'
 // import { EventBusEvents } from '~/constants/event-bus.constant'
 // import { MongoIdDto } from '~/shared/dto/id.dto'
 import { FastifyBizRequest } from '~/transformers/get-req.transformer'
 
-import { AuthInstanceInjectKey } from './auth.constant'
-import { InjectAuthInstance } from './auth.interface'
+// import { AuthInstanceInjectKey } from './auth.constant'
+// import { InjectAuthInstance } from './auth.interface'
 import { AuthService } from './auth.service'
+import { BotAuthUnitDto } from './bot-auth.dto'
 
 export class TokenDto {
   @IsDate()
@@ -55,9 +61,9 @@ export class TokenDto {
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly eventEmitter: EventEmitter2,
-    @Inject(AuthInstanceInjectKey)
-    private readonly authInstance: InjectAuthInstance,
+    // private readonly eventEmitter: EventEmitter2,
+    // @Inject(AuthInstanceInjectKey)
+    // private readonly authInstance: InjectAuthInstance,
   ) {}
 
   // @Get('token')
@@ -127,6 +133,7 @@ export class AuthController {
   @HttpCache({
     disable: true,
   })
+  @HTTPDecorators.Bypass
   async getSession(@Req() req: FastifyBizRequest) {
     const session = await this.authService.getSessionUser(req.raw)
 
@@ -161,4 +168,19 @@ export class AuthController {
   // async getProviders() {
   //   return this.authInstance.get().api.getProviders()
   // }
+
+  @Post('bot-auth/create')
+  @Authn({ role: [Roles.admin] })
+  async addBotAuth(@Body() body: BotAuthUnitDto) {
+    return this.authService.addBotAuth(body)
+  }
+
+  @Post('api-key/create/bot-auth')
+  @HTTPDecorators.Bypass
+  async createApiKeyByBotAuth(@Headers('Authorization') auth: string) {
+    if (!auth || !auth.startsWith('Bearer'))
+      throw new UnauthorizedException('未登录')
+    const jwt = auth.replace('Bearer ', '')
+    return this.authService.createApiKeyByBotAuth(jwt)
+  }
 }
