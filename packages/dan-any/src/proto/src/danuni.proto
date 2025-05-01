@@ -20,7 +20,7 @@ enum Pool {
 }
 
 message Danmaku {
-  string FCID = 1;
+  string EPID = 1;
   string DMID = 2;
   int32 progress = 3;
   Mode mode = 4;
@@ -33,7 +33,7 @@ message Danmaku {
   Pool pool = 11;
   repeated string attr = 12;
   string platform = 13;
-  optional string SPMO = 14;
+  optional string SOID = 14;
   optional string extra = 15;
 }
 

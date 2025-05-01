@@ -1,8 +1,13 @@
 import TimeFormat from 'hh-mm-ss'
 import type { DM_JSON_BiliCommandGrpc } from '..'
-import type { platfrom } from './id-gen'
+import type { PlatformDanmakuSource } from './platform'
 
-import { createDMID, domainPreset, UniID as ID, platforms } from './id-gen'
+import { createDMID, UniID as ID } from './id-gen'
+import {
+  PlatformDanmakuOnlySource,
+  PlatformDanmakuSources,
+  PlatformVideoSource,
+} from './platform'
 
 const BigIntSerializer = (k: string, v: any) =>
   typeof v === 'bigint' ? v.toString() : v
@@ -60,7 +65,7 @@ export type DMAttr =
   | 'Reported'
   | 'Hide'
 const DMAttrUtils = {
-  fromBin(bin: number = 0, format?: platfrom) {
+  fromBin(bin: number = 0, format?: PlatformDanmakuSource) {
     const array = toBits(bin),
       attr: DMAttr[] = []
     if (format === 'bili') {
@@ -77,7 +82,7 @@ const DMAttrUtils = {
      * 但由于不知道B站及其它使用该参数程序的读取逻辑，
      * 所以单独提供 bili 格式
      */
-    format?: platfrom,
+    format?: PlatformDanmakuSource,
   ) {
     const bin = new SetBin(0)
     if (format === 'bili') {
@@ -289,7 +294,7 @@ export type ctime = string | number | bigint | Date
 // }
 
 export interface UniDMObj {
-  FCID: string
+  EPID: string
   progress: number
   mode: Modes
   fontsize: number
@@ -300,8 +305,8 @@ export interface UniDMObj {
   weight: number
   pool: Pools
   attr: DMAttr[]
-  platform: platfrom | string
-  SPMO: string
+  platform: PlatformDanmakuSource | string
+  SOID: string
   extra: string | Extra
   extraStr: string
   DMID: string
@@ -317,9 +322,10 @@ export class UniDM {
   // syncAnchor = BigInt(Date.now())
   constructor(
     /**
-     * FCID
+     * EPID
+     * @description 由某一danuni服务确定的某一剧集的ID
      */
-    public FCID: string,
+    public EPID: string,
     /**
      * 弹幕出现位置(单位s;精度为ms,即保留三位小数)
      */
@@ -375,18 +381,12 @@ export class UniDM {
      * 初始来源平台
      * `danuni`与任意空值(可隐式转换为false的值)等价
      */
-    public platform?: platfrom | string,
+    public platform?: PlatformDanmakuSource | string,
     /**
-     * Same Platform Multiple Origin
-     * @description 解决B站等同一番剧存在港澳台站、多语言配音(不同一CID)的问题，同时方便过滤
-     * @description 示例:
-     * - main: 主站
-     * - hm: 仅港澳
-     * - t: 仅台
-     * - hmt: 仅港澳台
-     * - lang:{ISO语言代号}: 多语言
+     * 资源ID
+     * @description 由某一danuni服务确定的某一剧集下不同资源(不同视频站/字幕组具有细节差异)的ID
      */
-    public SPMO?: string,
+    public SOID?: string,
     /**
      * 弹幕原始数据(不推荐使用)
      * @description 适用于无法解析的B站代码弹幕、Artplayer弹幕样式等
@@ -415,7 +415,7 @@ export class UniDM {
   static create(args?: Partial<UniDMObj>) {
     return args
       ? new UniDM(
-          args.FCID || ID.fromNull().toString(),
+          args.EPID || ID.fromNull().toString(),
           args.progress,
           args.mode,
           args.fontsize,
@@ -427,7 +427,7 @@ export class UniDM {
           args.pool,
           args.attr,
           args.platform,
-          args.SPMO,
+          args.SOID,
           typeof args.extra === 'object'
             ? JSON.stringify(args.extra)
             : args.extra || args.extraStr,
@@ -442,14 +442,17 @@ export class UniDM {
     // return cleanEmptyObjects(extra) as Extra
   }
   get isFrom3rdPlatform() {
-    if (this.platform && platforms.includes(this.platform as platfrom))
+    if (
+      this.platform &&
+      PlatformDanmakuSources.includes(this.platform as PlatformDanmakuSource)
+    )
       return true
     else return false
   }
   /**
    * 弹幕id
    * @description sha3-256(content+senderID+ctime)截取前8位
-   * @description 同一FCID下唯一
+   * @description 同一EPID下唯一
    */
   toDMID() {
     return createDMID(this.content, this.senderID, this.ctime)
@@ -458,12 +461,12 @@ export class UniDM {
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
       checks = (
         [
-          'FCID',
+          'EPID',
           'content',
           'mode',
           'platform',
           'pool',
-          'SPMO',
+          'SOID',
         ] satisfies (keyof UniDMObj)[]
       ).every((k) => isSame(k))
     // 如果两个对象的extra都是空对象，只检查基本字段
@@ -500,7 +503,7 @@ export class UniDM {
     )
   }
   minify() {
-    type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'FCID'>
+    type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'EPID'>
     const def: UObj = UniDM.create(),
       dan: UObj = UniDM.create(this)
     // const prototypes = Object.getOwnPropertyNames(this)
@@ -508,7 +511,7 @@ export class UniDM {
       const k = key as keyof UObj,
         v = dan[k]
       // if (key in prototypes) continue
-      if (key === 'FCID') continue
+      if (key === 'EPID') continue
       else if (!v) delete dan[k]
       else if (v === def[k]) delete dan[k]
       else {
@@ -652,12 +655,12 @@ export class UniDM {
     }
     return mode
   }
-  static fromBili(args: DMBili, SPMO?: string, cid?: bigint) {
+  static fromBili(args: DMBili, cid?: bigint) {
     interface TExtra extends Extra {
       bili: ExtraBili
     }
     if (args.oid && !cid) cid = args.oid
-    const FCID = ID.fromBili({ cid }),
+    const EPID = ID.fromBili({ cid }),
       senderID = ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
     const pool = args.pool, //暂时不做处理，兼容bili的pool格式
@@ -695,7 +698,7 @@ export class UniDM {
     // else if (args.mode === 9) extra.bili.bas = args.content
     return this.create({
       ...args,
-      FCID: FCID.toString(),
+      EPID: EPID.toString(),
       // progress: args.progress,
       mode,
       // fontsize: args.fontsize,
@@ -705,9 +708,8 @@ export class UniDM {
       ctime: this.transCtime(args.ctime, 's'),
       weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
       pool,
-      attr: DMAttrUtils.fromBin(args.attr, 'bili'),
-      platform: domainPreset.bili,
-      SPMO,
+      attr: DMAttrUtils.fromBin(args.attr, PlatformVideoSource.Bilibili),
+      platform: PlatformVideoSource.Bilibili,
       // 需改进，7=>advanced 8=>code 9=>bas 互动=>command
       // 同时塞进无法/无需直接解析的数据
       // 另开一个解析器，为大部分播放器（无法解析该类dm）做文本类型降级处理
@@ -715,13 +717,13 @@ export class UniDM {
         args.mode >= 7 ? JSON.stringify(extra, BigIntSerializer) : undefined,
     })
   }
-  static fromBiliCommand(args: DMBiliCommand, SPMO?: string, cid?: bigint) {
+  static fromBiliCommand(args: DMBiliCommand, cid?: bigint) {
     if (args.oid && !cid) cid = args.oid
-    const FCID = ID.fromBili({ cid }),
+    const EPID = ID.fromBili({ cid }),
       senderID = ID.fromBili({ mid: args.mid })
     return this.create({
       ...args,
-      FCID: FCID.toString(),
+      EPID: EPID.toString(),
       // progress: args.progress,
       mode: Modes.Ext,
       // fontsize: args.fontsize,
@@ -732,8 +734,7 @@ export class UniDM {
       weight: 10,
       pool: Pools.Adv,
       attr: ['Protect'],
-      platform: domainPreset.bili,
-      SPMO,
+      platform: PlatformVideoSource.Bilibili,
       extra: JSON.stringify(
         {
           bili: {
@@ -745,11 +746,11 @@ export class UniDM {
     })
   }
   static fromDplayer(args: DMDplayer, playerID: string, domain: string) {
-    const FCID = ID.fromUnknown(playerID, domain),
+    const EPID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown(args.midHash, domain)
     return this.create({
       ...args,
-      FCID: FCID.toString(),
+      EPID: EPID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'dplayer'),
       // fontsize: 25,
@@ -772,7 +773,7 @@ export class UniDM {
     }
   }
   static fromArtplayer(args: DMArtplayer, playerID: string, domain: string) {
-    const FCID = ID.fromUnknown(playerID, domain),
+    const EPID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown('', domain)
     let extra = args.border
       ? ({ artplayer: { border: args.border, style: {} } } as Extra)
@@ -787,7 +788,7 @@ export class UniDM {
     }
     return this.create({
       ...args,
-      FCID: FCID.toString(),
+      EPID: EPID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'artplayer'),
       // fontsize: 25,
@@ -813,12 +814,12 @@ export class UniDM {
   static fromDDplay(
     args: DMDDplay,
     episodeId: string,
-    domain = domainPreset.ddplay,
+    domain = PlatformDanmakuOnlySource.DanDanPlay,
   ) {
-    const FCID = ID.fromUnknown(episodeId, domain)
+    const EPID = ID.fromUnknown(episodeId, domain)
     return this.create({
       ...args,
-      FCID: FCID.toString(),
+      EPID: EPID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'ddplay'),
       // fontsize: 25,

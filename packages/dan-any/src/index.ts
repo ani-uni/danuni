@@ -1,8 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
 import type { Options as AssGenOptions } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
-// import type * as UniDMType from './utils/dm-gen'
-import type { platfrom } from './utils/id-gen'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import {
@@ -23,6 +21,7 @@ import { DanmakuReplySchema } from './proto/gen/danuni_pb'
 import { UniDM } from './utils/dm-gen'
 import * as UniDMTools from './utils/dm-gen'
 import * as UniIDTools from './utils/id-gen'
+import * as platform from './utils/platform'
 
 export interface DM_XML_Bili {
   i: {
@@ -78,7 +77,7 @@ export type DM_format =
 type shareItems = Partial<
   Pick<
     UniDMTools.UniDMObj,
-    'FCID' | 'senderID' | 'platform' | 'SPMO' | 'pool' | 'mode'
+    'EPID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode'
   >
 >
 
@@ -88,10 +87,10 @@ export class UniPool {
     function isShared(key: keyof UniDMTools.UniDMObj) {
       return new Set(dans.map((d) => d[key])).size === 1
     }
-    if (isShared('FCID')) this.shared.FCID = dans[0].FCID
+    if (isShared('EPID')) this.shared.EPID = dans[0].EPID
     if (isShared('senderID')) this.shared.senderID = dans[0].senderID
     if (isShared('platform')) this.shared.platform = dans[0].platform
-    if (isShared('SPMO')) this.shared.SPMO = dans[0].SPMO
+    if (isShared('SOID')) this.shared.SOID = dans[0].SOID
     if (isShared('pool')) this.shared.pool = dans[0].pool
     if (isShared('mode')) this.shared.mode = dans[0].mode
   }
@@ -125,9 +124,9 @@ export class UniPool {
    * @param lifetime 查重时间区段，单位秒 (默认为0，表示不查重)
    */
   merge(lifetime = 0) {
-    if (!this.shared.FCID) {
+    if (!this.shared.EPID) {
       console.error(
-        "本功能仅支持同弹幕库内使用，可先 .split('FCID') 在分别使用",
+        "本功能仅支持同弹幕库内使用，可先 .split('EPID') 在分别使用",
       )
       return this
     }
@@ -140,7 +139,7 @@ export class UniPool {
       ]
     >(
       ([result, cache, mergeObj], danmaku) => {
-        const key = ['content', 'mode', 'platform', 'pool', 'SPMO']
+        const key = ['content', 'mode', 'platform', 'pool', 'SOID']
           .map((k) => danmaku[k as keyof UniDM])
           .join('|')
         const cached = cache[key]
@@ -184,7 +183,7 @@ export class UniPool {
     // 处理结果，删除senders<=1的merge字段
     const [result, _cache, mergeObj] = mergeContext
     result.forEach((danmaku, i) => {
-      const key = ['content', 'mode', 'platform', 'pool', 'SPMO']
+      const key = ['content', 'mode', 'platform', 'pool', 'SOID']
         .map((k) => danmaku[k as keyof UniDM])
         .join('|')
       const extra = result[i].extra,
@@ -252,7 +251,7 @@ export class UniPool {
       data.danmakus.map(
         (d) =>
           new UniDM(
-            d.FCID,
+            d.EPID,
             d.progress,
             d.mode as number,
             d.fontsize,
@@ -264,7 +263,7 @@ export class UniPool {
             d.pool as number,
             d.attr as UniDMTools.DMAttr[],
             d.platform,
-            d.SPMO,
+            d.SOID,
             d.extra,
             d.DMID,
           ),
@@ -280,7 +279,7 @@ export class UniPool {
       create(DanmakuReplySchema, {
         danmakus: this.dans.map((d) => {
           return {
-            FCID: d.FCID,
+            EPID: d.EPID,
             DMID: d.DMID,
             progress: d.progress,
             mode: d.mode as number,
@@ -293,14 +292,14 @@ export class UniPool {
             pool: d.pool as number,
             attr: d.attr,
             platform: d.platform,
-            SPMO: d.SPMO,
+            SOID: d.SOID,
             extra: d.extraStr,
           }
         }),
       }),
     )
   }
-  static fromBiliXML(xml: string, SPMO?: string) {
+  static fromBiliXML(xml: string) {
     const parser = new XMLParser({ ignoreAttributes: false }),
       oriData: DM_XML_Bili = parser.parse(xml),
       dans = oriData.i.d
@@ -321,32 +320,30 @@ export class UniPool {
             id: BigInt(p_arr[7]),
             weight: Number.parseInt(p_arr[8]),
           },
-          SPMO,
           BigInt(oriData.i.chatid),
         )
       }),
     )
   }
-  static fromBiliGrpc(bin: Uint8Array | ArrayBuffer, SPMO?: string) {
+  static fromBiliGrpc(bin: Uint8Array | ArrayBuffer) {
     const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin)),
       json = data.elems
     return new UniPool(
       json.map((d) => {
-        return UniDM.fromBili(d, SPMO)
+        return UniDM.fromBili(d)
       }),
     )
   }
   /**
    *
    * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
-   * @param SPMO
    */
-  static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer, SPMO?: string) {
+  static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer) {
     const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin)),
       json = data.commandDms
     return new UniPool(
       json.map((d) => {
-        return UniDM.fromBiliCommand(d, SPMO)
+        return UniDM.fromBiliCommand(d)
       }),
     )
   }
@@ -420,7 +417,7 @@ export class UniPool {
       }
     })
   }
-  static fromDDPlay(json: DM_JSON_DDPlay, episodeId: string, domain?: string) {
+  static fromDDPlay(json: DM_JSON_DDPlay, episodeId: string) {
     return new UniPool(
       json.comments.map((d) => {
         const p_arr = d.p.split(',')
@@ -434,7 +431,6 @@ export class UniPool {
             uid: p_arr[3],
           },
           episodeId,
-          domain,
         )
       }),
     )
@@ -456,18 +452,18 @@ export class UniPool {
     return parseAssRawField(ass)
   }
   toASS(options: AssGenOptions = { substyle: {} }): string {
-    const fn = this.shared.FCID
+    const fn = this.shared.EPID
     return generateASS(this, { filename: fn, title: fn, ...options })
   }
 }
 
 export {
+  platform,
   // UniPool,
   UniDM,
   UniDMTools,
   UniIDTools,
   type DM_JSON_BiliCommandGrpc,
-  type platfrom,
   // type UniDMType,
   // type UniIDType,
 }

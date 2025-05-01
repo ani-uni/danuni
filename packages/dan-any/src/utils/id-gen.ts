@@ -1,44 +1,9 @@
 import jsSHA from 'jssha'
 import type { ctime } from './dm-gen'
+import type { PlatformSource } from './platform'
 
 import { UniDM } from './dm-gen'
-
-export const domainPreset = {
-  // acfun: 'acfun.cn',
-  // baha: 'ani.gamer.com.tw',
-  // bgm: 'bgm.tv',
-  // bili: 'b23.tv',
-  // bglobal: 'biliintl.com',
-  // ddplay: 'dandanplay.com',
-  acfun: 'acfun',
-  baha: 'baha',
-  bgm: 'bgm',
-  bili: 'bili', //b23
-  bglobal: 'bglobal', //bintl
-  ddplay: 'ddplay',
-  tucao: 'tucao',
-}
-
-export type platfrom =
-  | 'acfun'
-  | 'baha'
-  | 'bili'
-  | 'bglobal'
-  | 'ddplay'
-  | 'danuni'
-  | 'tucao'
-  | 'other'
-export const platforms = Object.keys(domainPreset) as platfrom[]
-// export const platforms = [
-//   'acfun',
-//   'baha',
-//   'bili',
-//   'bglobal',
-//   'ddplay',
-//   'danuni',
-//   'tucao',
-//   // 'other',
-// ]
+import { PlatformVideoSource } from './platform'
 
 export class UniID {
   constructor(
@@ -54,22 +19,18 @@ export class UniID {
      * - `{any}.danuni` (若使用IP或无域名，请使用该domain，防止隐私泄露/无法解析)
      * #### 注意
      * - `any`值建议为UUID/ULID/NanoID以防同步错误
-     * ### 非DanUni弹幕服务预设(默认采用其最短服务域名)
-     * - `acfun.cn`
-     * - `ani.gamer.com.tw` (Baha)
-     * - `bgm.tv` (bangumi)
-     * - `b23.tv` (比bilibili.com短，省空间)
-     * - `biliintl.com` (即bilibili.tv)
-     * - `dandanplay.com`
-     * - `tucao` (由于其域名常变，故分配固定解析，运行时解析)
+     * ### 非DanUni弹幕服务建议使用预设，或自行填写域名
      */
-    public domain: string,
+    public domain: PlatformSource | string,
   ) {}
   toString() {
     return `${this.id}@${this.domain}`
   }
-  static fromNull(domain?: string) {
-    return new UniID('anonymous', domain || 'danuni')
+  static fromNull(domain?: PlatformSource | 'runtime' | string) {
+    return new UniID(
+      domain === 'runtime' ? 'runtime' : 'anonymous',
+      domain || 'danuni',
+    )
   }
   static fromBili({
     cid,
@@ -80,30 +41,22 @@ export class UniID {
     mid?: number | bigint
     midHash?: string
   }) {
-    if (cid) return new UniID(cid.toString(), domainPreset.bili)
-    else if (mid) return new UniID(mid.toString(), domainPreset.bili)
-    else if (midHash) return new UniID(midHash, domainPreset.bili)
-    else return this.fromNull(domainPreset.bili)
+    if (cid) return new UniID(cid.toString(), PlatformVideoSource.Bilibili)
+    else if (mid) return new UniID(mid.toString(), PlatformVideoSource.Bilibili)
+    else if (midHash) return new UniID(midHash, PlatformVideoSource.Bilibili)
+    else return this.fromNull(PlatformVideoSource.Bilibili)
   }
   static fromUnknown(
     id: string,
     /**
-     * 可使用预设`acfun` `baha` `bili` `bglobal` `ddplay` `tucao`代替其域名
+     * 可使用预设
      */
-    domain: platfrom | string,
+    domain: PlatformSource | string,
   ) {
-    // domain = preset2domain(domain).domain
     if (id) return new UniID(id, domain)
     else return this.fromNull(domain)
   }
 }
-
-// export function preset2domain(domain: platfrom | string) {
-//   for (const [k, v] of Object.entries(domainPreset)) {
-//     if (domain === k) return { platform: k, domain: v }
-//   }
-//   return { platform: 'other', domain: domain }
-// }
 
 export function createDMID(
   content: string = '',
