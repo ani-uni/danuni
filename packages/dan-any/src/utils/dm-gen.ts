@@ -566,7 +566,7 @@ export class UniDM {
           clone.fontsize = 36
         }
       }
-      clone.senderID = 'compat@bot'
+      clone.senderID = 'compat[bot]@dan-any'
       clone.attr.push('Compatible')
       if (cleanExtra) clone.extraStr = undefined
       return clone

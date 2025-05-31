@@ -209,7 +209,7 @@ export class UniPool {
               ? JSON.stringify(updatedExtra)
               : undefined
         } else {
-          result[i].senderID = 'merge@bot'
+          result[i].senderID = 'merge[bot]@dan-any'
         }
       }
     })
