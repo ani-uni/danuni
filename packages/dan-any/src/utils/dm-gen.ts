@@ -64,6 +64,7 @@ export type DMAttr =
   | 'Compatible' // 由dan-any进行过兼容处理的弹幕，可能丢失部分信息
   | 'Reported' // 在DanUni上被多人举报过的弹幕
   | 'Unchecked' // 在DanUni上未被审核过的弹幕
+  | 'HasEvent' // 该弹幕当前在DanUni上存在事件(如点赞/举报等)
   | 'Hide' // 由于其它原因需要隐藏的弹幕(建议在server端不返回该类弹幕)
 const DMAttrUtils = {
   fromBin(bin: number = 0, format?: PlatformDanmakuSource) {
