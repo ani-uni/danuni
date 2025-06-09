@@ -1,5 +1,11 @@
 packages:
   - packages/*
 onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@swc/core'
+  - esbuild
   - mongodb-memory-server
   - redis-memory-server
+  - sharp
+  # - simple-git-hooks
+  - unrs-resolver
