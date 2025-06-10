@@ -53,6 +53,10 @@ export class AuthService {
     private readonly authInstance: InjectAuthInstance,
   ) {}
 
+  get authInstancePublic() {
+    return this.authInstance.get()
+  }
+
   // get jwtServicePublic() {
   //   return this.jwtService
   // }

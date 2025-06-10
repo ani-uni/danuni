@@ -77,8 +77,8 @@ export class AuthnGuard implements CanActivate {
     if (!authn?.role) return false
     if (!authn.scopes) authn.scopes = new Set()
 
-    const setPass = (pass = false) =>
-      this.attachAuthn(request, { ...authn, pass })
+    const setPass = (pass = false, no_pass_scopes: Set<Scopes> = new Set()) =>
+      this.attachAuthn(request, { ...authn, pass, no_pass_scopes })
     setPass(true)
 
     if (authn.role === Roles.admin) {
@@ -91,6 +91,7 @@ export class AuthnGuard implements CanActivate {
       // setPass(true)
       return true
     } else if (SetUtils.isSubsetOf(targetScopes, authn?.scopes)) {
+      // 下面全是 else-if setPass()只执行了一次
       const hasTarget = {
         roles: targetRolesPass && targetRolesPass.length > 0,
         scopes: targetScopesPass && targetScopesPass.size > 0,
@@ -106,14 +107,20 @@ export class AuthnGuard implements CanActivate {
         hasTarget.scopes &&
         SetUtils.isSubsetOf(targetScopesPass, authn?.scopes)
       )
-        setPass()
+        setPass(
+          false,
+          SetUtils.difference(new Set(targetScopesPass), authn?.scopes),
+        )
       else if (
         hasTarget.roles &&
         hasTarget.scopes &&
         targetRolesPass.includes(authn.role) &&
         SetUtils.isSubsetOf(targetScopesPass, authn?.scopes)
       )
-        setPass()
+        setPass(
+          false,
+          SetUtils.difference(new Set(targetScopesPass), authn?.scopes),
+        )
 
       return true
     } else throw new NotInScopeException(targetScopes, authn?.scopes)
@@ -126,16 +133,20 @@ export class AuthnGuard implements CanActivate {
     return getNestExecutionContextRequest(context)
   }
 
-  attachAuthn(request: FastifyBizRequest, authn: Partial<AuthnModel>) {
+  attachAuthn(request: FastifyBizRequest, authn: NonNullable<AuthnModel>) {
     request.authn = authn
     Object.assign(request.raw, { authn })
   }
 
-  async refreshCtxAuthn(request: FastifyBizRequest, pass = false) {
+  async refreshCtxAuthn(
+    request: FastifyBizRequest,
+    pass = false,
+    no_pass_scopes: Set<Scopes> = new Set(),
+  ) {
     // 这里写个apikey权限vertify，再在controller搓个带permissions(scopes)的新建key接口
     // blog写个better-auth apikey get-session bug的解决方案
     const session = await this.authService.getSessionUser(request.raw)
-    if (session) {
+    if (session && session.user?.id) {
       const role: Roles = (session.user?.role as Roles) || Roles.guest
       // level: Levels = session.user?.level || Levels.GuestOrBan,
       let scopes: Set<Scopes> = new Set(session.user?.scopes as Scopes[])
@@ -146,12 +157,12 @@ export class AuthnGuard implements CanActivate {
         scopes.add(Scopes.all)
       } else if (session.user?.banned) scopes.clear()
       if (scopes.has(Scopes.all)) scopes = Groups.admin
-      else {
-        ;[...scopes].forEach((scope) => {
-          if (scope.endsWith('#passcheck'))
-            scopes.add(scope.replace('#passcheck', '') as Scopes)
-        })
-      }
+      // else {
+      //   ;[...scopes].forEach((scope) => {
+      //     if (scope.endsWith('#bypass'))
+      //       scopes.add(scope.replace('#bypass', '') as Scopes)
+      //   })
+      // }
       let sid: string | undefined
       const getSid = (provider: string) => {
         if (
@@ -185,6 +196,7 @@ export class AuthnGuard implements CanActivate {
         role,
         scopes,
         pass,
+        no_pass_scopes,
         weight: session.user?.weight || 1,
       })
     } else
@@ -192,7 +204,9 @@ export class AuthnGuard implements CanActivate {
         uid: 'guest@danuni',
         sid: 'guest@danuni',
         role: Roles.guest,
+        scopes: new Set(),
         pass,
+        no_pass_scopes,
         weight: 0,
       })
     return request.authn

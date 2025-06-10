@@ -1,18 +1,18 @@
 import type { ExecutionContext } from '@nestjs/common'
 import type { AuthnModel } from '~/constants/authn.constant'
-import type { UserModel } from '~/modules/user/user.model'
+// import type { UserModel } from '~/modules/user/user.model'
 import type { FastifyRequest } from 'fastify'
 import type { IncomingMessage } from 'node:http'
 
 type BizRequest = {
-  user?: UserModel
+  // user?: UserModel
   isGuest: boolean
 
   isAuthenticated: boolean
   token?: string
   // readerId?: string
 
-  authn: Partial<AuthnModel>
+  authn: NonNullable<AuthnModel>
   // level: number
   // uid?: string
 }
