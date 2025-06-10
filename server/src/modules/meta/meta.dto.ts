@@ -17,6 +17,8 @@ import {
 
 import { platform as PF } from '@dan-uni/dan-any'
 
+import { HashAlgorithm } from './source.constant'
+
 class MetaExternalIdInfoDto {
   @IsEnum(PF.PlatformInfoSource)
   @IsNotEmpty({ message: '剧集信息源平台?' })
@@ -64,6 +66,10 @@ class MetaSourceHashDto {
   )
   @IsNotEmpty({ message: 'Hash?' })
   hash!: string
+
+  @IsEnum(HashAlgorithm)
+  @IsNotEmpty({ message: 'Hash算法?' })
+  algorithm!: HashAlgorithm
 
   // @IsNumber()
   // vote: number

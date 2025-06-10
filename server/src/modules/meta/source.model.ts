@@ -6,11 +6,16 @@ import { modelOptions, prop, Severity } from '@typegoose/typegoose'
 import { META_SOURCE_COLLECTION_NAME } from '~/constants/db.constant'
 import { BaseModel } from '~/shared/model/base.model'
 
+import { HashAlgorithm } from './source.constant'
+
 export type MetaSourceDocument = DocumentType<MetaSourceModel>
 
 class MetaSourceHashModel {
   @prop({ required: true, trim: true })
-  hash: string
+  hash!: string
+
+  @prop({ required: true, trim: true, enum: HashAlgorithm })
+  algorithm!: string
 
   // @prop({ default: 1 })
   // vote: number
