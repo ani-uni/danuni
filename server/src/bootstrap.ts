@@ -11,6 +11,8 @@ import { Logger } from '@innei/pretty-logger-nestjs'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
+// import { apiReference } from '@scalar/nestjs-api-reference'
+
 import { CROSS_DOMAIN, DEBUG_MODE, PORT } from './app.config'
 import { AppModule } from './app.module'
 import { fastifyApp } from './common/adapters/fastify.adapter'
