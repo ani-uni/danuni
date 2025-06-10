@@ -1,15 +1,9 @@
 import type { ExecutionContext } from '@nestjs/common'
-import type {
-  GroupsClass,
-  // LevelSectionFiedls,
-  Roles,
-  Scopes,
-} from '~/constants/authn.constant'
+import type { GroupsClass, Roles, Scopes } from '~/constants/authn.constant'
 
 import { createParamDecorator, SetMetadata } from '@nestjs/common'
 
 import {
-  // AUTHN_LEVEL_OPTIONS,
   AUTHN_ROLES_OPTIONS,
   AUTHN_ROLES_PASS_OPTIONS,
   AUTHN_SCOPE_OPTIONS,
@@ -18,21 +12,9 @@ import {
 } from '~/constants/authn.constant'
 import { getNestExecutionContextRequest } from '~/transformers/get-req.transformer'
 
-// export const SkipLogging = SetMetadata(SYSTEM.SKIP_LOGGING_METADATA, true)
-
-// export const Level = (...levels: LevelSectionFiedls[]) =>
-//   SetMetadata('level', levels)
 // 在authn.guard.ts里await获取config比对即可
 // 顺带把service里的check改掉
 export const Role = (roles: Roles[]) => SetMetadata(AUTHN_ROLES_OPTIONS, roles)
-// export const LevelSection = (
-//   levelSection: LevelSectionFiedls | LevelSectionFiedls[],
-// ) =>
-//   SetMetadata(
-//     // 'levelSection',
-//     AUTHN_LEVEL_OPTIONS,
-//     Array.isArray(levelSection) ? levelSection : [levelSection],
-//   )
 export const Scope = (scopes: Scopes[]) =>
   SetMetadata(AUTHN_SCOPE_OPTIONS, new Set(scopes))
 
@@ -51,16 +33,6 @@ export const Authn = (options: {
   const s = options.scope || [],
     g = options.group ? Groups[options.group] : []
   return (_, __, descriptor: PropertyDescriptor) => {
-    // return (_, __, descriptor: PropertyDescriptor) => {
-    //   if (options.role) SetMetadata(AUTHN_ROLES_OPTIONS, options.role)
-    //   if (options.scope || options.group)
-    //     SetMetadata(AUTHN_SCOPE_OPTIONS, new Set([...s, ...g]))
-    //   if (options.pass) {
-    //     if (options.pass.role)
-    //       SetMetadata(AUTHN_ROLES_PASS_OPTIONS, options.pass.role)
-    //     if (options.pass.scope)
-    //       SetMetadata(AUTHN_SCOPE_PASS_OPTIONS, new Set(options.pass.scope))
-    //   }
     if (options.role)
       SetMetadata(AUTHN_ROLES_OPTIONS, options.role)(descriptor.value)
     if (options.scope || options.group)

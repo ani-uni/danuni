@@ -3,7 +3,7 @@ import type { AxiosRequestConfig } from 'axios'
 import { argv } from './app.config'
 
 export const PORT = process.env.PORT || 2333
-export const API_VERSION = 2
+export const API_VERSION = 0
 
 export const DEMO_MODE = false
 
@@ -11,15 +11,14 @@ export const CROSS_DOMAIN = {
   allowedOrigins: argv.allowed_origins
     ? argv.allowed_origins?.split?.(',')
     : [
-        'innei.ren',
-        '*.innei.ren',
+        'danuni.rinne.in',
 
         'localhost:*',
         '127.0.0.1',
         'mbp.cc',
-        'local.innei.test',
-        '22333322.xyz',
-        '*.dev',
+        'local.rinne.test',
+        // '22333322.xyz',
+        // '*.dev',
       ],
 
   // allowedReferer: 'innei.ren',

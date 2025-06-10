@@ -1,18 +1,10 @@
 import type { Scopes } from '~/constants/authn.constant'
-import type { Levels } from '~/modules/user/user.model'
 
 import { ForbiddenException } from '@nestjs/common'
 
 import { Roles } from '~/constants/authn.constant'
 
 import { difference } from './set.util'
-
-export class LevelLowException {
-  constructor(targetLv: Levels, userLv?: number) {
-    if (!userLv) return new ForbiddenException(`未登录`)
-    else return new ForbiddenException(`等级过低(${userLv} < ${targetLv})`)
-  }
-}
 
 export class NotSpecificRoleException {
   constructor(targetRoles: Roles[], userRole?: Roles) {

@@ -1,9 +1,3 @@
-// import { omit } from 'lodash'
-// import { Schema } from 'mongoose'
-
-// import { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
-// import type { platfrom } from '@dan-uni/dan-any'
-// import { ObjectId } from 'mongoose'
 import type { DocumentType } from '@typegoose/typegoose'
 
 import { platform as PF } from '@dan-uni/dan-any'

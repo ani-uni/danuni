@@ -57,7 +57,7 @@ export class HttpCacheInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse<FastifyReply>()
 
     // 如果请求通过认证，跳过缓存因为，认证后的请求可能会有敏感数据
-    if (request.isAuthenticated) {
+    if (request.authn.uid && request.authn.uid !== 'guest@danuni') {
       this.setPrivateCacheHeader(res)
       return call$
     }

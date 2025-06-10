@@ -1,6 +1,5 @@
 import {
   IsEnum,
-  // IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -10,17 +9,7 @@ import {
 } from 'class-validator'
 import { isObjectIdOrHexString } from 'mongoose'
 
-// import type { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
-// import { platfrom, UniDMTools } from '@dan-uni/dan-any'
-
 import { DanmakuEventAction } from './event.constant'
-
-// export enum DanmakuEventVoteAction {
-//   Like = 1,
-//   Dislike = -1,
-//   Report = -1,
-//   Pass = 0,
-// }
 
 class DanmakuEventBaseDto {
   @IsObjectIdOrHexString()

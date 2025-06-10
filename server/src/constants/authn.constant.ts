@@ -58,30 +58,19 @@ export enum Scopes {
   metaEdit = 'meta.edit', //base
   metaEditPgc = 'meta.edit:pgc', //maintainer
   metaDel = 'meta.del', //base
-  // metaEpCreate = 'meta.ep.create',
-  // metaEpEdit = 'meta.ep.edit',
-  // metaEpDel = 'meta.ep.del',
-  // metaSourceCreate = 'meta.source.create',
-  // metaSourceEdit = 'meta.source.edit',
-  // metaSourceDelPgc = 'meta.source.del:pgc', //maintainer
-  // metaRefreshOrFetchFromRemoteOrigin = 'meta.refresh',
   danmakuSend = 'danmaku.send',
   danmakuSendChapter = 'danmaku.send:chpt',
-  // danmakuSendChapterBypass = 'danmaku.send:chpt#bypass',
   danmakuSendAdv = 'danmaku.send:adv',
-  // danmakuSendAdvBypass = 'danmaku.send:adv#bypass',
   danmakuSendSub = 'danmaku.send:sub',
-  // danmakuSendSubBypass = 'danmaku.send:sub#bypass',
   danmakuDel = 'danmaku.del', //base
-  // /**
-  //  * 管理员级的删除权限，不受 inBufferTime 的制约，但仍可能已被备份
-  //  */
-  // danmakuDelBypass = 'danmaku.del#bypass',
-  danmakuImport = 'danmaku.import',
-  danmakuExport = 'danmaku.export',
   danmakuEventIssue = 'danmaku.event.issue',
   danmakuEventVote = 'danmaku.event.vote',
   danmakuEventClose = 'danmaku.event.close', //admin
+  metaImport = 'meta.import',
+  metaExport = 'meta.export',
+  danmakuImport = 'danmaku.import',
+  danmakuExport = 'danmaku.export',
+  danmakuEventExport = 'danmaku.event.export',
 }
 export class GroupsClass {
   public readonly admin = new Set(
@@ -94,13 +83,7 @@ export class GroupsClass {
   ])
   public readonly lv1 = new Set([Scopes.danmakuSend, Scopes.danmakuEventIssue])
   public readonly lv2 = new Set([...this.lv1, Scopes.metaEditPgc])
-  public readonly lv3 = new Set([
-    ...this.lv2,
-    Scopes.metaCreate,
-    // Scopes.metaSourceDelPgc,
-    Scopes.danmakuEventVote,
-    // Scopes.metaRefreshOrFetchFromRemoteOrigin,
-  ])
+  public readonly lv3 = new Set([...this.lv2, Scopes.danmakuEventVote])
   public readonly lv4 = new Set([...this.lv3, Scopes.danmakuSendChapter])
   public readonly lv5 = new Set([
     ...this.lv4,
@@ -108,8 +91,6 @@ export class GroupsClass {
     Scopes.danmakuSendAdv,
     Scopes.danmakuSendSub,
   ])
-  // public readonly lv6 = new Set([...this.lv5, Scopes.danmakuSendAdvBypass])
-  // public readonly sub = new Set([...this.lv6, Scopes.danmakuSendSubBypass])
 }
 export const Groups = new GroupsClass()
 

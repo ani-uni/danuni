@@ -1,53 +1,4 @@
-import { createHash } from 'node:crypto'
-import { createRequire } from 'node:module'
-import { join } from 'node:path'
 import { cloneDeep } from 'lodash'
-
-import { installPackage } from '@antfu/install-pkg'
-
-import { NODE_REQUIRE_PATH } from '~/constants/path.constant'
-import { logger } from '~/global/consola.global'
-
-export const md5 = (text: string) =>
-  createHash('md5').update(text).digest('hex') as string
-
-export function getAvatar(mail: string | undefined) {
-  if (!mail) {
-    return ''
-  }
-  return `https://cravatar.cn/avatar/${md5(mail)}?d=retro`
-}
-
-export function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-export function hasChinese(str: string) {
-  return !escape(str).includes('%u') ? false : true
-}
-
-export const safeJSONParse = (p: any) => {
-  try {
-    return JSON.parse(p)
-  } catch {
-    return null
-  }
-}
-
-/**
- * remove `..`, `~`
- * @param path
- */
-export const safePathJoin = (...path: string[]) => {
-  const newPathArr = path.map((p) =>
-    p
-      .split('/')
-      .map((o) => o.replace(/^(\.{2,}|~)$/, '.'))
-      .join('/'),
-  )
-
-  return join(...newPathArr)
-}
 
 export const deepCloneWithFunction = <T extends object>(object: T): T => {
   const clonedModule = cloneDeep(object)
@@ -136,34 +87,4 @@ export const parseBooleanishValue = (value: string | boolean | undefined) => {
   }
   if (typeof value === 'undefined') return undefined
   return false
-}
-
-export function escapeXml(unsafe: string) {
-  return unsafe.replaceAll(/["&'<>]/g, (c) => {
-    switch (c) {
-      case '<':
-        return '&lt;'
-      case '>':
-        return '&gt;'
-      case '&':
-        return '&amp;'
-      case "'":
-        return '&apos;'
-      case '"':
-        return '&quot;'
-    }
-    return c
-  })
-}
-
-export const requireDepsWithInstall = async (deps: string) => {
-  try {
-    const require = createRequire(NODE_REQUIRE_PATH)
-    return require(require.resolve(deps))
-  } catch {
-    logger.info(`Installing ${deps}...`)
-    await installPackage(deps, { silent: false, cwd: NODE_REQUIRE_PATH })
-    const require = createRequire(NODE_REQUIRE_PATH)
-    return require(deps)
-  }
 }

@@ -7,26 +7,22 @@ import {
 import { Reflector } from '@nestjs/core'
 
 import {
-  // AUTHN_LEVEL_OPTIONS,
   AUTHN_ROLES_OPTIONS,
   AUTHN_ROLES_PASS_OPTIONS,
   AUTHN_SCOPE_OPTIONS,
   AUTHN_SCOPE_PASS_OPTIONS,
   AuthnModel,
   Groups,
-  // LevelSectionFiedls,
   Roles,
   Scopes,
 } from '~/constants/authn.constant'
 import { SidOrder } from '~/modules/auth/auth.constant'
 import { AuthService } from '~/modules/auth/auth.service'
-// import { Levels } from '~/modules/user/user.model'
 import {
   FastifyBizRequest,
   getNestExecutionContextRequest,
 } from '~/transformers/get-req.transformer'
 import {
-  // LevelLowException,
   NotInScopeException,
   NotSpecificRoleException,
 } from '~/utils/custom-request-exception'
@@ -44,9 +40,6 @@ export class AuthnGuard implements CanActivate {
         AUTHN_ROLES_OPTIONS,
         [context.getHandler(), context.getClass()],
       ),
-      // targetLevelSections = this.reflector.getAllAndOverride<
-      //   LevelSectionFiedls[]
-      // >(AUTHN_LEVEL_OPTIONS, [context.getHandler(), context.getClass()]),
       targetScopes = new Set(
         this.reflector.getAllAndOverride<Scopes[]>(AUTHN_SCOPE_OPTIONS, [
           context.getHandler(),
@@ -124,9 +117,6 @@ export class AuthnGuard implements CanActivate {
 
       return true
     } else throw new NotInScopeException(targetScopes, authn?.scopes)
-    // if (level >= targetLevels[0]) return true
-    // else throw new LevelLowException(targetLevels[0], level)
-    // return requiredLevels.some((level) => request.user?.level)
   }
 
   getRequest(context: ExecutionContext) {
@@ -148,21 +138,12 @@ export class AuthnGuard implements CanActivate {
     const session = await this.authService.getSessionUser(request.raw)
     if (session && session.user?.id) {
       const role: Roles = (session.user?.role as Roles) || Roles.guest
-      // level: Levels = session.user?.level || Levels.GuestOrBan,
       let scopes: Set<Scopes> = new Set(session.user?.scopes as Scopes[])
-      // if (session.user?.role === Roles.admin) level = Levels.Admin
-      // else if (session.user?.banned) level = Levels.GuestOrBan
       if (session.user?.role === Roles.admin) {
         scopes.clear()
         scopes.add(Scopes.all)
       } else if (session.user?.banned) scopes.clear()
       if (scopes.has(Scopes.all)) scopes = Groups.admin
-      // else {
-      //   ;[...scopes].forEach((scope) => {
-      //     if (scope.endsWith('#bypass'))
-      //       scopes.add(scope.replace('#bypass', '') as Scopes)
-      //   })
-      // }
       let sid: string | undefined
       const getSid = (provider: string) => {
         if (

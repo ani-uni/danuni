@@ -5,16 +5,7 @@ import type { FastifyRequest } from 'fastify'
 import type { IncomingMessage } from 'node:http'
 
 type BizRequest = {
-  // user?: UserModel
-  isGuest: boolean
-
-  isAuthenticated: boolean
-  token?: string
-  // readerId?: string
-
   authn: NonNullable<AuthnModel>
-  // level: number
-  // uid?: string
 }
 
 export type FastifyBizRequest = FastifyRequest & BizRequest

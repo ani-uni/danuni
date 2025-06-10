@@ -1,34 +1,14 @@
 import { IncomingMessage } from 'node:http'
-// import {
-//   APIError,
-//   betterAuth,
-//   mongodbAdapter,
-//   toNodeHandler,
-// } from '@mx-space/complied/auth'
 import { betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
-// import {
-//   APIError,
-//   // createAuthMiddleware,
-//   // getSessionFromCtx,
-// } from 'better-auth/api'
 import { toNodeHandler } from 'better-auth/node'
-// import { fromNodeHeaders, toNodeHandler } from 'better-auth/node'
-import {
-  admin,
-  apiKey,
-  // bearer,
-  genericOAuth,
-  openAPI,
-} from 'better-auth/plugins'
+import { admin, apiKey, genericOAuth, openAPI } from 'better-auth/plugins'
 import { MongoClient } from 'mongodb'
 import type { BetterAuthOptions } from 'better-auth'
 import type { ServerResponse } from 'node:http'
 import type { Oauth2Providers } from './auth.constant'
 
 import { API_VERSION, CROSS_DOMAIN, MONGO_DB, SECURITY } from '~/app.config'
-
-// import { SECURITY } from '~/app.config.test'
 
 import {
   AUTH_JS_ACCOUNT_COLLECTION,
@@ -212,7 +192,6 @@ export async function CreateAuth(
         defaultPrefix: 'danuni_',
         enableMetadata: true,
       }),
-      // bearer(),
       admin(),
       openAPI(),
       genericOAuth({
@@ -229,11 +208,6 @@ export async function CreateAuth(
           defaultValue: false,
           input: false,
         },
-        // level: {
-        //   type: 'number',
-        //   defaultValue: 3,
-        //   input: false,
-        // },
         weight: {
           type: 'number',
           defaultValue: 5,

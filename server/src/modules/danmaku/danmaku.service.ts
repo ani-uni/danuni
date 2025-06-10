@@ -236,7 +236,6 @@ export class DanmakuService {
     const newUniDM = UniDM.create(dan)
     newUniDM.attr.push('Unchecked')
     const newDan = await this.danmakuModel.create(IdPrefixPreHandler(newUniDM))
-    // console.log(newDan._id)
     return this.fmtSingleDan(newDan)
   }
 

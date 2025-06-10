@@ -1,29 +1,11 @@
-// import { compareSync } from 'bcryptjs'
-
-// import {
-//   Extra,
-//   ExtraDanUni,
-//   Modes,
-//   Pools,
-//   UniDM,
-// } from '@dan-uni/dan-any/src/utils/dm-gen'
-// import { createDMID } from '@dan-uni/dan-any/src/utils/id-gen'
 import {
   BadRequestException,
-  // ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  // UnprocessableEntityException,
 } from '@nestjs/common'
 import { ReturnModelType } from '@typegoose/typegoose'
 
-// import { FastifyBizRequest } from '~/transformers/get-req.transformer'
-// import {
-//   BizException,
-//   BusinessException,
-// } from '~/common/exceptions/biz.exception'
-// import { ErrorCodeEnum } from '~/constants/error-code.constant'
 import { InjectModel } from '~/transformers/model.transformer'
 
 import { ConfigsService } from '../configs/configs.service'
@@ -31,9 +13,6 @@ import { MetaService } from '../meta/meta.service'
 import { DanmakuService } from './danmaku.service'
 import { DanmakuEventAction, DanmakuEventLabel } from './event.constant'
 import { DanmakuEventDto } from './event.dto'
-// import { getAvatar } from '~/utils/tool.util'
-
-// import { AuthService } from '../auth/auth.service'
 import {
   DanmakuEventDocument,
   DanmakuEventModel,
@@ -46,32 +25,14 @@ export class DanmakuEventService {
   private Logger = new Logger(DanmakuEventService.name)
   constructor(
     @InjectModel(DanmakuEventModel)
-    // @InjectModel(DanmakuModel)
     private readonly eventModel: ReturnModelType<typeof DanmakuEventModel>,
-    // private readonly danmakuModel: ReturnModelType<typeof DanmakuModel>,
     private readonly metaService: MetaService,
     private readonly danmakuService: DanmakuService,
     private readonly configService: ConfigsService,
-    // private readonly authService: AuthService,
   ) {}
   public get model() {
     return this.eventModel
   }
-  // async canEdit(meta: MetaDocument, ctx: FastifyBizRequest) {
-  //   const { level, uid } = ctx
-  //   if (level === Levels.Creator || uid === meta.creator) return true
-  //   return false
-  // }
-  // async getVote(DMID: string) {
-  //   const dan = await this.danmakuModel.findOne({
-  //     DMID,
-  //   })
-  //   if (!dan) return null
-  //   return dan
-  // }
-  // async hasDan(DMID: string) {
-  //   return !!(await this.getDan(DMID))?.DMID
-  // }
 
   fmtEvent(
     event:
@@ -169,10 +130,6 @@ export class DanmakuEventService {
   // async operateDan(action: DanmakuEventDto, ctx: FastifyBizRequest) {
   async operateDan(action: DanmakuEventDto) {
     if (!action.PID) throw new BadRequestException('未找到该弹幕')
-    // let voteAction = 0
-    // if (action.action === DanmakuEventAction.Like) voteAction = 1
-    // else if (action.action === DanmakuEventAction.Report) voteAction = -1
-    // else throw new BadRequestException('未知的操作')
     let event = await this.eventModel.findOne({ PID: action.PID })
     if (!event) {
       if (!(await this.canAccessEvent(action.PID, 'new')))
@@ -183,7 +140,6 @@ export class DanmakuEventService {
         pub: true,
       })
       await this.danmakuService.setDanProp(event.PID, ['HasEvent'])
-      // await this.danmakuService.setDanProp(event.PID, 'Reported')
     }
     return this.voteAction(event, action.action)
   }
@@ -219,13 +175,6 @@ export class DanmakuEventService {
       await this.finishEvent(event)
       return 'OK'
     } else throw new BadRequestException('投票失败')
-    // .then((e) => {
-    //   if (e) return this.fmtEvent(e)
-    //   else throw new BadRequestException('投票失败，你的投票已撤回')
-    // })
-    // .catch(() => {
-    //   throw new BadRequestException('投票失败，你的投票已撤回')
-    // })
   }
 
   async finishEvent(
@@ -267,7 +216,6 @@ export class DanmakuEventService {
             true,
           )
         },
-        // n: async () => await this.danmakuService.delDan(event.PID),
       }
       if (action === 1) {
         await acf.p('admin')

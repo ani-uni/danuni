@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer'
 import {
-  // IsBoolean,
   IsEmail,
   IsEnum,
   IsIn,
@@ -16,53 +15,7 @@ import {
   ValidationOptions,
 } from 'class-validator'
 
-// import type { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
 import { platform as PF } from '@dan-uni/dan-any'
-
-// import { IsAllowedUrl } from '~/decorators/dto/isAllowedUrl'
-
-// class UserOptionDto {
-//   @IsOptional()
-//   @IsString()
-//   @IsNotEmpty()
-//   readonly introduce?: string
-
-//   @IsEmail()
-//   @IsOptional()
-//   readonly mail?: string
-
-//   @IsUrl({ require_protocol: true }, { message: '请更正为正确的网址' })
-//   @IsOptional()
-//   readonly url?: string
-
-//   @IsString()
-//   @IsOptional()
-//   name?: string
-
-//   // @IsAllowedUrl()
-//   @IsOptional()
-//   readonly avatar?: string
-
-//   @IsOptional()
-//   @IsObject()
-//   readonly socialIds?: Record<string, any>
-// }
-
-// class UniNodeDto {
-//   @IsString()
-//   domain: string
-
-//   @IsString()
-//   pub: string
-// }
-
-// class thirdPlatformDto {
-//   @IsString()
-//   platform: platfrom
-
-//   @IsString()
-//   id: string
-// }
 
 class MetaExternalIdInfoDto {
   @IsEnum(PF.PlatformInfoSource)

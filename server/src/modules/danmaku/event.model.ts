@@ -1,5 +1,3 @@
-// import { omit } from 'lodash'
-// import { Schema } from 'mongoose'
 import type { DocumentType } from '@typegoose/typegoose'
 
 import { BadRequestException } from '@nestjs/common'
@@ -22,21 +20,6 @@ export class DanmakuEventVoteModel {
   @prop({ required: true })
   action: number
 }
-
-// export class DanmakuEventVoteModel {
-//   // @prop({ min: 0, default: 0 })
-//   @prop({ type: DanmakuEventVoteUserModel })
-//   positiveList: DanmakuEventVoteUserModel[]
-
-//   // @prop({ min: 0, default: 0 })
-//   @prop({ type: DanmakuEventVoteUserModel })
-//   neutralList: DanmakuEventVoteUserModel[]
-
-//   // @prop({ min: 0, default: 0 })
-//   @prop({ type: DanmakuEventVoteUserModel })
-//   negativeList: DanmakuEventVoteUserModel[]
-
-// }
 
 @modelOptions({
   options: {

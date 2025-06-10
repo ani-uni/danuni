@@ -41,24 +41,6 @@ export class RequestContext {
     return null
   }
 
-  // static currentUser(throwError?: boolean): Nullable<UserModel> {
-  //   const requestContext = RequestContext.currentRequestContext()
-
-  //   if (requestContext) {
-  //     const user = requestContext.request['user']
-
-  //     if (user) {
-  //       return user
-  //     }
-  //   }
-
-  //   if (throwError) {
-  //     throw new UnauthorizedException()
-  //   }
-
-  //   return null
-  // }
-
   static currentAuthn(throwError?: boolean): NonNullable<AuthnModel> {
     const requestContext = RequestContext.currentRequestContext()
 

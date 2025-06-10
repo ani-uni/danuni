@@ -5,7 +5,7 @@ import { Authn } from '~/common/decorators/authn.decorator'
 import { HttpCache } from '~/common/decorators/cache.decorator'
 import { AuthnGuard } from '~/common/guards/authn.guard'
 import { Roles, Scopes } from '~/constants/authn.constant'
-import { IdPrefixHandlers } from '~/utils/id-prefix.util'
+import { IdPrefixPreHandlers } from '~/utils/id-prefix.util'
 
 import { DanmakuEventDto } from './event.dto'
 import { DanmakuEventService } from './event.service'
@@ -13,16 +13,7 @@ import { DanmakuEventService } from './event.service'
 @ApiController(['community'])
 @UseGuards(AuthnGuard)
 export class DanmakuEventController {
-  constructor(
-    // private readonly danmakuService: DanmakuService,
-    // private readonly danmakuSendService: DanmakuSendService,
-    private readonly danmakuEventService: DanmakuEventService,
-    // private readonly authService: AuthService,
-    // private readonly configService: ConfigsService,
-
-    // @Inject(forwardRef(() => AuthnService))
-    // private readonly authnService: AuthnService,
-  ) {}
+  constructor(private readonly danmakuEventService: DanmakuEventService) {}
   @Post('/:DMID/new')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuEventIssue] })
@@ -30,7 +21,7 @@ export class DanmakuEventController {
     @Param('DMID') PID: string,
     @Body() danmakuEventDto: DanmakuEventDto,
   ) {
-    danmakuEventDto.PID = IdPrefixHandlers.PID(PID)
+    danmakuEventDto.PID = IdPrefixPreHandlers.dm(PID)
     return await this.danmakuEventService.operateDan(danmakuEventDto)
   }
   @Post('/:DMID/vote')
@@ -41,7 +32,7 @@ export class DanmakuEventController {
     @Body() danmakuEventDto: DanmakuEventDto,
   ) {
     return await this.danmakuEventService.voteAction(
-      IdPrefixHandlers.PID(PID),
+      IdPrefixPreHandlers.dm(PID),
       danmakuEventDto.action,
     )
   }
@@ -50,7 +41,7 @@ export class DanmakuEventController {
   @Authn({ role: [Roles.user, Roles.bot] })
   async getDanEvent(@Param('DMID') PID: string) {
     return this.danmakuEventService.fmtEvent(
-      await this.danmakuEventService.getDanEvent(IdPrefixHandlers.PID(PID)),
+      await this.danmakuEventService.getDanEvent(IdPrefixPreHandlers.dm(PID)),
     )
   }
   // @Get(['', '/list'])
@@ -71,14 +62,13 @@ export class DanmakuEventController {
   // }
   @Post('/:DMID/done')
   @HttpCache({ disable: true })
-  // @Level(Levels.Creator)
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuEventClose] })
   async finishDanEvent(
     @Param('DMID') PID: string,
     @Body() danmakuEventDto: DanmakuEventDto,
   ) {
     return await this.danmakuEventService.finishEvent(
-      IdPrefixHandlers.PID(PID),
+      IdPrefixPreHandlers.dm(PID),
       danmakuEventDto.action,
     )
   }

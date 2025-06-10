@@ -13,23 +13,13 @@ import {
   Min,
 } from 'class-validator'
 
-// import type { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
 import { platform, UniDMTools } from '@dan-uni/dan-any'
-
-// import {
-//   DMAttr,
-//   ExtraDanUniChapterAction,
-//   ExtraDanUniChapterType,
-//   Modes,
-//   Pools,
-// } from '@dan-uni/dan-any/src/utils/dm-gen'
 
 export class DanmakuDto {
   @IsNumber()
   @IsNotEmpty({ message: '弹幕进度?' })
   progress: number
 
-  // @IsInt()
   @IsEnum(UniDMTools.Modes)
   @IsOptional()
   // @IsNotEmpty({ message: '弹幕类型?' })

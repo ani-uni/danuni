@@ -1,59 +1,16 @@
-// import { omit } from 'lodash'
-// import { Schema } from 'mongoose'
 import type { DocumentType } from '@typegoose/typegoose'
 
-// import { DMAttr, Modes, Pools } from '@dan-uni/dan-any/src/utils/dm-gen'
-// import { createDMID, platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
 import { platform, UniDMTools } from '@dan-uni/dan-any'
-// import { ConflictException } from '@nestjs/common'
-import {
-  // getModelForClass,
-  modelOptions,
-  prop,
-  Severity,
-} from '@typegoose/typegoose'
+import { modelOptions, prop, Severity } from '@typegoose/typegoose'
 
 import { DANMAKU_COLLECTION_NAME } from '~/constants/db.constant'
 import { BaseModel } from '~/shared/model/base.model'
-
-// const { createDMID } = UniIDTools
 
 export type DanmakuDocument = DocumentType<DanmakuModel>
 
 @modelOptions({
   options: { customName: DANMAKU_COLLECTION_NAME, allowMixed: Severity.ALLOW },
-  // schemaOptions: {
-  //   timestamps: false,
-  // },
 })
-// @pre<DanmakuModel>(/(find|update|replace|insert|save).*/i, async function () {
-//   // if (!this.DMID)
-//   //   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-//   // const danmakuModel = getModelForClass(DanmakuModel)
-//   // const hasDMID = await danmakuModel
-//   //   .findOne({ FCID: this.FCID, DMID: this.DMID })
-//   //   .lean({ virtuals: true })
-//   // if (hasDMID?.FCID && hasDMID.DMID)
-//   //   throw new ConflictException('DMID already exists')
-// })
-// @pre<DanmakuModel>('replaceOne', function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
-// @pre<DanmakuModel>('updateMany', function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
-// @pre<DanmakuModel>('updateOne', function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
-// @pre<DanmakuModel>('findOneAndReplace', function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
-// @pre<DanmakuModel>('findOneAndUpdate', function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
-// @pre<DanmakuModel>(['updateOne'], function () {
-//   this.DMID = createDMID(this.content, this.senderID, this.ctime)
-// })
 export class DanmakuModel extends BaseModel {
   @prop({ alias: 'id' })
   DMID!: string

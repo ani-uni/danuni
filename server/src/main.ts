@@ -22,8 +22,7 @@ async function main() {
   //   await migrateDatabase()
   // }
 
-  // const [{ bootstrap }, { CLUSTER, ENCRYPT }, { Cluster }] = await Promise.all([
-  const [{ bootstrap }, { CLUSTER }, { Cluster }] = await Promise.all([
+  const [{ bootstrap }, { CLUSTER, ENCRYPT }, { Cluster }] = await Promise.all([
     import('./bootstrap'),
     import('./app.config'),
     import('./cluster'),
@@ -34,22 +33,22 @@ async function main() {
     logger.log('cwd: ', cwd)
   }
 
-  // if (ENCRYPT.enable && ENCRYPT.key) {
-  //   const isValidKey = ENCRYPT.key.length === 64
+  if (ENCRYPT.enable && ENCRYPT.key) {
+    const isValidKey = ENCRYPT.key.length === 64
 
-  //   if (!isValidKey) {
-  //     logger.error('encrypt key must be 64 length')
-  //     process.exit(1)
-  //   }
+    if (!isValidKey) {
+      logger.error('encrypt key must be 64 length')
+      process.exit(1)
+    }
 
-  //   logger.debug('encrypt key: ', ENCRYPT.key)
-  //   logger.log(
-  //     `Encrypt is enabled, please remember encrypt key. Your key is starts with ${ENCRYPT.key.slice(
-  //       0,
-  //       3,
-  //     )}`,
-  //   )
-  // }
+    logger.debug('encrypt key: ', ENCRYPT.key)
+    logger.log(
+      `Encrypt is enabled, please remember encrypt key. Your key is starts with ${ENCRYPT.key.slice(
+        0,
+        3,
+      )}`,
+    )
+  }
 
   DEBUG_MODE.memoryDump && registerForMemoryDump()
   if (CLUSTER.enable) {

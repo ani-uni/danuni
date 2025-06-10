@@ -1,14 +1,8 @@
 import { IncomingMessage } from 'node:http'
 import { UserWithRole } from 'better-auth/plugins'
 import jose from 'jose'
-// import dayjs from 'dayjs'
-// import { isDate, omit } from 'lodash'
 import { Types } from 'mongoose'
 import { nanoid } from 'nanoid'
-
-// import nanoid from 'nanoid'
-// import type { TokenModel, UserModel } from '~/modules/user/user.model'
-// import type { TokenDto } from './auth.controller'
 
 import {
   BadRequestException,
@@ -17,37 +11,20 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common'
 
-// import { ReturnModelType } from '@typegoose/typegoose'
-
 import { RequestContext } from '~/common/contexts/request.context'
 import { Scopes } from '~/constants/authn.constant'
-// import { alphabet } from '~/constants/other.constant'
-// import { UserModel as User } from '~/modules/user/user.model'
 import { DatabaseService } from '~/processors/database/database.service'
 import { isSubsetOf } from '~/utils/set.util'
 
 import { ConfigsService } from '../configs/configs.service'
-// import { JWTService } from '~/processors/helper/helper.jwt.service'
-
-// import { InjectModel } from '~/transformers/model.transformer'
-
-import {
-  // AUTH_JS_ACCOUNT_COLLECTION,
-  AUTH_JS_USER_COLLECTION,
-  AuthInstanceInjectKey,
-  // Oauth2Provider,
-} from './auth.constant'
+import { AUTH_JS_USER_COLLECTION, AuthInstanceInjectKey } from './auth.constant'
 import { InjectAuthInstance } from './auth.interface'
 import { BotAuthUnitDto } from './bot-auth.dto'
-
-// const { customAlphabet } = nanoid
 
 @Injectable()
 export class AuthService {
   constructor(
-    // @InjectModel(User) private readonly userModel: ReturnModelType<typeof User>,
     private readonly databaseService: DatabaseService,
-    // private readonly jwtService: JWTService,
     private readonly configService: ConfigsService,
     @Inject(AuthInstanceInjectKey)
     private readonly authInstance: InjectAuthInstance,
@@ -56,99 +33,6 @@ export class AuthService {
   get authInstancePublic() {
     return this.authInstance.get()
   }
-
-  // get jwtServicePublic() {
-  //   return this.jwtService
-  // }
-
-  // private async getAccessTokens() {
-  //   return (await this.userModel.findOne().select('apiToken').lean())
-  //     ?.apiToken as TokenModel[] | undefined
-  // }
-  // async getAllAccessToken() {
-  //   const tokens = await this.getAccessTokens()
-  //   if (!tokens) {
-  //     return []
-  //   }
-  //   return tokens.map((token) => ({
-  //     // @ts-ignore
-  //     id: token._id,
-  //     ...omit(token, ['_id', '__v']),
-  //   })) as any as TokenModel[]
-  // }
-
-  // async getTokenSecret(id: string) {
-  //   const tokens = await this.getAccessTokens()
-  //   if (!tokens) {
-  //     return null
-  //   }
-  //   // note: _id is ObjectId not equal to string
-  //   // @ts-ignore
-  //   return tokens.find((token) => String(token._id) === id)
-  // }
-
-  // async generateAccessToken() {
-  //   const ap = customAlphabet(alphabet, 40)
-  //   const nanoid = ap()
-
-  //   return `txo${nanoid}`
-  // }
-
-  // isCustomToken(token: string) {
-  //   return token.startsWith('txo') && token.length - 3 === 40
-  // }
-
-  // async verifyCustomToken(
-  //   token: string,
-  // ): Promise<[true, UserModel] | [false, null]> {
-  //   const user = await this.userModel.findOne({}).lean().select('+apiToken')
-
-  //   if (!user) {
-  //     return [false, null]
-  //   }
-  //   const tokens = user.apiToken
-  //   if (!tokens || !Array.isArray(tokens)) {
-  //     return [false, null]
-  //   }
-  //   const valid = tokens.some((doc) => {
-  //     if (doc.token === token) {
-  //       if (typeof doc.expired === 'undefined') {
-  //         return true
-  //       } else if (isDate(doc.expired)) {
-  //         const isExpired = dayjs(new Date()).isAfter(doc.expired)
-  //         return isExpired ? false : true
-  //       }
-  //     }
-  //     return false
-  //   })
-
-  //   return valid ? [true, user] : [false, null]
-  // }
-
-  // async saveToken(model: TokenDto & { token: string }) {
-  //   await this.userModel.updateOne(
-  //     {},
-  //     {
-  //       $push: {
-  //         apiToken: { created: new Date(), ...model },
-  //       },
-  //     },
-  //   )
-  //   return model
-  // }
-
-  // async deleteToken(id: string) {
-  //   await this.userModel.updateOne(
-  //     {},
-  //     {
-  //       $pull: {
-  //         apiToken: {
-  //           _id: id,
-  //         },
-  //       },
-  //     },
-  //   )
-  // }
 
   async getSessionUser(
     req: IncomingMessage,
@@ -163,14 +47,8 @@ export class AuthService {
       authHeader = new Headers()
     if (apiKeyHeader) authHeader.set('x-api-key', apiKeyHeader)
 
-    // const cookieHeader = new Headers()
-    // if (!req.headers.cookie) {
-    //   return null
-    // }
-    // cookieHeader.set('cookie', req.headers.cookie)
     if (req.headers.cookie) authHeader.set('cookie', req.headers.cookie)
     if (req.headers.origin) {
-      // cookieHeader.set('origin', req.headers.origin)
       authHeader.set('origin', req.headers.origin)
     }
     if (!apiKeyHeader && !req.headers.cookie) return null
@@ -179,12 +57,10 @@ export class AuthService {
       query: {
         disableCookieCache: true,
       },
-      // headers: cookieHeader,
       headers: authHeader,
     })
 
     const accounts = (await auth.api.listUserAccounts({
-      // headers: cookieHeader,
       headers: authHeader,
     })) || [{ id: '', provider: 'credential', accountId: '' }]
 
@@ -396,12 +272,6 @@ export class AuthService {
 
     const unit = botAuth.units.find((unit) => unit.domain === payload.iss)
     if (!unit) throw new BadRequestException(`${errMesMain} (domain Not Found)`)
-
-    // const bot = unit.bots.find((bot) => bot.botId === payload.botId)
-    // if (!bot)
-    //   throw new BadRequestException(
-    //     `${errMesMain} (bot Not Found in this domain)`,
-    //   )
 
     const pub = await jose
       .importJWK(JSON.parse(unit.publicKey))
