@@ -18,7 +18,6 @@ import {
 } from '@nestjs/common'
 import { ReturnModelType } from '@typegoose/typegoose'
 
-import { AuthnModel } from '~/constants/authn.constant'
 // import { FastifyBizRequest } from '~/transformers/get-req.transformer'
 // import {
 //   BizException,
@@ -29,13 +28,9 @@ import { InjectModel } from '~/transformers/model.transformer'
 
 import { ConfigsService } from '../configs/configs.service'
 import { MetaService } from '../meta/meta.service'
-import { DanmakuEService } from './danmaku.e.service'
+import { DanmakuService } from './danmaku.service'
 import { DanmakuEventAction, DanmakuEventLabel } from './event.constant'
-import {
-  DanmakuEventDto,
-  DanmakuEventPIDDto,
-  DanmakuEventVoteAction,
-} from './event.dto'
+import { DanmakuEventDto } from './event.dto'
 // import { getAvatar } from '~/utils/tool.util'
 
 // import { AuthService } from '../auth/auth.service'
@@ -55,7 +50,7 @@ export class DanmakuEventService {
     private readonly eventModel: ReturnModelType<typeof DanmakuEventModel>,
     // private readonly danmakuModel: ReturnModelType<typeof DanmakuModel>,
     private readonly metaService: MetaService,
-    private readonly danmakuService: DanmakuEService,
+    private readonly danmakuService: DanmakuService,
     private readonly configService: ConfigsService,
     // private readonly authService: AuthService,
   ) {}
@@ -82,7 +77,6 @@ export class DanmakuEventService {
     event:
       | DanmakuEventDocument
       | DanmakuEventModelStatisfied
-      | DanmakuEventModelStatisfied[]
       | DanmakuEventModelStatisfied[],
   ) {
     if (Array.isArray(event)) return event.map((e) => this.fmtEvent(e))
@@ -94,30 +88,49 @@ export class DanmakuEventService {
           : DanmakuEventTools.toStatistics(event)
     return { ...mainData, votes }
   }
-  async isScopeAdmin(
+
+  actionStr2Num(action: DanmakuEventAction) {
+    switch (action) {
+      case DanmakuEventAction.Like:
+        return 1
+      case DanmakuEventAction.Permit:
+        return 1
+      case DanmakuEventAction.Dislike:
+        return -1
+      case DanmakuEventAction.Report:
+        return -1
+      default:
+        throw new BadRequestException('未知的操作')
+    }
+  }
+
+  async canAccessEvent(
     event: string | DanmakuEventDocument,
-    // ctx: FastifyBizRequest,
-    authn: AuthnModel,
-    checkCanOp = false,
+    mode: 'view' | 'new' = 'view',
   ) {
     // event 为 PID 或 事件对象
     const isPID = typeof event === 'string',
       PID = isPID ? event : event.PID
-    if (checkCanOp) {
-      const dan = await this.danmakuService.getDanByObjectID(PID)
+    // dan = await this.danmakuService.getDan(PID)
+    if (mode === 'new') {
+      const dan = await this.danmakuService.getDan(PID)
       if (
         dan && //存在弹幕
         !dan.attr?.includes('Protect') && //弹幕不受保护
-        !dan.attr?.includes('Hide') && //弹幕非临时隐藏
+        !dan.attr?.includes('HasEvent') && //弹幕目前未创建事件
+        // !dan.attr?.includes('Unchecked') && //弹幕已被检查
+        // !dan.attr?.includes('Hide') && //弹幕非临时隐藏
         !this.danmakuService.fmtSingleDan(dan).isFrom3rdPlatform //且不来自3rd平台
       )
         return true //可以操作
       else return false
-    } else if (!isPID && event.pub) return true
+    }
+    // mode === 'view'
+    else if (!isPID && event.pub) return true
     else {
-      const dan = await this.danmakuService.getDanByObjectID(PID)
-      if (!dan) return false
-      return this.metaService.isScopeAdmin(dan.FCID, authn)
+      const dan = await this.danmakuService.getDan(PID)
+      if (await this.metaService.isMaintainer(dan.EPID)) return true
+      else return false
     }
   }
   async preEvent() {
@@ -128,86 +141,59 @@ export class DanmakuEventService {
   }
 
   // async getDanEvent(PID: string | DanmakuEventPIDDto, ctx: FastifyBizRequest) {
-  async getDanEvent(PID: string | DanmakuEventPIDDto, authn: AuthnModel) {
-    if (typeof PID !== 'string') PID = PID.PID
-    const vote = await this.eventModel.findOne({ PID })
-    // .lean({ virtuals: true })
-    if (!vote || !(await this.isScopeAdmin(vote, authn)))
+  async getDanEvent(PID?: string) {
+    const realEvent = !PID
+      ? await this.eventModel.findOne({ pub: true })
+      : await this.eventModel.findOne({ PID })
+    if (!realEvent || !(await this.canAccessEvent(realEvent)))
       throw new NotFoundException('未找到该事件')
-    return this.fmtEvent(vote)
-  }
-  async listDanEvent() {
-    return this.fmtEvent(await this.eventModel.find().lean({ virtuals: true }))
-  }
-  // async listDanEventByFCID(FCID: string, ctx: FastifyBizRequest) {
-  async listDanEventByFCID(FCID: string, authn: AuthnModel) {
-    const canVisit = await this.metaService.isScopeAdmin(FCID, authn)
-    if (!canVisit) throw new NotFoundException('未找到事件')
-    const dans = (await this.danmakuService.listDanByFCID({ FCID })).dans
-    if (dans.length === 0) throw new NotFoundException('未找到弹幕')
-    const PIDs = dans.map((dan) => dan.PID)
-    const events = await this.eventModel
-      .find({ PID: { $in: PIDs } })
-      .lean({ virtuals: true })
-    return this.fmtEvent(events)
+    return realEvent
   }
 
+  // async listDanEvent() {
+  //   return this.fmtEvent(await this.eventModel.find().lean({ virtuals: true }))
+  // }
+  // async listDanEventByFCID(FCID: string, ctx: FastifyBizRequest) {
+  // async listDanEvent(ID: string) {
+  //   const canVisit = await this.metaService.isScopeAdmin(FCID, authn)
+  //   if (!canVisit) throw new NotFoundException('未找到事件')
+  //   const dans = (await this.danmakuService.listDanByFCID({ FCID })).dans
+  //   if (dans.length === 0) throw new NotFoundException('未找到弹幕')
+  //   const PIDs = dans.map((dan) => dan.PID)
+  //   const events = await this.eventModel
+  //     .find({ PID: { $in: PIDs } })
+  //     .lean({ virtuals: true })
+  //   return this.fmtEvent(events)
+  // }
+
   // async operateDan(action: DanmakuEventDto, ctx: FastifyBizRequest) {
-  async operateDan(action: DanmakuEventDto, authn: AuthnModel) {
+  async operateDan(action: DanmakuEventDto) {
     if (!action.PID) throw new BadRequestException('未找到该弹幕')
-    // if (!authn.uid) throw new BadRequestException('未登录')
-    let voteAction = 0
-    if (action.action === DanmakuEventAction.Like) voteAction = 1
-    else if (action.action === DanmakuEventAction.Report) voteAction = -1
-    else throw new BadRequestException('未知的操作')
+    // let voteAction = 0
+    // if (action.action === DanmakuEventAction.Like) voteAction = 1
+    // else if (action.action === DanmakuEventAction.Report) voteAction = -1
+    // else throw new BadRequestException('未知的操作')
     let event = await this.eventModel.findOne({ PID: action.PID })
     if (!event) {
-      if (!(await this.isScopeAdmin(action.PID, authn, true)))
+      if (!(await this.canAccessEvent(action.PID, 'new')))
         throw new BadRequestException('事件已存在 或 弹幕来自其它平台或受保护')
-      // throw new NotFoundException('未找到该事件')
-      // const v = { uid: ctx.uid, weight: ctx.level, action: voteAction }
-      // let v:
-      //   | {
-      //       positiveList?: { uid: string; weight: number }
-      //       negativeList?: { uid: string; weight: number }
-      //     }
-      //   | undefined = undefined
-      // switch (action.action) {
-      //   case DanmakuEventAction.Like:
-      //     v = { positiveList: user }
-      //     break
-      //   case DanmakuEventAction.Report:
-      //     v = { negativeList: user }
-      //     break
-      // }
       event = await this.eventModel.create({
         ...action,
         label: DanmakuEventLabel.UserCreate,
         pub: true,
       })
+      await this.danmakuService.setDanProp(event.PID, ['HasEvent'])
       // await this.danmakuService.setDanProp(event.PID, 'Reported')
     }
-    return this.voteAction(event, authn, voteAction)
+    return this.voteAction(event, action.action)
   }
+
   async voteAction(
-    // PID: string,
     event: string | DanmakuEventDocument,
-    // ctx: FastifyBizRequest,
-    authn: AuthnModel,
-    action: DanmakuEventVoteAction,
+    action: DanmakuEventAction,
   ) {
-    // if (!ctx.uid) throw new BadRequestException('未登录')
-    if (typeof event === 'string') {
-      const realEvent = await this.eventModel.findOne({ PID: event })
-      if (
-        !realEvent ||
-        !realEvent.PID ||
-        !realEvent.action ||
-        !(await this.isScopeAdmin(realEvent, authn))
-      )
-        throw new NotFoundException('未找到该事件')
-      event = realEvent
-    }
+    if (typeof event === 'string') event = await this.getDanEvent(event)
+    const authn = this.danmakuService.currentAuthn
     // danmaku event 中返回的结果不会包含投票者的信息，故可使用uid做特定服务器内的唯一识别
     const find = event.votes.find((i) => i.uid === authn.uid)
     if (find)
@@ -218,46 +204,41 @@ export class DanmakuEventService {
         .catch(() => {
           throw new BadRequestException('投票失败')
         })
-    const v = { uid: authn.uid, weight: authn.weight, action }
+    const v = {
+      uid: authn.uid,
+      weight: authn.weight,
+      action: this.actionStr2Num(action),
+    }
     if (!v) throw new BadRequestException('未知的操作')
-    return this.eventModel
-      .findByIdAndUpdate(
-        event._id,
-        {
-          $addToSet: {
-            votes: v,
-          },
-        },
-        { returnDocument: 'after' },
-      )
-      .then((e) => {
-        if (e) return this.fmtEvent(e)
-        else throw new BadRequestException('投票失败，你的投票已撤回')
-      })
-      .catch(() => {
-        throw new BadRequestException('投票失败，你的投票已撤回')
-      })
+    const res = await this.eventModel.updateOne(event._id, {
+      $addToSet: {
+        votes: v,
+      },
+    })
+    if (res.acknowledged) {
+      await this.finishEvent(event)
+      return 'OK'
+    } else throw new BadRequestException('投票失败')
+    // .then((e) => {
+    //   if (e) return this.fmtEvent(e)
+    //   else throw new BadRequestException('投票失败，你的投票已撤回')
+    // })
+    // .catch(() => {
+    //   throw new BadRequestException('投票失败，你的投票已撤回')
+    // })
   }
 
   async finishEvent(
     event: string | DanmakuEventDocument,
-    // ctx: FastifyBizRequest,
-    action?: DanmakuEventVoteAction,
+    actionStr?: DanmakuEventAction, // admin下使用该参数指定处理结果
   ) {
-    // if (!ctx.uid) throw new BadRequestException('未登录')
-    if (typeof event === 'string') {
-      const realEvent = await this.eventModel.findOne({ PID: event })
-      if (
-        !realEvent ||
-        !realEvent.PID ||
-        !realEvent.action
-        // !(await this.canVisit(realEvent, ctx))
-      )
-        throw new NotFoundException('未找到该事件')
-      event = realEvent
-    }
+    if (typeof event === 'string') event = await this.getDanEvent(event)
+    const action = actionStr ? this.actionStr2Num(actionStr) : undefined
+
+    const rmHasEventAttr = async () =>
+      await this.danmakuService.setDanProp(event.PID, ['HasEvent'], true)
     async function resConstructor(
-      type: DanmakuEventVoteAction,
+      type: -1 | 0 | 1,
       operator: 'admin' | 'vote',
       mes?: string,
       event?: DanmakuEventDocument,
@@ -265,7 +246,10 @@ export class DanmakuEventService {
     ) {
       mes = mes ? `(${mes})` : mes
       done = done ? done : type === 0 ? false : true
-      if (done && event) await event.deleteOne()
+      if (done && event) {
+        await event.deleteOne()
+        await rmHasEventAttr()
+      }
       return {
         type,
         operator,
@@ -276,32 +260,31 @@ export class DanmakuEventService {
     // TODO 处理时对event.PID -> danmaku.sender 进行相应奖惩
     if (event.action === DanmakuEventAction.Permit) {
       const acf = {
-        p: async () =>
-          await this.danmakuService.setDanProp(event.PID, 'Hide', true),
-        n: async () => await this.danmakuService.delDanById(event.PID),
+        p: async (operator: 'admin' | 'vote') => {
+          await this.danmakuService.setDanProp(
+            event.PID,
+            operator === 'admin' ? ['Hide', 'Reported'] : ['Reported'],
+            true,
+          )
+        },
+        // n: async () => await this.danmakuService.delDan(event.PID),
       }
       if (action === 1) {
-        await acf.p()
-        return resConstructor(1, 'admin', '解除隐藏', event)
-      } else if (action === -1) {
-        await acf.n()
-        return resConstructor(-1, 'admin', '删除', event)
+        await acf.p('admin')
+        return resConstructor(1, 'admin', '解除"Hide""Reported"属性', event)
       } else {
         const pre = await this.preEvent(),
           ratio = event.toRatio()
         if (event.votes.length < pre.danmakuEventConf.participantNum)
           return resConstructor(0, 'vote', '参与人数过少,无弹幕操作')
         else if (ratio.positive * 100 >= pre.danmakuEventConf.positiveRatio) {
-          await acf.p()
-          return resConstructor(1, 'vote', '解除隐藏', event)
-        } else if (ratio.negative * 100 >= pre.danmakuEventConf.negativeRatio) {
-          await acf.n()
-          return resConstructor(-1, 'vote', '删除', event)
+          await acf.p('vote')
+          return resConstructor(1, 'vote', '解除"Reported"属性', event)
         }
       }
     } else if (event.action === DanmakuEventAction.Like) {
       if (action === 1) {
-        await this.danmakuService.setDanProp(event.PID, 'HighLike')
+        await this.danmakuService.setDanProp(event.PID, ['HighLike'])
         return resConstructor(1, 'admin', '高赞', event)
       } else {
         const pre = await this.preEvent(),
@@ -309,32 +292,39 @@ export class DanmakuEventService {
         if (event.votes.length < pre.danmakuEventConf.participantNum)
           return resConstructor(0, 'vote', '参与人数过少,无弹幕操作')
         else if (ratio.positive * 100 >= pre.danmakuEventConf.positiveRatio) {
-          await this.danmakuService.setDanProp(event.PID, 'HighLike')
+          await this.danmakuService.setDanProp(event.PID, ['HighLike'])
           return resConstructor(1, 'vote', '高赞', event)
         } else if (ratio.positive * 100 >= pre.danmakuEventConf.negativeRatio) {
           return resConstructor(-1, 'vote', '无弹幕操作', event)
-        } else return resConstructor(0, 'vote', '无弹幕操作')
+        }
       }
     } else if (event.action === DanmakuEventAction.Report) {
       if (action === -1) {
-        await this.danmakuService.delDanById(event.PID)
-        return resConstructor(-1, 'admin', '删除弹幕', event)
+        await this.danmakuService.delDan(event.PID)
+        return resConstructor(-1, 'admin', '删除/隐藏弹幕', event)
       } else {
         const pre = await this.preEvent(),
           ratio = event.toRatio()
         if (event.votes.length < pre.danmakuEventConf.participantNum)
           return resConstructor(0, 'vote', '参与人数过少,无弹幕操作')
         else if (ratio.negative * 100 >= pre.danmakuEventConf.autoDelRatio) {
-          await this.danmakuService.delDanById(event.PID)
+          await this.danmakuService.delDan(event.PID)
           return resConstructor(-1, 'vote', '删除弹幕', event)
         } else if (ratio.negative * 100 >= pre.danmakuEventConf.negativeRatio) {
-          await this.danmakuService.setDanProp(event.PID, 'Reported')
+          await this.danmakuService.setDanProp(event.PID, ['Reported'])
           await event.set('label', DanmakuEventLabel.VoteCreate).save()
-          return resConstructor(-1, 'vote', '举报级别上升', event, false)
+          return resConstructor(
+            -1,
+            'vote',
+            '举报级别上升(弹幕添加"Reported"属性)',
+            event,
+            false,
+          )
         } else if (ratio.negative * 100 >= pre.danmakuEventConf.positiveRatio) {
           return resConstructor(1, 'vote', '无弹幕操作', event)
-        } else return resConstructor(0, 'vote', '无弹幕操作')
+        }
       }
-    } else return
+    }
+    return resConstructor(0, 'vote', '无弹幕操作')
   }
 }

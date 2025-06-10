@@ -1,6 +1,6 @@
 import {
   IsEnum,
-  IsInt,
+  // IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -15,18 +15,13 @@ import { isObjectIdOrHexString } from 'mongoose'
 
 import { DanmakuEventAction } from './event.constant'
 
-export enum DanmakuEventVoteAction {
-  Like = 1,
-  Dislike = -1,
-  Report = -1,
-  Pass = 0,
-}
+// export enum DanmakuEventVoteAction {
+//   Like = 1,
+//   Dislike = -1,
+//   Report = -1,
+//   Pass = 0,
+// }
 
-export class DanmakuEventPIDDto {
-  @IsObjectIdOrHexString()
-  @IsNotEmpty({ message: '上级对象ID?' })
-  PID: string
-}
 class DanmakuEventBaseDto {
   @IsObjectIdOrHexString()
   @IsOptional()
@@ -38,24 +33,11 @@ export class DanmakuEventDto extends DanmakuEventBaseDto {
   @IsString()
   @IsEnum(DanmakuEventAction)
   @IsNotEmpty({ message: '事件类型?' })
-  action: string
+  action: DanmakuEventAction
 
   @IsString()
   @IsOptional()
   reason?: string
-}
-
-export class DanmakuEventFinishDto extends DanmakuEventBaseDto {
-  @IsInt()
-  @IsEnum(DanmakuEventVoteAction)
-  @IsOptional()
-  action?: number
-}
-export class DanmakuEventVoteDto extends DanmakuEventFinishDto {
-  @IsInt()
-  @IsEnum(DanmakuEventVoteAction)
-  @IsNotEmpty({ message: '事件类型?' })
-  action: number
 }
 
 export function IsObjectIdOrHexString(validationOptions?: ValidationOptions) {

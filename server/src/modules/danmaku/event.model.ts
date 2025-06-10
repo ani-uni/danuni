@@ -1,15 +1,14 @@
 // import { omit } from 'lodash'
 // import { Schema } from 'mongoose'
-import { ObjectId } from 'mongoose'
 import type { DocumentType } from '@typegoose/typegoose'
 
-import { modelOptions, prop, Severity } from '@typegoose/typegoose'
+import { BadRequestException } from '@nestjs/common'
+import { modelOptions, post, pre, prop, Severity } from '@typegoose/typegoose'
 
 import { DANMAKU_EVENT_COLLECTION_NAME } from '~/constants/db.constant'
 import { BaseModel } from '~/shared/model/base.model'
 
 import { DanmakuEventAction, DanmakuEventLabel } from './event.constant'
-import { DanmakuEventVoteAction } from './event.dto'
 
 export type DanmakuEventDocument = DocumentType<DanmakuEventModel>
 
@@ -20,7 +19,7 @@ export class DanmakuEventVoteModel {
   @prop({ required: true, min: 0, max: 10 })
   weight: number
 
-  @prop({ required: true, enum: DanmakuEventVoteAction })
+  @prop({ required: true })
   action: number
 }
 
@@ -45,9 +44,17 @@ export class DanmakuEventVoteModel {
     allowMixed: Severity.ALLOW,
   },
 })
+@pre<DanmakuEventModel>(/\*/, function () {
+  if (this.PID.startsWith('dm_')) this.PID = this.PID.slice(3)
+  else if (this.PID.startsWith('ep_') || this.PID.startsWith('so_'))
+    throw new BadRequestException('PID must start with "dm_" or "".')
+})
+@post<DanmakuEventModel>(/\*/, function () {
+  if (this.PID) this.PID = `dm_${this.PID}`
+})
 export class DanmakuEventModel extends BaseModel {
   @prop({ required: true, unique: true })
-  PID: ObjectId
+  PID: string
 
   @prop({ required: true, enum: DanmakuEventAction })
   action: string

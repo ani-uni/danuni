@@ -15,6 +15,7 @@ import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 
 import { RESPONSE_PASSTHROUGH_METADATA } from '~/constants/system.constant'
+import { IdPrefixPostHandlers } from '~/utils/id-prefix.util'
 
 @Injectable()
 export class JSONTransformInterceptor implements NestInterceptor {
@@ -73,6 +74,7 @@ export class JSONTransformInterceptor implements NestInterceptor {
         const val = obj[key]
         // first
         if (!isObjectLike(val)) {
+          idPrefixAdd(obj, key, val)
           continue
         }
 
@@ -80,6 +82,7 @@ export class JSONTransformInterceptor implements NestInterceptor {
           obj[key] = val.toJSON()
           // second
           if (!isObjectLike(obj[key])) {
+            idPrefixAdd(obj, key, obj[key])
             continue
           }
           batDel(obj[key], ['__v', '_id', 'id', 'created'])
@@ -96,4 +99,23 @@ export class JSONTransformInterceptor implements NestInterceptor {
 
 function batDel(obj: any, keys: string[]) {
   keys.forEach((key) => Reflect.deleteProperty(obj, key))
+}
+
+function idPrefixAdd(obj: any, key: string, val: string) {
+  if (typeof key === 'string') {
+    switch (key) {
+      case 'EPID':
+        obj[key] = IdPrefixPostHandlers.ep(val)
+        break
+      case 'SOID':
+        obj[key] = IdPrefixPostHandlers.so(val)
+        break
+      case 'DMID':
+      case 'PID':
+        obj[key] = IdPrefixPostHandlers.dm(val)
+        break
+      default:
+        break
+    }
+  }
 }

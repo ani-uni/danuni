@@ -2,14 +2,15 @@ import { Global, Module } from '@nestjs/common'
 
 // import { AuthnModule } from '../authn/auth.module'
 import { DanmakuController } from './danmaku.controller'
-import { DanmakuEService } from './danmaku.e.service'
+import { DanmakuSendService } from './danmaku.send.service'
 import { DanmakuService } from './danmaku.service'
+import { DanmakuEventController } from './event.controller'
 import { DanmakuEventService } from './event.service'
 
 @Global()
 @Module({
-  controllers: [DanmakuController],
-  providers: [DanmakuService, DanmakuEService, DanmakuEventService],
+  controllers: [DanmakuController, DanmakuEventController],
+  providers: [DanmakuService, DanmakuSendService, DanmakuEventService],
   // providers: [
   //   {
   //     provide: DanmakuService,
@@ -21,6 +22,6 @@ import { DanmakuEventService } from './event.service'
   //   },
   // ],
   // imports: [forwardRef(() => AuthnModule)],
-  exports: [DanmakuService, DanmakuEService, DanmakuEventService],
+  exports: [DanmakuService, DanmakuSendService, DanmakuEventService],
 })
 export class DanmakuModule {}

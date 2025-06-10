@@ -2,10 +2,10 @@
 // import { Schema } from 'mongoose'
 
 // import { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
-import type { platfrom } from '@dan-uni/dan-any'
+import type { platform as PF } from '@dan-uni/dan-any'
 import type { DocumentType } from '@typegoose/typegoose'
 
-import { modelOptions, prop, Severity } from '@typegoose/typegoose'
+import { index, modelOptions, prop, Severity } from '@typegoose/typegoose'
 
 import {
   META_COLLECTION_NAME,
@@ -27,24 +27,40 @@ export type MetaDocument = DocumentType<MetaModel>
 //   options: { customName: META_COLLECTION_NAME, allowMixed: Severity.ALLOW },
 // })
 // export class MetaHashModel extends BaseModel {
-class MetaHashModel {
-  // @prop({ required: true, unique: true, trim: true })
-  // FCID: string
+// class MetaHashModel {
+//   // @prop({ required: true, unique: true, trim: true })
+//   // FCID: string
 
+//   @prop({ required: true, trim: true })
+//   hash: string
+
+//   @prop({ default: 1 })
+//   vote: number
+
+//   @prop({ default: false })
+//   exact: boolean
+// }
+
+// class thirdPlatformModel {
+//   @prop({ required: true, unique: true, trim: true })
+//   platform: platfrom
+
+//   @prop({ required: true, trim: true })
+//   id: string
+// }
+
+@index(
+  { platform: 1 },
+  { unique: true, partialFilterExpression: { platform: { $type: 'string' } } },
+)
+class MetaInfoModel {
   @prop({ required: true, trim: true })
-  hash: string
+  platform: PF.PlatformInfoSource
 
-  @prop({ default: 1 })
-  vote: number
-
-  @prop({ default: false })
-  exact: boolean
-}
-
-class thirdPlatformModel {
-  @prop({ required: true, unique: true, trim: true })
-  platform: platfrom
-
+  /**
+   * - bgm?: number // bgm.tv的epid
+   * - tmdb?: string // TMDB的path 如: tv/{series_id}/season/{season_number}/episode/{episode_number}
+   */
   @prop({ required: true, trim: true })
   id: string
 }
@@ -54,24 +70,21 @@ class thirdPlatformModel {
 })
 export class MetaModel extends BaseModel {
   @prop({ required: true, unique: true, trim: true })
-  FCID!: string
+  EPID!: string
 
   @prop()
   duration?: number
 
   @prop({ trim: true })
-  creator?: string
+  maintainer?: string
 
-  // @prop({ type: UniNodeModel })
-  // nodes?: UniNodeModel[]
+  @prop({ type: MetaInfoModel })
+  externalIds?: MetaInfoModel[]
 
-  @prop({ type: MetaHashModel })
-  hashes?: MetaHashModel[]
+  @prop()
+  pgc: boolean
 
-  @prop({ type: thirdPlatformModel })
-  thirdPlatforms?: thirdPlatformModel[]
-
-  fmt() {
-    this.hashes = this.hashes?.sort((a, b) => b.vote - a.vote)
-  }
+  // fmt() {
+  //   this.hashes = this.hashes?.sort((a, b) => b.vote - a.vote)
+  // }
 }

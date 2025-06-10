@@ -25,6 +25,7 @@ import { DanmakuEventModel } from '~/modules/danmaku/event.model'
 // import { WebhookEventModel } from '~/modules/webhook/webhook-event.model'
 // import { WebhookModel } from '~/modules/webhook/webhook.model'
 import { MetaModel } from '~/modules/meta/meta.model'
+import { MetaSourceModel } from '~/modules/meta/source.model'
 // import { UserModel } from '~/modules/user/user.model'
 import { getProviderByTypegooseClass } from '~/transformers/model.transformer'
 
@@ -54,7 +55,7 @@ export const databaseModels = [
   // WebhookEventModel,
   // WebhookModel,
   MetaModel,
-  // MetaHashModel,
+  MetaSourceModel,
   DanmakuModel,
   DanmakuEventModel,
 ].map((model) => getProviderByTypegooseClass(model))

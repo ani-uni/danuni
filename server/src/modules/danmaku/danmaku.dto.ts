@@ -14,7 +14,7 @@ import {
 } from 'class-validator'
 
 // import type { platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
-import { platfrom, UniDMTools } from '@dan-uni/dan-any'
+import { platform, UniDMTools } from '@dan-uni/dan-any'
 
 // import {
 //   DMAttr,
@@ -44,7 +44,7 @@ export class DanmakuDto {
   color?: number
 
   @IsString()
-  @IsOptional()
+  @IsOptional() // TODO 这一文件里3个content上regex关键词检查
   content?: string
 }
 
@@ -90,8 +90,8 @@ export class DanmakuMarkChapterDto extends DanmakuDto {
 
 export class DanmakuFullDto extends DanmakuAdvDto {
   @IsEmail()
-  @IsNotEmpty({ message: '弹幕ID?' })
-  readonly FCID: string
+  @IsNotEmpty({ message: '剧集ID?' })
+  readonly EPID: string
 
   @IsEmail()
   @IsNotEmpty({ message: '发送者ID?' })
@@ -119,11 +119,11 @@ export class DanmakuFullDto extends DanmakuAdvDto {
 
   @IsString()
   @IsOptional()
-  platfrom?: platfrom | string
+  platform?: platform.PlatformDanmakuSource
 
   @IsString()
   @IsOptional()
-  SPMO?: string
+  SOID?: string
 }
 
 export class DanmakuImportDto extends DanmakuFullDto {

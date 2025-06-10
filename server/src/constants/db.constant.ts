@@ -7,7 +7,7 @@
 // export const NOTE_COLLECTION_NAME = 'notes'
 // export const PAGE_COLLECTION_NAME = 'pages'
 export const META_COLLECTION_NAME = 'metas'
-// export const META_HASH_COLLECTION_NAME = 'metahashes'
+export const META_SOURCE_COLLECTION_NAME = 'meta_sources'
 export const DANMAKU_COLLECTION_NAME = 'danmakus'
 export const DANMAKU_EVENT_COLLECTION_NAME = 'danmaku_events'
 

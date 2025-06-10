@@ -1,9 +1,10 @@
-import { platfrom } from '@dan-uni/dan-any'
+import { platform as PF } from '@dan-uni/dan-any'
 import {
   BadRequestException,
   Body,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -12,12 +13,13 @@ import {
 } from '@nestjs/common'
 
 import { ApiController } from '~/common/decorators/api-controller.decorator'
-import { Authn, CurrentAuthnModel } from '~/common/decorators/authn.decorator'
+import { Authn } from '~/common/decorators/authn.decorator'
 // import { Auth } from '~/common/decorators/auth.decorator'
 import { HttpCache } from '~/common/decorators/cache.decorator'
 // import { CurrentCtx, Level } from '~/common/decorators/level.decorator'
 import { AuthnGuard } from '~/common/guards/authn.guard'
-import { AuthnModel, Roles, Scopes } from '~/constants/authn.constant'
+import { Roles, Scopes } from '~/constants/authn.constant'
+import { checkID } from '~/utils/id-prefix.util'
 
 // import { LevelGuard } from '~/common/guards/level.guard'
 // import { FastifyBizRequest } from '~/transformers/get-req.transformer'
@@ -38,9 +40,10 @@ import { MetaAdvService } from './meta.adv.service'
 // import { AuthService } from '../auth/auth.service'
 // import { AuthnService } from '../authn/authn.service'
 // import { ConfigsService } from '../configs/configs.service'
-import { MetaDto } from './meta.dto'
+import { MetaDto, MetaSourceDto, MetaTransferDto } from './meta.dto'
 // import { MetaDocument } from './meta.model'
 import { MetaService } from './meta.service'
+import { MetaSourceService } from './source.service'
 
 @ApiController(['meta'])
 @UseGuards(AuthnGuard)
@@ -48,6 +51,7 @@ export class MetaController {
   constructor(
     private readonly metaService: MetaService,
     private readonly metaAdvService: MetaAdvService,
+    private readonly metaSourceService: MetaSourceService,
     // private readonly authService: AuthService,
     // private readonly configService: ConfigsService,
 
@@ -55,123 +59,219 @@ export class MetaController {
     // private readonly authnService: AuthnService,
   ) {}
 
-  @Get('/:FCID')
+  @Get('/:ID')
   @Authn({ role: [Roles.guest] })
-  async getMetaByFCID(
-    @Param('FCID') FCID: string,
+  async getEp(
+    @Param('ID') ID: string,
     // @Query('hash') hash?: string,
   ) {
-    const meta = await this.metaService.getMetaByID(FCID)
-    //TODO 由config读取是否无则创建新meta，或指定domain下自动创建, eg. xxx@bgm.tv
-    // if (meta && hash) meta = await this.metaService.voteHash(meta, hash)
-    return meta
+    const Id = checkID(ID, ['ep', 'so'])
+    if (Id.type === 'ep') return await this.metaService.getEp(Id.id, true)
+    else if (Id.type === 'so') return await this.metaSourceService.getSo(Id.id)
+    else throw new BadRequestException('ID格式错误') // 此行由于checkID不会异常
   }
-  @Get('/hash/:hash')
+  @Get(['/:type/external-id/:platform', '/external-id/:platform'])
   @Authn({ role: [Roles.guest] })
-  async getMetaByHash(@Param('hash') hash: string) {
-    return this.metaService.listMetaByHash(hash)
-  }
-  @Get('/3rd/:platform/:id')
-  @Authn({
-    role: [Roles.guest],
-    pass: {
-      role: [Roles.user, Roles.bot],
-      scope: [Scopes.metaRefreshOrFetchFromRemoteOrigin],
-    },
-  })
-  async getMetaBy3rdID(
-    @Param('platform') platform: platfrom,
-    @Param('id') id: string,
-    @Query('refresh') refresh: boolean = false,
-    @CurrentAuthnModel() authn: AuthnModel,
+  async findEpByExternalID(
+    @Param('platform') platform: PF.PlatformSource,
+    @Query('id') id: string,
+    @Param('type') type?: 'ep' | 'so',
   ) {
-    return this.metaService.getMetaBy3rdID(
-      platform,
-      id,
-      refresh ? authn : undefined,
-    )
+    if (platform in PF.PlatformDanmakuSources) {
+      const so = await this.metaSourceService.findSo(
+        id,
+        platform as PF.PlatformDanmakuSource,
+      )
+      if (!type || type === 'so') return so
+      else if (type === 'ep') {
+        if (so.exact) return this.metaService.getEp(so.exact.EPID)
+        else throw new NotFoundException('未找到该剧集')
+      }
+    } else if (platform in PF.PlatformInfoSources) {
+      const ep = await this.metaService.findEp(
+        id,
+        platform as PF.PlatformInfoSource,
+      )
+      return ep
+    }
   }
-  @Get(['/up/me', '/up/:creator'])
-  // @Level(Levels.GuestOrBan)
-  @Authn({ role: [Roles.user, Roles.bot] })
-  async getMetasByCreator(
-    @Param('creator') creator: string,
-    // @CurrentCtx() ctx: FastifyBizRequest,
-    @CurrentAuthnModel() authn: AuthnModel,
+  @Get(['/:type/hash/:hash', '/hash/:hash'])
+  @Authn({ role: [Roles.guest] })
+  async findEpByHash(
+    @Param('hash') hash?: string,
+    @Param('type') type?: 'ep' | 'so',
+    @Query('hash') hash2?: string,
   ) {
-    return this.metaService.listMetasByCreator(creator || 'me', authn)
+    hash = hash ?? hash2
+    if (!hash) throw new BadRequestException('Hash?')
+    const so = await this.metaSourceService.findSo(hash, 'hash')
+    if (!type || type === 'so') return so
+    else if (type === 'ep') {
+      if (so.exact) return this.metaService.getEp(so.exact.EPID)
+      else throw new NotFoundException('未找到该剧集')
+    }
   }
-
-  @Post('/')
-  @HttpCache({ disable: true })
-  // @Level(Levels.Min) // 根据config判断决定等级要求，此处仅运行中间层获取必要ctx
-  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaCreate] })
-  async createMetaRandom(
-    @Body() metaDto: MetaDto,
-    // @CurrentCtx() ctx: FastifyBizRequest,
-    @CurrentAuthnModel() authn: AuthnModel,
-  ) {
-    return this.metaService.createMeta(
-      authn,
-      {
-        ...metaDto,
-        hashes: metaDto.hashes?.map((hash) => ({ ...hash, exact: true })),
-      },
-      // ctx.uid,
-    )
-  }
-  // @Post('/FCID')
-  // @HttpCache({ disable: true })
-  // //auth admin
-  // async createMeta(@Body() metaDto: MetaDto) {
-  //   return this.metaService.createMeta(metaDto.FCID, metaDto)
+  // @Get(['/up/me', '/up/:creator'])
+  // // @Level(Levels.GuestOrBan)
+  // @Authn({ role: [Roles.user, Roles.bot] })
+  // async getMetasByCreator(
+  //   @Param('creator') creator: string,
+  //   // @CurrentCtx() ctx: FastifyBizRequest,
+  //   @CurrentAuthnModel() authn: AuthnModel,
+  // ) {
+  //   return this.metaService.listMetasByCreator(creator || 'me', authn)
   // }
-  @Post('/:FCID/hash/:hash/vote')
-  @HttpCache({ disable: true })
-  // @Level(Levels.Default)
-  @Authn({
-    role: [Roles.user],
-    scope: [Scopes.metaHashVote],
-    pass: { scope: [Scopes.metaHashNew] },
-  })
-  async voteHash(
-    @Param('FCID') FCID: string,
-    @Param('hash') hash: string,
-    @CurrentAuthnModel() authn: AuthnModel,
-  ) {
-    if (!hash) throw new BadRequestException('hash不能为空') // 此处type hash必有值，但js不会校验是否有值
-    const meta = await this.metaService.getMeta(FCID)
-    if (meta) return this.metaService.voteHash(meta, hash, authn)
-    else throw new BadRequestException('未找到该弹幕库')
-  }
 
-  @Delete('/:FCID')
+  @Post('/ep')
   @HttpCache({ disable: true })
-  // @Level(Levels.GuestOrBan)
-  @Authn({ role: [Roles.user, Roles.bot], pass: { scope: [Scopes.metaDel] } })
-  async delMeta(
-    @Param('FCID') FCID: string,
-    // @CurrentCtx() ctx: FastifyBizRequest,
-    @CurrentAuthnModel() authn: AuthnModel,
-  ) {
-    return this.metaAdvService.delMeta(FCID, authn)
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaCreate] })
+  async createEp(@Body() metaDto: MetaDto) {
+    return this.metaService.createEp(metaDto)
+    // 已启用了dto whitelist，无需手动删除多余字段
+    // return this.metaService.createEp({
+    //   ...metaDto,
+    //   EPID: undefined,
+    //   maintainer: undefined,
+    //   pgc: undefined,
+    // })
   }
-
-  @Patch('/:FCID')
+  @Post('/ep/:EPID/transfer')
   @HttpCache({ disable: true })
-  // @Level(Levels.GuestOrBan)
   @Authn({
     role: [Roles.user, Roles.bot],
-    pass: { scope: [Scopes.metaModify] },
+    scope: [Scopes.metaEdit],
   })
-  async updateMeta(
-    @Param('FCID') FCID: string,
-    @Body() metaDto: MetaDto,
-    // @CurrentCtx() ctx: FastifyBizRequest,
-    @CurrentAuthnModel() authn: AuthnModel,
+  async transferEp(
+    @Param('EPID') EPID: string,
+    @Body() metaTransferDto: MetaTransferDto,
   ) {
-    return this.metaService.patchMeta(FCID, metaDto, authn)
+    return this.metaService.transferEp(EPID, metaTransferDto.sid)
   }
+  @Patch('/ep/:EPID')
+  @HttpCache({ disable: true })
+  @Authn({
+    role: [Roles.user, Roles.bot],
+    scope: [Scopes.metaEdit],
+    pass: { scope: [Scopes.metaEditPgc] }, // 该scope与pass配合canEditEp
+  })
+  async editEp(@Param('EPID') EPID: string, @Body() metaDto: MetaDto) {
+    return this.metaService.editEp({ ...metaDto, EPID })
+  }
+  @Delete('/ep/:EPID')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaDel] })
+  async delEp(@Param('EPID') EPID: string) {
+    return this.metaService.delEp(EPID)
+  }
+
+  @Post('/so')
+  @HttpCache({ disable: true })
+  @Authn({
+    role: [Roles.user, Roles.bot],
+    scope: [Scopes.metaEdit],
+    pass: { scope: [Scopes.metaEditPgc] },
+  })
+  async createSo(@Body() metaSourceDto: MetaSourceDto) {
+    return this.metaSourceService.createSo(metaSourceDto)
+    // return this.metaSourceService.createSo({
+    //   ...metaSourceDto,
+    //   SOID: undefined,
+    // })
+  }
+  @Patch('/so/:SOID')
+  @HttpCache({ disable: true })
+  @Authn({
+    role: [Roles.user, Roles.bot],
+    scope: [Scopes.metaEdit],
+    pass: { scope: [Scopes.metaEditPgc] },
+  })
+  async editSo(
+    @Param('SOID') SOID: string,
+    @Body() metaSourceDto: MetaSourceDto,
+  ) {
+    return this.metaSourceService.editSo({ ...metaSourceDto, SOID })
+  }
+  @Delete('/so/:SOID')
+  @HttpCache({ disable: true })
+  @Authn({
+    role: [Roles.user, Roles.bot],
+    scope: [Scopes.metaEdit],
+    pass: { scope: [Scopes.metaEditPgc] },
+  })
+  async delSo(@Param('SOID') SOID: string) {
+    return this.metaSourceService.delSo(SOID)
+  }
+
+  // @Post('/')
+  // @HttpCache({ disable: true })
+  // // @Level(Levels.Min) // 根据config判断决定等级要求，此处仅运行中间层获取必要ctx
+  // @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaCreate] })
+  // async createMetaRandom(
+  //   @Body() metaDto: MetaDto,
+  //   // @CurrentCtx() ctx: FastifyBizRequest,
+  //   @CurrentAuthnModel() authn: AuthnModel,
+  // ) {
+  //   return this.metaService.createMeta(
+  //     authn,
+  //     {
+  //       ...metaDto,
+  //       hashes: metaDto.hashes?.map((hash) => ({ ...hash, exact: true })),
+  //     },
+  //     // ctx.uid,
+  //   )
+  // }
+  // // @Post('/FCID')
+  // // @HttpCache({ disable: true })
+  // // //auth admin
+  // // async createMeta(@Body() metaDto: MetaDto) {
+  // //   return this.metaService.createMeta(metaDto.FCID, metaDto)
+  // // }
+  // @Post('/:FCID/hash/:hash/vote')
+  // @HttpCache({ disable: true })
+  // // @Level(Levels.Default)
+  // @Authn({
+  //   role: [Roles.user],
+  //   scope: [Scopes.metaHashVote],
+  //   pass: { scope: [Scopes.metaHashNew] },
+  // })
+  // async voteHash(
+  //   @Param('FCID') FCID: string,
+  //   @Param('hash') hash: string,
+  //   @CurrentAuthnModel() authn: AuthnModel,
+  // ) {
+  //   if (!hash) throw new BadRequestException('hash不能为空') // 此处type hash必有值，但js不会校验是否有值
+  //   const meta = await this.metaService.getMeta(FCID)
+  //   if (meta) return this.metaService.voteHash(meta, hash, authn)
+  //   else throw new BadRequestException('未找到该弹幕库')
+  // }
+
+  // @Delete('/:FCID')
+  // @HttpCache({ disable: true })
+  // // @Level(Levels.GuestOrBan)
+  // @Authn({ role: [Roles.user, Roles.bot], pass: { scope: [Scopes.metaDel] } })
+  // async delMeta(
+  //   @Param('FCID') FCID: string,
+  //   // @CurrentCtx() ctx: FastifyBizRequest,
+  //   @CurrentAuthnModel() authn: AuthnModel,
+  // ) {
+  //   return this.metaAdvService.delMeta(FCID, authn)
+  // }
+
+  // @Patch('/:FCID')
+  // @HttpCache({ disable: true })
+  // // @Level(Levels.GuestOrBan)
+  // @Authn({
+  //   role: [Roles.user, Roles.bot],
+  //   pass: { scope: [Scopes.metaModify] },
+  // })
+  // async updateMeta(
+  //   @Param('FCID') FCID: string,
+  //   @Body() metaDto: MetaDto,
+  //   // @CurrentCtx() ctx: FastifyBizRequest,
+  //   @CurrentAuthnModel() authn: AuthnModel,
+  // ) {
+  //   return this.metaService.patchMeta(FCID, metaDto, authn)
+  // }
 
   // @Get()
   // async getMasterInfo(@IsAuthenticated() isAuthenticated: boolean) {

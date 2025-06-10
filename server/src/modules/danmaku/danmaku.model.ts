@@ -4,12 +4,11 @@ import type { DocumentType } from '@typegoose/typegoose'
 
 // import { DMAttr, Modes, Pools } from '@dan-uni/dan-any/src/utils/dm-gen'
 // import { createDMID, platfrom } from '@dan-uni/dan-any/src/utils/id-gen'
-import { platfrom, UniDMTools, UniIDTools } from '@dan-uni/dan-any'
-import { ConflictException } from '@nestjs/common'
+import { platform, UniDMTools } from '@dan-uni/dan-any'
+// import { ConflictException } from '@nestjs/common'
 import {
-  getModelForClass,
+  // getModelForClass,
   modelOptions,
-  pre,
   prop,
   Severity,
 } from '@typegoose/typegoose'
@@ -17,7 +16,7 @@ import {
 import { DANMAKU_COLLECTION_NAME } from '~/constants/db.constant'
 import { BaseModel } from '~/shared/model/base.model'
 
-const { createDMID } = UniIDTools
+// const { createDMID } = UniIDTools
 
 export type DanmakuDocument = DocumentType<DanmakuModel>
 
@@ -27,18 +26,16 @@ export type DanmakuDocument = DocumentType<DanmakuModel>
   //   timestamps: false,
   // },
 })
-@pre<DanmakuModel>('validate', async function () {
-  if (!this.ctime) this.ctime = new Date().toISOString()
-  else this.ctime = new Date(this.ctime).toISOString()
-  if (!this.DMID)
-    this.DMID = createDMID(this.content, this.senderID, this.ctime)
-  const danmakuModel = getModelForClass(DanmakuModel)
-  const hasDMID = await danmakuModel
-    .findOne({ FCID: this.FCID, DMID: this.DMID })
-    .lean({ virtuals: true })
-  if (hasDMID?.FCID && hasDMID.DMID)
-    throw new ConflictException('DMID already exists')
-})
+// @pre<DanmakuModel>(/(find|update|replace|insert|save).*/i, async function () {
+//   // if (!this.DMID)
+//   //   this.DMID = createDMID(this.content, this.senderID, this.ctime)
+//   // const danmakuModel = getModelForClass(DanmakuModel)
+//   // const hasDMID = await danmakuModel
+//   //   .findOne({ FCID: this.FCID, DMID: this.DMID })
+//   //   .lean({ virtuals: true })
+//   // if (hasDMID?.FCID && hasDMID.DMID)
+//   //   throw new ConflictException('DMID already exists')
+// })
 // @pre<DanmakuModel>('replaceOne', function () {
 //   this.DMID = createDMID(this.content, this.senderID, this.ctime)
 // })
@@ -58,11 +55,11 @@ export type DanmakuDocument = DocumentType<DanmakuModel>
 //   this.DMID = createDMID(this.content, this.senderID, this.ctime)
 // })
 export class DanmakuModel extends BaseModel {
-  @prop({ required: true, trim: true })
+  @prop({ alias: 'id' })
   DMID!: string
 
   @prop({ required: true, trim: true })
-  FCID!: string
+  EPID!: string
 
   @prop({ required: true, min: 0 })
   progress!: number
@@ -98,10 +95,12 @@ export class DanmakuModel extends BaseModel {
   attr?: UniDMTools.DMAttr[]
 
   @prop({ trim: true })
-  platfrom?: platfrom
+  platform?: platform.PlatformDanmakuSource
 
-  @prop({ trim: true })
-  SPMO?: string
+  // @prop({ trim: true })
+  // SPMO?: string
+  @prop({ required: true, trim: true, default: 'default' })
+  SOID!: string
 
   @prop({ trim: true })
   extraStr?: string
