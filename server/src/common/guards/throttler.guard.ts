@@ -12,7 +12,7 @@ export class ExtendThrottlerGuard extends ThrottlerGuard {
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
     const req = getNestExecutionContextRequest(context)
 
-    if (req.authn.uid && req.authn.uid !== 'guest@danuni') {
+    if (req.authn?.uid && req.authn.uid !== 'guest@danuni') {
       return true
     }
     return super.shouldSkip(context)
