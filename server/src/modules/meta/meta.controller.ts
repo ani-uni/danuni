@@ -64,16 +64,15 @@ export class MetaController {
       return ep
     }
   }
-  @Get(['/:type/hash/:hash', '/hash/:hash'])
+  @Get(['/:type/hash', '/hash'])
   @Authn({ role: [Roles.guest] })
   async findEpByHash(
-    @Param('hash') hash?: string,
     @Param('type') type?: 'ep' | 'so',
-    @Query('hash') hash2?: string,
+    @Query('hash') hash?: string,
+    @Query('alg') algorithm?: string,
   ) {
-    hash = hash ?? hash2
     if (!hash) throw new BadRequestException('Hash?')
-    const so = await this.metaSourceService.findSo(hash, 'hash')
+    const so = await this.metaSourceService.findSo(hash, 'hash', algorithm)
     if (!type || type === 'so') return so
     else if (type === 'ep') {
       if (so.exact) return this.metaService.getEp(so.exact.EPID)

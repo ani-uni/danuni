@@ -60,12 +60,17 @@ export class MetaSourceService {
     return this.modelPostHook(so)
   }
 
-  async findSo(id: string, platform?: PF.PlatformDanmakuSource | 'hash') {
+  async findSo(
+    id: string,
+    platform?: PF.PlatformDanmakuSource | 'hash',
+    hashAlg?: string,
+  ) {
     // const ep = await this.model.findOne({ platform, id })
     if (platform === 'hash') {
       const exact = await this.model.findOne(
         IdPrefixPreHandler({
           'hash.hash': id,
+          'hash.algorithm': hashAlg || undefined,
           'hash.exact': true,
         }),
       )
@@ -75,6 +80,7 @@ export class MetaSourceService {
           .find(
             IdPrefixPreHandler({
               'hash.hash': id,
+              'hash.algorithm': hashAlg || undefined,
               'hash.exact': false,
             }),
           )
