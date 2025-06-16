@@ -86,7 +86,7 @@ describe('其它', () => {
   })
   it('比较(extra)', () => {
     const commonSample = {
-      EPID: 'test@du',
+      SOID: 'test@du',
       content: 'T Sample',
       extra: {
         danuni: {

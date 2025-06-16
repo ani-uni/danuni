@@ -296,7 +296,7 @@ export type ctime = string | number | bigint | Date
 // }
 
 export interface UniDMObj {
-  EPID: string
+  SOID: string
   progress: number
   mode: Modes
   fontsize: number
@@ -308,7 +308,6 @@ export interface UniDMObj {
   pool: Pools
   attr: DMAttr[]
   platform: PlatformDanmakuSource | string
-  SOID: string
   extra: string | Extra
   extraStr: string
   DMID: string
@@ -324,10 +323,10 @@ export class UniDM {
   // syncAnchor = BigInt(Date.now())
   constructor(
     /**
-     * EPID
-     * @description 由某一danuni服务确定的某一剧集的ID
+     * 资源ID
+     * @description 由某一danuni服务确定的某一剧集下不同资源(不同视频站/字幕组具有细节差异)的ID
      */
-    public EPID: string,
+    public SOID: string,
     /**
      * 弹幕出现位置(单位s;精度为ms,即保留三位小数)
      */
@@ -385,11 +384,6 @@ export class UniDM {
      */
     public platform?: PlatformDanmakuSource | string,
     /**
-     * 资源ID
-     * @description 由某一danuni服务确定的某一剧集下不同资源(不同视频站/字幕组具有细节差异)的ID
-     */
-    public SOID?: string,
-    /**
      * 弹幕原始数据(不推荐使用)
      * @description 适用于无法解析的B站代码弹幕、Artplayer弹幕样式等
      * @description 初步约定:
@@ -417,7 +411,7 @@ export class UniDM {
   static create(args?: Partial<UniDMObj>) {
     return args
       ? new UniDM(
-          args.EPID || ID.fromNull().toString(),
+          args.SOID || ID.fromNull().toString(),
           args.progress,
           args.mode,
           args.fontsize,
@@ -429,7 +423,6 @@ export class UniDM {
           args.pool,
           args.attr,
           args.platform,
-          args.SOID,
           typeof args.extra === 'object'
             ? JSON.stringify(args.extra)
             : args.extra || args.extraStr,
@@ -454,7 +447,7 @@ export class UniDM {
   /**
    * 弹幕id
    * @description sha3-256(content+senderID+ctime)截取前8位
-   * @description 同一EPID下唯一
+   * @description 同一SOID下唯一
    */
   toDMID() {
     return createDMID(this.content, this.senderID, this.ctime)
@@ -463,12 +456,11 @@ export class UniDM {
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
       checks = (
         [
-          'EPID',
+          'SOID',
           'content',
           'mode',
           'platform',
           'pool',
-          'SOID',
         ] satisfies (keyof UniDMObj)[]
       ).every((k) => isSame(k))
     // 如果两个对象的extra都是空对象，只检查基本字段
@@ -505,7 +497,7 @@ export class UniDM {
     )
   }
   minify() {
-    type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'EPID'>
+    type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'SOID'>
     const def: UObj = UniDM.create(),
       dan: UObj = UniDM.create(this)
     // const prototypes = Object.getOwnPropertyNames(this)
@@ -513,7 +505,7 @@ export class UniDM {
       const k = key as keyof UObj,
         v = dan[k]
       // if (key in prototypes) continue
-      if (key === 'EPID') continue
+      if (key === 'SOID') continue
       else if (!v) delete dan[k]
       else if (v === def[k]) delete dan[k]
       else {
@@ -662,7 +654,7 @@ export class UniDM {
       bili: ExtraBili
     }
     if (args.oid && !cid) cid = args.oid
-    const EPID = ID.fromBili({ cid }),
+    const SOID = `def::${ID.fromBili({ cid })}`,
       senderID = ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
     const pool = args.pool, //暂时不做处理，兼容bili的pool格式
@@ -700,7 +692,7 @@ export class UniDM {
     // else if (args.mode === 9) extra.bili.bas = args.content
     return this.create({
       ...args,
-      EPID: EPID.toString(),
+      SOID: SOID.toString(),
       // progress: args.progress,
       mode,
       // fontsize: args.fontsize,
@@ -721,11 +713,11 @@ export class UniDM {
   }
   static fromBiliCommand(args: DMBiliCommand, cid?: bigint) {
     if (args.oid && !cid) cid = args.oid
-    const EPID = ID.fromBili({ cid }),
+    const SOID = ID.fromBili({ cid }),
       senderID = ID.fromBili({ mid: args.mid })
     return this.create({
       ...args,
-      EPID: EPID.toString(),
+      SOID: SOID.toString(),
       // progress: args.progress,
       mode: Modes.Ext,
       // fontsize: args.fontsize,
@@ -748,11 +740,11 @@ export class UniDM {
     })
   }
   static fromDplayer(args: DMDplayer, playerID: string, domain: string) {
-    const EPID = ID.fromUnknown(playerID, domain),
+    const SOID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown(args.midHash, domain)
     return this.create({
       ...args,
-      EPID: EPID.toString(),
+      SOID: SOID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'dplayer'),
       // fontsize: 25,
@@ -775,7 +767,7 @@ export class UniDM {
     }
   }
   static fromArtplayer(args: DMArtplayer, playerID: string, domain: string) {
-    const EPID = ID.fromUnknown(playerID, domain),
+    const SOID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown('', domain)
     let extra = args.border
       ? ({ artplayer: { border: args.border, style: {} } } as Extra)
@@ -790,7 +782,7 @@ export class UniDM {
     }
     return this.create({
       ...args,
-      EPID: EPID.toString(),
+      SOID: SOID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'artplayer'),
       // fontsize: 25,
@@ -818,10 +810,10 @@ export class UniDM {
     episodeId: string,
     domain = PlatformDanmakuOnlySource.DanDanPlay,
   ) {
-    const EPID = ID.fromUnknown(episodeId, domain)
+    const SOID = ID.fromUnknown(`def::${episodeId}`, domain)
     return this.create({
       ...args,
-      EPID: EPID.toString(),
+      SOID: SOID.toString(),
       // progress: args.progress,
       mode: this.transMode(args.mode, 'ddplay'),
       // fontsize: 25,

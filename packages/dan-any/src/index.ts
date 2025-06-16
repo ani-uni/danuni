@@ -77,7 +77,7 @@ export type DM_format =
 type shareItems = Partial<
   Pick<
     UniDMTools.UniDMObj,
-    'EPID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode'
+    'SOID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode'
   >
 >
 
@@ -87,7 +87,7 @@ export class UniPool {
     function isShared(key: keyof UniDMTools.UniDMObj) {
       return new Set(dans.map((d) => d[key])).size === 1
     }
-    if (isShared('EPID')) this.shared.EPID = dans[0].EPID
+    if (isShared('SOID')) this.shared.SOID = dans[0].SOID
     if (isShared('senderID')) this.shared.senderID = dans[0].senderID
     if (isShared('platform')) this.shared.platform = dans[0].platform
     if (isShared('SOID')) this.shared.SOID = dans[0].SOID
@@ -124,7 +124,7 @@ export class UniPool {
    * @param lifetime 查重时间区段，单位秒 (默认为0，表示不查重)
    */
   merge(lifetime = 0) {
-    if (!this.shared.EPID) {
+    if (!this.shared.SOID) {
       console.error(
         "本功能仅支持同弹幕库内使用，可先 .split('EPID') 在分别使用",
       )
@@ -251,7 +251,7 @@ export class UniPool {
       data.danmakus.map(
         (d) =>
           new UniDM(
-            d.EPID,
+            d.SOID,
             d.progress,
             d.mode as number,
             d.fontsize,
@@ -263,7 +263,6 @@ export class UniPool {
             d.pool as number,
             d.attr as UniDMTools.DMAttr[],
             d.platform,
-            d.SOID,
             d.extra,
             d.DMID,
           ),
@@ -279,7 +278,7 @@ export class UniPool {
       create(DanmakuReplySchema, {
         danmakus: this.dans.map((d) => {
           return {
-            EPID: d.EPID,
+            SOID: d.SOID,
             DMID: d.DMID,
             progress: d.progress,
             mode: d.mode as number,
@@ -292,7 +291,6 @@ export class UniPool {
             pool: d.pool as number,
             attr: d.attr,
             platform: d.platform,
-            SOID: d.SOID,
             extra: d.extraStr,
           }
         }),
@@ -452,7 +450,7 @@ export class UniPool {
     return parseAssRawField(ass)
   }
   toASS(options: AssGenOptions = { substyle: {} }): string {
-    const fn = this.shared.EPID
+    const fn = this.shared.SOID
     return generateASS(this, { filename: fn, title: fn, ...options })
   }
 }

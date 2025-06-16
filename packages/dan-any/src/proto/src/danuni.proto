@@ -4,6 +4,15 @@ package danuni.danmaku.v1;
 
 import public "google/protobuf/timestamp.proto";
 
+service DanmakuService {
+  rpc listDan (listDanReq) returns (DanmakuReply) {}
+}
+
+message listDanReq {
+  string ID = 1;
+  optional int32 seg = 2;
+}
+
 enum Mode {
   Normal = 0;
   Bottom = 1;
@@ -20,7 +29,7 @@ enum Pool {
 }
 
 message Danmaku {
-  string EPID = 1;
+  string SOID = 1;
   string DMID = 2;
   int32 progress = 3;
   Mode mode = 4;
@@ -33,8 +42,7 @@ message Danmaku {
   Pool pool = 11;
   repeated string attr = 12;
   string platform = 13;
-  optional string SOID = 14;
-  optional string extra = 15;
+  optional string extra = 14;
 }
 
 message DanmakuReply {
