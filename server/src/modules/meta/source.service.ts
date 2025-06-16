@@ -1,3 +1,6 @@
+import { zstdCompressSync, zstdDecompressSync } from 'node:zlib'
+import { jwtVerify, SignJWT } from 'jose'
+import { AnyBulkWriteOperation } from 'mongoose'
 import { nanoid } from 'nanoid'
 
 import { platform as PF } from '@dan-uni/dan-any'
@@ -10,8 +13,10 @@ import {
 } from '@nestjs/common'
 import { ReturnModelType } from '@typegoose/typegoose'
 
+import { SECURITY } from '~/app.config'
 import { InjectModel } from '~/transformers/model.transformer'
-import { IdPrefixPreHandler } from '~/utils/id-prefix.util'
+import { IdPrefixPreHandler, IdPrefixPreHandlers } from '~/utils/id-prefix.util'
+import { difference } from '~/utils/set.util'
 
 import { MetaService } from './meta.service'
 import { MetaSourceDocument, MetaSourceModel } from './source.model'
@@ -28,36 +33,11 @@ export class MetaSourceService {
     return this.metaSourceModel
   }
 
-  modelPreHook(source: { EPID?: string; SOID?: string; [key: string]: any }) {
-    if (source.EPID) {
-      if (source.EPID.startsWith('ep_')) source.EPID = source.EPID.slice(3)
-      else if (source.EPID.startsWith('so_') || source.EPID.startsWith('dm_'))
-        throw new BadRequestException('EPID must start with "ep_" or "".')
-    }
-    if (source.SOID) {
-      if (source.SOID.startsWith('so_')) source.SOID = source.SOID.slice(3)
-      else if (source.SOID.startsWith('ep_') || source.SOID.startsWith('dm_'))
-        throw new BadRequestException('SOID must start with "so_" or "".')
-    }
-    return source
-  }
-  modelPostHook(source: MetaSourceDocument) {
-    if (source.EPID) source.EPID = `ep_${source.EPID}`
-    if (source.SOID) source.SOID = `so_${source.SOID}`
-    return source
-  }
-  modelArray(
-    source: MetaSourceDocument[],
-    cb: (source: MetaSourceDocument) => MetaSourceDocument,
-  ) {
-    return source.map(cb)
-  }
-
   async getSo(SOID: string) {
     const so = await this.model.findOne(IdPrefixPreHandler({ SOID }))
     // .lean({ virtuals: true })
     if (!so) throw new NotFoundException('未找到该资源')
-    return this.modelPostHook(so)
+    return so
   }
 
   async findSo(
@@ -91,7 +71,7 @@ export class MetaSourceService {
           throw new NotFoundException('未找到该资源')
         return {
           exact: null,
-          similar: this.modelArray(similar, this.modelPostHook),
+          similar,
         }
       }
       return { exact, similar: [] }
@@ -103,7 +83,7 @@ export class MetaSourceService {
         }),
       )
       if (!so) throw new NotFoundException('未找到该资源')
-      return { exact: this.modelPostHook(so), similar: [] }
+      return { exact: so, similar: [] }
     }
   }
 
@@ -134,6 +114,12 @@ export class MetaSourceService {
     return false
   }
 
+  async isMaintainer(so: string | MetaSourceDocument, throwError?: boolean) {
+    const soReal = typeof so === 'string' ? await this.getSo(so) : so,
+      epReal = await this.metaService.getEp(soReal.EPID)
+    return this.metaService.isMaintainer(epReal, throwError)
+  }
+
   async createSo(data: Partial<MetaSourceModel> & { EPID: string }) {
     // const ep = await this.metaService.getEp(data.EPID)
     // await this.metaService.canEditEp(ep, true)
@@ -152,7 +138,7 @@ export class MetaSourceService {
         SOID,
       }),
     )
-    if (so.EPID && so.SOID) return this.modelPostHook(so)
+    if (so.EPID && so.SOID) return so
     else throw new BadRequestException('资源创建失败')
   }
 
@@ -184,5 +170,148 @@ export class MetaSourceService {
     const res = await this.model.deleteOne({ SOID })
     if (res.acknowledged) return 'OK'
     else throw new BadRequestException('资源删除失败')
+  }
+
+  async diffSo(data: Omit<MetaSourceModel, 'id'>[], sign = false) {
+    data = data.map(IdPrefixPreHandler) as Omit<MetaSourceModel, 'id'>[]
+    const SOID = data.map((d) => d.SOID)
+    const existingSo = await this.model
+      .find({ SOID: { $in: SOID } })
+      .lean({ virtuals: true })
+    const existingSoMap = new Map(existingSo.map((d) => [d.SOID, d]))
+
+    const newItems: Omit<MetaSourceModel, 'id'>[] = [],
+      updatedItems: {
+        updatedFields: (keyof MetaSourceModel)[]
+        newData: Omit<MetaSourceModel, 'id'>
+      }[] = [],
+      duplicatedSOID: string[] = [],
+      bulkOperations: AnyBulkWriteOperation[] = []
+    for (const d of data) {
+      const existingDoc = existingSoMap.get(d.SOID)
+      // 新增项
+      if (!existingDoc) {
+        newItems.push(d)
+        if (sign)
+          bulkOperations.push({
+            insertOne: {
+              document: d,
+            },
+          })
+      } else {
+        // 已存在，比较字段以确定是否更新
+        const updatedFields: (keyof MetaSourceModel)[] = []
+        let isModified = false
+        // 比较每个 key (除了 _id)
+        for (const key in d) {
+          if (key !== '_id' && d[key] !== existingDoc[key]) {
+            updatedFields.push(key as keyof MetaSourceModel)
+            isModified = true
+          }
+        }
+        if (isModified) {
+          updatedItems.push({
+            updatedFields,
+            newData: d,
+          })
+          if (sign)
+            bulkOperations.push({
+              updateOne: {
+                filter: { SOID: d.SOID },
+                update: { $set: d }, // 使用 $set 更新整个文档
+              },
+            })
+        } else duplicatedSOID.push(d.SOID)
+      }
+    }
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      new: newItems,
+      updated: updatedItems,
+      duplicated: duplicatedSOID,
+      jwt,
+    }
+  }
+
+  async batchDelSo(SOID: string[], sign = false) {
+    const existingSOID = await this.model
+      .find({ SOID }, { SOID: 1 })
+      .lean({ virtuals: true })
+    const inSOIDSet = new Set(SOID),
+      existingSOIDSet = new Set(existingSOID.map((d) => d.SOID)),
+      missingSOIDSet = difference(inSOIDSet, existingSOIDSet)
+    const bulkOperations: AnyBulkWriteOperation[] = [
+      {
+        deleteMany: {
+          filter: { EPID: { $in: existingSOID } },
+        },
+      },
+    ]
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      missing: Array.from(missingSOIDSet),
+      jwt,
+    }
+  }
+
+  async importSo(jwt: string) {
+    const decoded = await jwtVerify(
+      jwt,
+      new TextEncoder().encode(SECURITY.jwtSecret),
+    ).catch(() => {
+      throw new BadRequestException('jwt 验证失败')
+    })
+    const bulkOperations = JSON.safeParse(
+      zstdDecompressSync(
+        Buffer.from(decoded.payload.bulkOperations as string),
+      ).toString('utf-8'),
+    )
+    if (bulkOperations && bulkOperations.length > 0) {
+      const session = await this.model.db.startSession()
+      await session
+        .withTransaction(async (currentSession) => {
+          await this.model.bulkWrite(bulkOperations, {
+            ordered: false,
+            session: currentSession,
+          })
+        })
+        .catch(() => {
+          throw new BadRequestException('导入失败，操作已回滚')
+        })
+        .finally(async () => await session.endSession())
+      return 'OK'
+    } else throw new BadRequestException('jwt 验证失败')
+  }
+
+  async exportSo(SOID: string[]) {
+    SOID = SOID.map(IdPrefixPreHandlers.so)
+    const existingSo = await this.model
+      .find({ SOID: { $in: SOID } })
+      .lean({ virtuals: true })
+    const existingSOID = existingSo.map((d) => d.SOID)
+    return {
+      existing: existingSo,
+      missing: SOID.filter((id) => !existingSOID.includes(id)),
+    }
   }
 }

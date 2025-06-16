@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common'
@@ -19,7 +20,14 @@ import { AuthnGuard } from '~/common/guards/authn.guard'
 import { Roles, Scopes } from '~/constants/authn.constant'
 import { checkID } from '~/utils/id-prefix.util'
 
-import { MetaDto, MetaSourceDto, MetaTransferDto } from './meta.dto'
+import {
+  MetaBatchDelOrExportDto,
+  MetaDto,
+  MetaImportDto,
+  MetaSourceDto,
+  MetaSourceImportDto,
+  MetaTransferDto,
+} from './meta.dto'
 import { MetaService } from './meta.service'
 import { MetaSourceService } from './source.service'
 
@@ -168,5 +176,56 @@ export class MetaController {
   })
   async delSo(@Param('SOID') SOID: string) {
     return this.metaSourceService.delSo(SOID)
+  }
+
+  // TODO 之后迁移成grpc
+  @Put('/ep/diff')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async diffEp(@Body() metaImportDto: MetaImportDto) {
+    return this.metaService.diffEp(metaImportDto.units, metaImportDto.sign)
+  }
+  @Put('/ep/batch-del')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async batchDel(@Body() metaImportDto: MetaBatchDelOrExportDto) {
+    return this.metaService.batchDelEp(metaImportDto.units)
+  }
+  @Put('/ep/import')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async importEp(@Body() metaImportJwt: string) {
+    return this.metaService.importEp(metaImportJwt)
+  }
+  @Get('/ep/export')
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaExport] })
+  async exportEp(@Body() metaExportDto: MetaBatchDelOrExportDto) {
+    return this.metaService.exportEp(metaExportDto.units)
+  }
+  @Put('/so/diff')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async diffSo(@Body() metaSourceImportDto: MetaSourceImportDto) {
+    return this.metaSourceService.diffSo(
+      metaSourceImportDto.units,
+      metaSourceImportDto.sign,
+    )
+  }
+  @Put('/so/batch-del')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async batchDelSo(@Body() metaSourceImportDto: MetaBatchDelOrExportDto) {
+    return this.metaSourceService.batchDelSo(metaSourceImportDto.units)
+  }
+  @Put('/so/import')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaImport] })
+  async importSo(@Body() metaSourceImportJwt: string) {
+    return this.metaSourceService.importSo(metaSourceImportJwt)
+  }
+  @Get('/so/export')
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.metaExport] })
+  async exportSo(@Body() metaSourceExportDto: MetaBatchDelOrExportDto) {
+    return this.metaSourceService.exportSo(metaSourceExportDto.units)
   }
 }

@@ -37,7 +37,7 @@ const commander = program
   .option('--disable_cache', 'disable redis cache')
 
   // jwt
-  // .option('--jwt_secret <string>', 'custom jwt secret')
+  .option('--jwt_secret <string>', 'custom jwt secret')
   // .option('--jwt_expire <number>', 'custom jwt expire time(d)')
 
   // cluster
@@ -133,7 +133,7 @@ export const AXIOS_CONFIG: AxiosRequestConfig = {
 
 export const SECURITY = {
   jwtSecret: argv.jwt_secret || argv.jwtSecret,
-  jwtExpire: +argv.jwt_expire || 14,
+  // jwtExpire: +argv.jwt_expire || 14,
 }
 
 export const CLUSTER = {

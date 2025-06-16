@@ -63,7 +63,7 @@ app.getInstance().addHook('onRequest', (request, reply, done) => {
 
 app.register(fastifyCookie, {
   secret: 'cookie-secret', // 这个 secret 不太重要，不存鉴权相关，无关紧要
-} as FastifyCookieOptions)
+} satisfies FastifyCookieOptions)
 
 const logWarn = (desc: string, req: FastifyRequest, _context: string) => {
   const ua = req.raw.headers['user-agent']

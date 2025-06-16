@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common'
@@ -18,6 +19,8 @@ import { Roles, Scopes } from '~/constants/authn.constant'
 
 import {
   DanmakuAdvDto,
+  DanmakuBatchDelOrExportDto,
+  DanmakuImportDto,
   DanmakuMarkChapterDto,
   DanmakuStdDto,
 } from './danmaku.dto'
@@ -52,32 +55,41 @@ export class DanmakuController {
 
   // TODO 做一下creator和管理员可用的通过sender查弹幕，记得验证uid权限
 
-  @Post('/:ID')
+  @Post('/:SOID')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuSend] })
-  async sendDanStd(@Param('ID') ID: string, @Body() danmakuDto: DanmakuStdDto) {
+  async sendDanStd(
+    @Param('SOID') ID: string,
+    @Body() danmakuDto: DanmakuStdDto,
+  ) {
     return await this.danmakuSendService.sendDanStd(ID, danmakuDto)
   }
 
-  @Post('/:ID/adv')
+  @Post('/:SOID/adv')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuSendAdv] })
-  async sendDanAdv(@Param('ID') ID: string, @Body() danmakuDto: DanmakuAdvDto) {
+  async sendDanAdv(
+    @Param('SOID') ID: string,
+    @Body() danmakuDto: DanmakuAdvDto,
+  ) {
     return await this.danmakuSendService.sendDanStd(ID, danmakuDto, true)
   }
 
-  @Post('/:ID/sub')
+  @Post('/:SOID/sub')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuSendSub] })
-  async sendDanSub(@Param('ID') ID: string, @Body() danmakuDto: DanmakuStdDto) {
+  async sendDanSub(
+    @Param('SOID') ID: string,
+    @Body() danmakuDto: DanmakuStdDto,
+  ) {
     return await this.danmakuSendService.sendDanSub(ID, danmakuDto)
   }
 
-  @Post('/:ID/chpt')
+  @Post('/:SOID/chpt')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuSendChapter] })
   async sendDanMarkChapter(
-    @Param('ID') ID: string,
+    @Param('SOID') ID: string,
     @Body() danmakuDto: DanmakuMarkChapterDto,
   ) {
     return await this.danmakuSendService.sendDanMarkChapter(ID, danmakuDto)
@@ -93,16 +105,27 @@ export class DanmakuController {
     return await this.danmakuService.delDan(DMID)
   }
 
-  // @Get(['/export', '/export/:FCID'])
-  // // @Level(Levels.Creator)
-  // @Authn({ role: [Roles.bot], scope: [Scopes.danmakuExport] })
-  // async exportDan(@Param('FCID') FCID?: string) {
-  //   return await this.danmakuEService.exportDan(FCID)
-  // }
-  // @Put('import')
-  // // @Level(Levels.Creator)
-  // @Authn({ role: [Roles.bot], scope: [Scopes.danmakuImport] })
-  // async importDan(@Body() danmakuDto: DanmakuImportDto[]) {
-  //   return await this.danmakuEService.importDan(danmakuDto)
-  // }
+  @Put('/diff')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuImport] })
+  async diffEp(@Body() metaImportDto: DanmakuImportDto) {
+    return this.danmakuService.diffDan(metaImportDto.units, metaImportDto.sign)
+  }
+  @Put('/batch-del')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuImport] })
+  async batchDel(@Body() danmakuImportDto: DanmakuBatchDelOrExportDto) {
+    return this.danmakuService.batchDelDan(danmakuImportDto.units)
+  }
+  @Put('/import')
+  @HttpCache({ disable: true })
+  @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuImport] })
+  async importEp(@Body() metaImportJwt: string) {
+    return this.danmakuService.importDan(metaImportJwt)
+  }
+  @Get('/export')
+  @Authn({ role: [Roles.bot], scope: [Scopes.danmakuExport] })
+  async exportDan(@Body() danmakuExportDto: DanmakuBatchDelOrExportDto) {
+    return await this.danmakuService.exportDan(danmakuExportDto.units)
+  }
 }

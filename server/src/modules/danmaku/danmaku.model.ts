@@ -16,7 +16,7 @@ export class DanmakuModel extends BaseModel {
   DMID!: string
 
   @prop({ required: true, trim: true })
-  EPID!: string
+  SOID!: string
 
   @prop({ required: true, min: 0 })
   progress!: number
@@ -53,11 +53,6 @@ export class DanmakuModel extends BaseModel {
 
   @prop({ trim: true })
   platform?: platform.PlatformDanmakuSource
-
-  // @prop({ trim: true })
-  // SPMO?: string
-  @prop({ required: true, trim: true, default: 'default' })
-  SOID!: string
 
   @prop({ trim: true })
   extraStr?: string

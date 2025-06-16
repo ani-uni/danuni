@@ -9,7 +9,7 @@ import { ReturnModelType } from '@typegoose/typegoose'
 import { InjectModel } from '~/transformers/model.transformer'
 
 import { ConfigsService } from '../configs/configs.service'
-import { MetaService } from '../meta/meta.service'
+import { MetaSourceService } from '../meta/source.service'
 import { DanmakuService } from './danmaku.service'
 import { DanmakuEventAction, DanmakuEventLabel } from './event.constant'
 import { DanmakuEventDto } from './event.dto'
@@ -26,7 +26,7 @@ export class DanmakuEventService {
   constructor(
     @InjectModel(DanmakuEventModel)
     private readonly eventModel: ReturnModelType<typeof DanmakuEventModel>,
-    private readonly metaService: MetaService,
+    private readonly metaSourceService: MetaSourceService,
     private readonly danmakuService: DanmakuService,
     private readonly configService: ConfigsService,
   ) {}
@@ -90,7 +90,7 @@ export class DanmakuEventService {
     else if (!isPID && event.pub) return true
     else {
       const dan = await this.danmakuService.getDan(PID)
-      if (await this.metaService.isMaintainer(dan.EPID)) return true
+      if (await this.metaSourceService.isMaintainer(dan.SOID)) return true
       else return false
     }
   }

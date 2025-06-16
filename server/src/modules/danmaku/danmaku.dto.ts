@@ -1,5 +1,8 @@
+import { Type } from 'class-transformer'
 import {
+  ArrayUnique,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsEmpty,
@@ -11,42 +14,46 @@ import {
   IsString,
   Max,
   Min,
+  registerDecorator,
+  ValidateNested,
+  ValidationArguments,
+  ValidationOptions,
 } from 'class-validator'
 
 import { platform, UniDMTools } from '@dan-uni/dan-any'
 
 export class DanmakuDto {
-  @IsNumber()
   @IsNotEmpty({ message: '弹幕进度?' })
+  @IsNumber()
   progress: number
 
-  @IsEnum(UniDMTools.Modes)
   @IsOptional()
+  @IsEnum(UniDMTools.Modes)
   // @IsNotEmpty({ message: '弹幕类型?' })
   mode?: UniDMTools.Modes
 
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   fontsize?: number
 
-  @IsInt()
   @IsOptional()
+  @IsInt()
   color?: number
 
-  @IsString()
-  @IsOptional() // TODO 这一文件里3个content上regex关键词检查
+  @IsOptional()
+  @IsString() // TODO 这一文件里3个content上regex关键词检查
   content?: string
 }
 
 export class DanmakuStdDto extends DanmakuDto {
-  @IsString()
   @IsNotEmpty({ message: '弹幕内容?' })
+  @IsString()
   content!: string
 }
 
 export class DanmakuAdvDto extends DanmakuDto {
-  @IsString()
   @IsOptional()
+  @IsString()
   extraStr?: string
 }
 
@@ -65,12 +72,12 @@ export class DanmakuMarkChapterDto extends DanmakuDto {
   // @IsOptional()
   // chpt_seg_start: number // alia of progress
 
-  @IsNumber()
   @IsNotEmpty({ message: '章节持续时间?' })
+  @IsNumber()
   chpt_duration: number
 
-  @IsEnum(UniDMTools.ExtraDanUniChapterType)
   @IsNotEmpty({ message: '章节类型?' })
+  @IsEnum(UniDMTools.ExtraDanUniChapterType)
   chpt_type: UniDMTools.ExtraDanUniChapterType
 
   // @IsEnum(UniDMTools.ExtraDanUniChapterAction)
@@ -79,12 +86,12 @@ export class DanmakuMarkChapterDto extends DanmakuDto {
 }
 
 export class DanmakuFullDto extends DanmakuAdvDto {
+  @IsNotEmpty({ message: '资源ID?' })
   @IsEmail()
-  @IsNotEmpty({ message: '剧集ID?' })
-  readonly EPID: string
+  SOID: string
 
-  @IsEmail()
   @IsNotEmpty({ message: '发送者ID?' })
+  @IsEmail()
   senderID!: string
 
   // // 或可直接调用 created 参数
@@ -92,37 +99,80 @@ export class DanmakuFullDto extends DanmakuAdvDto {
   // ctime?: bigint
   // // ctime?: bigint = BigInt(Number(this.created))
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(10)
   weight?: number
 
-  @IsEnum(UniDMTools.Pools)
   @IsNotEmpty({ message: '弹幕池?' })
+  @IsEnum(UniDMTools.Pools)
   pool?: UniDMTools.Pools
 
-  @IsArray()
-  @IsString({ each: true })
   @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
   // @Type(() => String)
   attr?: UniDMTools.DMAttr[]
 
-  @IsString()
   @IsOptional()
+  @IsString()
   platform?: platform.PlatformDanmakuSource
-
-  @IsString()
-  @IsOptional()
-  SOID?: string
 }
 
-export class DanmakuImportDto extends DanmakuFullDto {
-  @IsString()
+class DanmakuImportUnitDto extends DanmakuFullDto {
   @IsNotEmpty({ message: '弹幕ID?' })
+  @IsString()
   DMID!: string
 
+  @IsNotEmpty({ message: '发送时间?' })
+  // @IsOptional()
   @IsDateString()
-  @IsOptional()
-  // @IsNotEmpty({ message: '发送时间?' })
-  ctime?: string
+  ctime: string
+}
+
+export class DanmakuImportDto {
+  @IsNotEmpty({ message: '导入剧集单元?' })
+  @IsNonPrimitiveArray()
+  @ArrayUnique()
+  @ValidateNested({ each: true })
+  @Type(() => DanmakuImportUnitDto)
+  units: DanmakuImportUnitDto[]
+
+  @IsNotEmpty({ message: '是否需要签名批量操作?' })
+  @IsBoolean()
+  sign: boolean
+}
+
+export class DanmakuBatchDelOrExportDto {
+  @IsNotEmpty({ message: '批量删除/导出的弹幕单元?' })
+  @ArrayUnique()
+  @ValidateNested({ each: true })
+  @Type(() => String)
+  units: string[]
+}
+
+// 是否为 非基本类型数组 Object[]
+export function IsNonPrimitiveArray(validationOptions?: ValidationOptions) {
+  return (object: any, propertyName: string) => {
+    registerDecorator({
+      name: 'IsNonPrimitiveArray',
+      target: object.constructor,
+      propertyName,
+      constraints: [],
+      options: validationOptions,
+      validator: {
+        validate(value: any, _args: ValidationArguments) {
+          return (
+            Array.isArray(value) &&
+            value.reduce(
+              (a, b) => a && typeof b === 'object' && !Array.isArray(b),
+              true,
+            )
+          )
+        },
+      },
+    })
+  }
 }

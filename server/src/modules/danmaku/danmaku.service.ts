@@ -1,5 +1,8 @@
 // import { compareSync } from 'bcryptjs'
+import { zstdCompressSync, zstdDecompressSync } from 'node:zlib'
 import { isInt } from 'class-validator'
+import { jwtVerify, SignJWT } from 'jose'
+import { AnyBulkWriteOperation } from 'mongoose'
 import type { DanmakuDocument } from './danmaku.model'
 
 // import {
@@ -10,6 +13,7 @@ import type { DanmakuDocument } from './danmaku.model'
 //   UniDM,
 // } from '@dan-uni/dan-any/src/utils/dm-gen'
 import { UniDM, UniDMTools, UniPool } from '@dan-uni/dan-any'
+import { DMAttr } from '@dan-uni/dan-any/dist/src/utils/dm-gen'
 // import { createDMID } from '@dan-uni/dan-any/src/utils/id-gen'
 import {
   BadRequestException,
@@ -22,6 +26,7 @@ import {
 } from '@nestjs/common'
 import { ReturnModelType } from '@typegoose/typegoose'
 
+import { SECURITY } from '~/app.config'
 import { RequestContext } from '~/common/contexts/request.context'
 // import { FastifyBizRequest } from '~/transformers/get-req.transformer'
 // import {
@@ -36,6 +41,7 @@ import {
   IdPrefixPreHandler,
   IdPrefixPreHandlers,
 } from '~/utils/id-prefix.util'
+import { difference } from '~/utils/set.util'
 
 // import { LevelLowException } from '~/utils/custom-request-exception'
 
@@ -43,7 +49,7 @@ import { ConfigsService } from '../configs/configs.service'
 import { MetaDocument } from '../meta/meta.model'
 import { MetaService } from '../meta/meta.service'
 import { MetaSourceService } from '../meta/source.service'
-import { DanmakuFullDto, DanmakuImportDto } from './danmaku.dto'
+import { DanmakuFullDto } from './danmaku.dto'
 // import { getAvatar } from '~/utils/tool.util'
 
 // import { AuthService } from '../auth/auth.service'
@@ -84,7 +90,7 @@ export class DanmakuService {
     // dan = this.modelPostHook(dan)
     // console.log(String(dan._id))
     return new UniDM(
-      IdPrefixPostHandlers.ep(dan.EPID),
+      IdPrefixPostHandlers.ep(dan.SOID),
       dan.progress,
       dan.mode,
       dan.fontsize,
@@ -96,7 +102,6 @@ export class DanmakuService {
       dan.pool,
       dan.attr,
       dan.platform,
-      IdPrefixPostHandlers.so(dan.SOID),
       dan.extraStr,
       IdPrefixPostHandlers.dm(dan.DMID),
     )
@@ -143,11 +148,15 @@ export class DanmakuService {
       SOID: string | undefined = id.type === 'so' ? id.id : undefined
     if (seg && (seg < 0 || !isInt(seg)))
       throw new BadRequestException('seg应为自然数')
-    let query: object = { EPID, SOID, attr: { $not: { $in: ['Hide'] } } }, //TODO undefined测试是否符合预期ID结果
+    let query: object = {
+        EPID,
+        SOID,
+        attr: { $not: { $in: ['Hide'] satisfies DMAttr[] } },
+      }, //TODO undefined测试是否符合预期ID结果
       pool1Query: object = {
         ...query,
         pool: UniDMTools.Pools.Sub,
-        attr: { $not: { $in: ['Hide'] } },
+        attr: { $not: { $in: ['Hide'] satisfies DMAttr[] } },
       }
     if (seg > 0) {
       const progress = {
@@ -182,26 +191,19 @@ export class DanmakuService {
   //   return this.fmt2Uni(dans)
   // }
 
-  // async preDan(FCID: string, authn: AuthnModel, sub = false) {
   async preDan(
-    ID: string,
+    SOID: string,
     addons: { [key: string]: boolean } = { danmakuConf: false },
   ) {
-    // const authn = this.currentAuthn
-    // if (!authn.sid) throw new BadRequestException('未登录')
-    // const meta = await this.metaService.getMeta(FCID)
-    const id = checkID(ID, ['ep', 'so'])
-    const so =
-      id.type === 'so' ? await this.metaSourceService.getSo(ID) : undefined
-    if (id.type === 'so' && !so) throw new NotFoundException('未找到该弹幕库')
-    // if (await this.metaService.isScopeAdmin(meta, authn)) authn.pass = true
+    const id = checkID(SOID, ['so'])
+    const so = await this.metaSourceService.getSo(id.id)
+    if (!so) throw new NotFoundException('未找到该弹幕库')
     const baseConf = await this.configService.get('base')
     const IDs = {
-      EPID: id.type === 'ep' ? id.id : so!.EPID, // id为so(及非ep)时，上方已获取so
-      SOID: id.type === 'so' ? id.id : 'default',
+      EPID: so.EPID,
+      SOID: id.id,
     }
     return {
-      // authn,
       ID: IDs,
       meta: await this.metaService.getEp(IDs.EPID),
       so,
@@ -212,7 +214,6 @@ export class DanmakuService {
         : this.configService.defaultConfig.danmaku,
     }
   }
-  // // async canEdit(FCID: string, ctx: FastifyBizRequest)
   async isSender(dan: DanmakuDocument | string) {
     dan = await this.toDanmakuDocument(dan)
     const authn = this.currentAuthn
@@ -223,16 +224,13 @@ export class DanmakuService {
     dan = await this.toDanmakuDocument(dan)
     return (
       (await this.isSender(dan)) ||
-      (await this.metaService.isMaintainer(dan.EPID))
+      (await this.metaSourceService.isMaintainer(dan.SOID, true))
     )
   }
 
   async sendDan(dan: DanmakuFullDto, meta: MetaDocument) {
     if (meta.duration && dan.progress > meta.duration)
       throw new BadRequestException('弹幕时间超出视频长度')
-    // const ctime = UniDM.transCtime(new Date())
-    // DMID = createDMID(dan.content, dan.senderID, ctime)
-    // const newDan = await this.danmakuModel.create({ ...dan, ctime })
     const newUniDM = UniDM.create(dan)
     newUniDM.attr.push('Unchecked')
     const newDan = await this.danmakuModel.create(IdPrefixPreHandler(newUniDM))
@@ -243,7 +241,6 @@ export class DanmakuService {
     const dan = await this.getDan(DMID)
     if (!dan) throw new NotFoundException('未找到该弹幕')
     if (internalMode || (await this.canEditDm(dan))) {
-      // const pre = await this.preDan(ID, { danmakuConf: true })
       const danmakuConf = await this.configService.get('danmaku')
       if (
         Date.now() <=
@@ -261,26 +258,12 @@ export class DanmakuService {
   // async delDanById(oid: ObjectId | string) {
   //   return this.danmakuModel.findByIdAndDelete(oid)
   // }
-  /**
-   * EPID + 'ep' = 该剧集所有弹幕
-   * EPID + 'so' = 该剧集的'default'资源所有弹幕
-   * SOID + 'so' = 该资源所有弹幕
-   */
-  async delAllDan(ID: string, layer: 'ep' | 'so' = 'so') {
-    const id = checkID(ID, ['ep', 'so'])
-    if (id.type === 'ep') {
-      const res = await this.danmakuModel.deleteMany(
-        layer === 'ep'
-          ? IdPrefixPreHandler({ EPID: id.id })
-          : IdPrefixPreHandler({ EPID: id.id, SOID: 'default' }),
-      )
-      if (res.acknowledged) return 'OK'
-    } else if (id.type === 'so') {
-      const res = await this.danmakuModel.deleteMany(
-        IdPrefixPreHandler({ SOID: id.id }),
-      )
-      if (res.acknowledged) return 'OK'
-    } else throw new BadRequestException('ID格式错误(无"ep_"或"so_"标识前缀)')
+  async delAllDan(ID: string) {
+    const id = checkID(ID, ['so'])
+    const res = await this.danmakuModel.deleteMany(
+      IdPrefixPreHandler({ SOID: id.id }),
+    )
+    if (res.acknowledged) return 'OK'
     throw new BadRequestException('弹幕删除失败')
   }
 
@@ -300,12 +283,151 @@ export class DanmakuService {
       })
   }
 
-  async exportDan(FCID?: string) {
-    const conf = await this.configService.get('danmaku'),
-      search = { $lt: Date.now() - conf.inBufferTime }
-    return this.danmakuModel.find(FCID ? { ...search, FCID } : search).lean()
+  async diffDan(data: Omit<DanmakuModel, 'id'>[], sign = false) {
+    data = data.map(IdPrefixPreHandler) as Omit<DanmakuModel, 'id'>[]
+    const inDMID = data.map((d) => d.DMID)
+    const existingDan = await this.model
+      .find({ DMID: { $in: inDMID } })
+      .lean({ virtuals: true })
+    const existingDanMap = new Map(existingDan.map((d) => [d.DMID, d]))
+
+    const newItems: Omit<DanmakuModel, 'id'>[] = [],
+      updatedItems: {
+        updatedFields: (keyof DanmakuModel)[]
+        newData: Omit<DanmakuModel, 'id'>
+      }[] = [],
+      duplicatedDMID: string[] = [],
+      bulkOperations: AnyBulkWriteOperation[] = []
+    for (const d of data) {
+      const existingDoc = existingDanMap.get(d.DMID)
+      // 新增项
+      if (!existingDoc) {
+        newItems.push(d)
+        if (sign)
+          bulkOperations.push({
+            insertOne: {
+              document: d,
+            },
+          })
+      } else {
+        // 已存在，比较字段以确定是否更新
+        const updatedFields: (keyof DanmakuModel)[] = []
+        let isModified = false
+        // 比较每个 key (除了 _id)
+        for (const key in d) {
+          if (key !== '_id' && d[key] !== existingDoc[key]) {
+            updatedFields.push(key as keyof DanmakuModel)
+            isModified = true
+          }
+        }
+        if (isModified) {
+          updatedItems.push({
+            updatedFields,
+            newData: d,
+          })
+          if (sign)
+            bulkOperations.push({
+              updateOne: {
+                filter: { DMID: d.DMID },
+                update: { $set: d }, // 使用 $set 更新整个文档
+              },
+            })
+        } else duplicatedDMID.push(d.DMID)
+      }
+    }
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      new: newItems,
+      updated: updatedItems,
+      duplicated: duplicatedDMID,
+      jwt,
+    }
   }
-  async importDan(dans: DanmakuImportDto[]) {
-    return this.danmakuModel.insertMany(dans)
+
+  async batchDelDan(DMID: string[], sign = false) {
+    const existingDMID = await this.model
+      .find({ DMID }, { DMID: 1 })
+      .lean({ virtuals: true })
+    const inDMIDSet = new Set(DMID),
+      existingDMIDSet = new Set(existingDMID.map((d) => d.DMID)),
+      missingDMIDSet = difference(inDMIDSet, existingDMIDSet)
+    const bulkOperations: AnyBulkWriteOperation[] = [
+      {
+        deleteMany: {
+          filter: { DMID: { $in: existingDMID } },
+        },
+      },
+    ]
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      missing: Array.from(missingDMIDSet),
+      jwt,
+    }
+  }
+
+  async importDan(jwt: string) {
+    const decoded = await jwtVerify(
+      jwt,
+      new TextEncoder().encode(SECURITY.jwtSecret),
+    ).catch(() => {
+      throw new BadRequestException('jwt 验证失败')
+    })
+    const bulkOperations = JSON.safeParse(
+      zstdDecompressSync(
+        Buffer.from(decoded.payload.bulkOperations as string),
+      ).toString('utf-8'),
+    )
+    if (bulkOperations && bulkOperations.length > 0) {
+      const session = await this.model.db.startSession()
+      await session
+        .withTransaction(async (currentSession) => {
+          await this.model.bulkWrite(bulkOperations, {
+            ordered: false,
+            session: currentSession,
+          })
+        })
+        .catch(() => {
+          throw new BadRequestException('导入失败，操作已回滚')
+        })
+        .finally(async () => await session.endSession())
+      return 'OK'
+    } else throw new BadRequestException('jwt 验证失败')
+  }
+
+  async exportDan(SOID: string[]) {
+    SOID = SOID.map(IdPrefixPreHandlers.so)
+    const conf = await this.configService.get('danmaku')
+    const existingDan = await this.model
+      .find({
+        SOID: { $in: SOID },
+        ctime: { $lt: Date.now() - conf.inBufferTime },
+      })
+      .lean({ virtuals: true })
+    const existingSOID = new Set()
+    existingDan.forEach((dan) => existingSOID.add(dan.SOID))
+    return {
+      existing: existingDan,
+      missing: SOID.filter((id) => !existingSOID.has(id)),
+    }
   }
 }

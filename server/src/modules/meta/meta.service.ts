@@ -1,3 +1,6 @@
+import { zstdCompressSync, zstdDecompressSync } from 'node:zlib'
+import { jwtVerify, SignJWT } from 'jose'
+import { AnyBulkWriteOperation } from 'mongoose'
 import { nanoid } from 'nanoid'
 import type { MetaDocument } from './meta.model'
 
@@ -12,11 +15,13 @@ import {
 } from '@nestjs/common'
 import { ReturnModelType } from '@typegoose/typegoose'
 
+import { SECURITY } from '~/app.config'
 import { RequestContext } from '~/common/contexts/request.context'
 import { META_SOURCE_COLLECTION_NAME } from '~/constants/db.constant'
 import { InjectModel } from '~/transformers/model.transformer'
 import { NotInScopeException } from '~/utils/custom-request-exception'
-import { IdPrefixPreHandler } from '~/utils/id-prefix.util'
+import { IdPrefixPreHandler, IdPrefixPreHandlers } from '~/utils/id-prefix.util'
+import { difference } from '~/utils/set.util'
 
 import { ConfigsService } from '../configs/configs.service'
 import { MetaModel } from './meta.model'
@@ -87,11 +92,20 @@ export class MetaService {
 
   async isMaintainer(ep: string | MetaDocument, throwError?: boolean) {
     const epReal = typeof ep === 'string' ? await this.getEp(ep) : ep
-    if (!epReal) throw new NotFoundException('未找到该剧集')
+    // if (!epReal) throw new NotFoundException('未找到该剧集')
     if (epReal.maintainer === this.currentAuthn.sid) return true
 
     if (throwError) throw new ForbiddenException('您不是该剧集的维护者')
     else return false
+  }
+
+  async preMeta(addons: { [key: string]: boolean } = { metaConf: false }) {
+    const baseConf = await this.configService.get('base'), //记得初始化domain
+      suffix = `@${baseConf.domain}`,
+      metaConf = addons.metaConf
+        ? await this.configService.get('meta')
+        : this.configService.defaultConfig.meta
+    return { baseConf, suffix, metaConf }
   }
 
   async createEp(data: Partial<MetaModel>) {
@@ -178,19 +192,159 @@ export class MetaService {
     // TODO: 记得删下级So和弹幕
     const hasEPID = await this.getEp(EPID)
     if (!hasEPID) throw new NotFoundException('未找到该剧集')
-    if (!this.isMaintainer(hasEPID))
-      throw new ForbiddenException('您不是该剧集的维护者')
+    await this.isMaintainer(hasEPID, true)
     const ep = await this.model.deleteOne(IdPrefixPreHandler({ EPID }))
     if (ep.acknowledged) return 'OK'
     else throw new BadRequestException('剧集删除失败')
   }
 
-  async preMeta(addons: { [key: string]: boolean } = { metaConf: false }) {
-    const baseConf = await this.configService.get('base'), //记得初始化domain
-      suffix = `@${baseConf.domain}`,
-      metaConf = addons.metaConf
-        ? await this.configService.get('meta')
-        : this.configService.defaultConfig.meta
-    return { baseConf, suffix, metaConf }
+  async diffEp(data: Omit<MetaModel, 'id'>[], sign = false) {
+    data = data.map(IdPrefixPreHandler) as Omit<MetaModel, 'id'>[]
+    const inEPID = data.map((d) => d.EPID)
+    const existingEp = await this.model
+      .find({ EPID: { $in: inEPID } })
+      .lean({ virtuals: true })
+    const existingEpMap = new Map(existingEp.map((d) => [d.EPID, d]))
+
+    const newItems: Omit<MetaModel, 'id'>[] = [],
+      updatedItems: {
+        updatedFields: (keyof MetaModel)[]
+        newData: Omit<MetaModel, 'id'>
+      }[] = [],
+      duplicatedEPID: string[] = [],
+      bulkOperations: AnyBulkWriteOperation[] = []
+    for (const d of data) {
+      const existingDoc = existingEpMap.get(d.EPID)
+      // 新增项
+      if (!existingDoc) {
+        newItems.push(d)
+        if (sign)
+          bulkOperations.push({
+            insertOne: {
+              document: d,
+            },
+          })
+      } else {
+        // 已存在，比较字段以确定是否更新
+        const updatedFields: (keyof MetaModel)[] = []
+        let isModified = false
+        // 比较每个 key (除了 _id)
+        for (const key in d) {
+          if (key !== '_id' && d[key] !== existingDoc[key]) {
+            updatedFields.push(key as keyof MetaModel)
+            isModified = true
+          }
+        }
+        if (isModified) {
+          updatedItems.push({
+            updatedFields,
+            newData: d,
+          })
+          if (sign)
+            bulkOperations.push({
+              updateOne: {
+                filter: { EPID: d.EPID },
+                update: { $set: d }, // 使用 $set 更新整个文档
+              },
+            })
+        } else duplicatedEPID.push(d.EPID)
+      }
+    }
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      new: newItems,
+      updated: updatedItems,
+      duplicated: duplicatedEPID,
+      jwt,
+    }
+  }
+
+  async batchDelEp(EPID: string[], sign = false) {
+    const existingEPID = await this.model
+      .find({ EPID }, { EPID: 1 })
+      .lean({ virtuals: true })
+    const inEPIDSet = new Set(EPID),
+      existingEPIDSet = new Set(existingEPID.map((d) => d.EPID)),
+      missingEPIDSet = difference(inEPIDSet, existingEPIDSet)
+    // const bulkOperations: AnyBulkWriteOperation[] = existingEPID.map((d) => ({
+    //   deleteOne: {
+    //     filter: { EPID: d.EPID },
+    //   },
+    // }))
+    const bulkOperations: AnyBulkWriteOperation[] = [
+      {
+        deleteMany: {
+          filter: { EPID: { $in: existingEPID } },
+        },
+      },
+    ]
+    let jwt: string | undefined = undefined
+    if (sign)
+      jwt = await new SignJWT({
+        bulkOperations: zstdCompressSync(
+          Buffer.from(JSON.stringify(bulkOperations)),
+        ).toString('utf-8'),
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+    return {
+      missing: Array.from(missingEPIDSet),
+      jwt,
+    }
+  }
+
+  async importEp(jwt: string) {
+    const decoded = await jwtVerify(
+      jwt,
+      new TextEncoder().encode(SECURITY.jwtSecret),
+    ).catch(() => {
+      throw new BadRequestException('jwt 验证失败')
+    })
+    const bulkOperations = JSON.safeParse(
+      zstdDecompressSync(
+        Buffer.from(decoded.payload.bulkOperations as string),
+      ).toString('utf-8'),
+    )
+    if (bulkOperations && bulkOperations.length > 0) {
+      // console.log('正在执行批量写入...')
+      const session = await this.model.db.startSession()
+      await session
+        .withTransaction(async (currentSession) => {
+          await this.model.bulkWrite(bulkOperations, {
+            ordered: false,
+            session: currentSession,
+          })
+        })
+        .catch(() => {
+          throw new BadRequestException('导入失败，操作已回滚')
+        })
+        .finally(async () => await session.endSession())
+      // console.log('批量写入结果:', result)
+      return 'OK'
+    } else throw new BadRequestException('jwt 验证失败')
+  }
+
+  async exportEp(EPID: string[]) {
+    EPID = EPID.map(IdPrefixPreHandlers.ep)
+    const existingEp = await this.model
+      .find({ EPID: { $in: EPID } })
+      .lean({ virtuals: true })
+    const existingEPID = existingEp.map((d) => d.EPID)
+    return {
+      existing: existingEp,
+      missing: EPID.filter((id) => !existingEPID.includes(id)),
+    }
   }
 }

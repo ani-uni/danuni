@@ -70,7 +70,7 @@ export enum Scopes {
   metaExport = 'meta.export',
   danmakuImport = 'danmaku.import',
   danmakuExport = 'danmaku.export',
-  danmakuEventExport = 'danmaku.event.export',
+  // danmakuEventExport = 'danmaku.event.export',
 }
 export class GroupsClass {
   public readonly admin = new Set(
