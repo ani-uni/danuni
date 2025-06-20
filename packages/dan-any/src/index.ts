@@ -90,7 +90,6 @@ export class UniPool {
     if (isShared('SOID')) this.shared.SOID = dans[0].SOID
     if (isShared('senderID')) this.shared.senderID = dans[0].senderID
     if (isShared('platform')) this.shared.platform = dans[0].platform
-    if (isShared('SOID')) this.shared.SOID = dans[0].SOID
     if (isShared('pool')) this.shared.pool = dans[0].pool
     if (isShared('mode')) this.shared.mode = dans[0].mode
   }
@@ -139,7 +138,7 @@ export class UniPool {
       ]
     >(
       ([result, cache, mergeObj], danmaku) => {
-        const key = ['content', 'mode', 'platform', 'pool', 'SOID']
+        const key = ['SOID', 'content', 'mode', 'platform', 'pool']
           .map((k) => danmaku[k as keyof UniDM])
           .join('|')
         const cached = cache[key]
