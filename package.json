@@ -27,7 +27,7 @@
     "@rslib/core": "^0.4.1",
     "@sxzz/eslint-config": "^4.6.0",
     "@types/eslint__js": "^8.42.3",
-    "@typescript-eslint/parser": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.1",
     "@vitest/ui": "^2.1.9",
     "eslint": "^9.29.0",
     "globals": "^15.15.0",

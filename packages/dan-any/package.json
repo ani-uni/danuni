@@ -32,13 +32,13 @@
   },
   "dependencies": {
     "base16384": "^1.0.0",
-    "canvas": "^3.1.0",
+    "canvas": "^3.1.1",
     "fast-xml-parser": "^4.5.3",
     "hh-mm-ss": "^1.2.0",
     "jssha": "^3.3.1"
   },
   "devDependencies": {
-    "@bufbuild/buf": "^1.54.0",
+    "@bufbuild/buf": "^1.55.1",
     "@bufbuild/protobuf": "^2.5.2",
     "@bufbuild/protoc-gen-es": "^2.5.2",
     "@types/hh-mm-ss": "^1.2.3",
