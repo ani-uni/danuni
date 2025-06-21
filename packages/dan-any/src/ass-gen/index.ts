@@ -1,4 +1,5 @@
 // import parse from './parse/bilibili'
+import type { RawConfig } from './ass/raw'
 import type { SubtitleStyle } from './types'
 
 import { UniPool } from '..'
@@ -11,6 +12,7 @@ export type Options = {
   filename?: string
   title?: string
   substyle?: Partial<SubtitleStyle>
+  raw?: RawConfig
 }
 
 /**
@@ -37,10 +39,16 @@ export function generateASS(danmaku: UniPool, options: Options): string {
   // const mergedList = mergeDanmaku(result.list, config.mergeIn)
   const mergedList = danmaku.merge(config.mergeIn)
   const layoutList = layoutDanmaku(mergedList, config)
-  const content = ass(layoutList, danmaku, config, {
-    filename: options?.filename || 'unknown',
-    title: options?.title || 'unknown',
-  })
+  const content = ass(
+    layoutList,
+    danmaku,
+    config,
+    {
+      filename: options?.filename || 'unknown',
+      title: options?.title || 'unknown',
+    },
+    options.raw,
+  )
 
   return content
 }

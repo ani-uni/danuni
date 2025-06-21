@@ -3,14 +3,21 @@ import {
   brotliDecompressSync,
   gunzipSync,
   gzipSync,
+  zstdCompressSync,
+  zstdDecompressSync,
 } from 'node:zlib'
 import * as base16384 from 'base16384'
 import type { Context, Danmaku, SubtitleStyle } from '../types'
 
-type compressType = 'brotli' | 'gzip'
+type compressType = 'zstd' | 'brotli' | 'gzip'
 type baseType = 'base64' | 'base18384'
-const compressTypes = ['brotli', 'gzip'],
+const compressTypes = ['zstd', 'brotli', 'gzip'],
   baseTypes = ['base64', 'base18384']
+
+export interface RawConfig {
+  compressType: compressType
+  baseType: baseType
+}
 
 function fromUint16Array(array: Uint16Array): string {
   let result = ''
@@ -20,18 +27,18 @@ function fromUint16Array(array: Uint16Array): string {
   return result
 }
 
-// eslint-disable-next-line import/no-default-export
-export default (
+export function raw(
   list: Danmaku[],
   config: SubtitleStyle,
   context: Context,
-  compressType: compressType = 'brotli',
+  compressType: compressType = 'zstd',
   baseType: baseType = 'base18384',
-) => {
+) {
   const raw = { list, config, context },
     rawText = JSON.stringify(raw)
   let compress = Buffer.from('')
-  if (compressType === 'brotli') compress = brotliCompressSync(rawText)
+  if (compressType === 'zstd') compress = zstdCompressSync(rawText)
+  else if (compressType === 'brotli') compress = brotliCompressSync(rawText)
   else compress = gzipSync(rawText)
   return `;RawCompressType: ${compressType}\n;RawBaseType: ${baseType}\n;Raw: ${baseType === 'base64' ? compress.toString('base64') : fromUint16Array(base16384.encode(compress))}`
 }
@@ -63,7 +70,9 @@ export function deRaw(ass: string):
               base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
             )
     let decompress = Buffer.from('')
-    if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
+    if (compressType === 'zstd') decompress = zstdDecompressSync(buffer)
+    else if (compressType === 'brotli')
+      decompress = brotliDecompressSync(buffer)
     else decompress = gunzipSync(buffer)
     try {
       return JSON.parse(decompress.toString('utf-8'))
