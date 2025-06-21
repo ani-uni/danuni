@@ -1,4 +1,9 @@
-import { brotliCompressSync, brotliDecompressSync, gzipSync } from 'node:zlib'
+import {
+  brotliCompressSync,
+  brotliDecompressSync,
+  gunzipSync,
+  gzipSync,
+} from 'node:zlib'
 import * as base16384 from 'base16384'
 import type { Context, Danmaku, SubtitleStyle } from '../types'
 
@@ -59,7 +64,7 @@ export function deRaw(ass: string):
             )
     let decompress = Buffer.from('')
     if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
-    else decompress = gzipSync(buffer)
+    else decompress = gunzipSync(buffer)
     try {
       return JSON.parse(decompress.toString('utf-8'))
     } catch {
