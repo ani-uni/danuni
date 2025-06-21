@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
 import type { Options as AssGenOptions } from './ass-gen'
+import type { Config as DeTaoLuConfig } from './pakku.js'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
@@ -10,6 +11,7 @@ import {
 } from '@bufbuild/protobuf/wkt'
 
 import { generateASS, parseAssRawField } from './ass-gen'
+import pakkujs from './pakku.js'
 import {
   // DanmakuElem as DM_JSON_BiliGrpc,
   DmSegMobileReplySchema,
@@ -77,21 +79,124 @@ export type DM_format =
 type shareItems = Partial<
   Pick<
     UniDMTools.UniDMObj,
-    'SOID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode'
+    'SOID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode' | 'color'
   >
 >
 
 export class UniPool {
-  readonly shared: shareItems = {}
-  constructor(public dans: UniDM[]) {
-    function isShared(key: keyof UniDMTools.UniDMObj) {
-      return new Set(dans.map((d) => d[key])).size === 1
+  constructor(public dans: UniDM[]) {}
+  get shared(): shareItems {
+    const isShared = (key: keyof UniDMTools.UniDMObj) => {
+      return this.dans.every((d) => d[key])
     }
-    if (isShared('SOID')) this.shared.SOID = dans[0].SOID
-    if (isShared('senderID')) this.shared.senderID = dans[0].senderID
-    if (isShared('platform')) this.shared.platform = dans[0].platform
-    if (isShared('pool')) this.shared.pool = dans[0].pool
-    if (isShared('mode')) this.shared.mode = dans[0].mode
+    return {
+      SOID: isShared('SOID') ? this.dans[0].SOID : undefined,
+      senderID: isShared('senderID') ? this.dans[0].senderID : undefined,
+      platform: isShared('platform') ? this.dans[0].platform : undefined,
+      pool: isShared('pool') ? this.dans[0].pool : undefined,
+      mode: isShared('mode') ? this.dans[0].mode : undefined,
+      color: isShared('color') ? this.dans[0].color : undefined,
+    }
+  }
+  get stat() {
+    const default_stat = {
+      SOID: [] as { val: string; count: number }[],
+      mode: [
+        { val: UniDMTools.Modes.Normal, count: 0 },
+        { val: UniDMTools.Modes.Bottom, count: 0 },
+        { val: UniDMTools.Modes.Top, count: 0 },
+        { val: UniDMTools.Modes.Reverse, count: 0 },
+        { val: UniDMTools.Modes.Ext, count: 0 },
+      ],
+      fontsize: [
+        // { val: 18, count: 0 },
+        // { val: 25, count: 0 },
+        // { val: 36, count: 0 },
+      ] as { val: number; count: number }[],
+      color: [] as { val: number; count: number }[],
+      senderID: [] as { val: string; count: number }[],
+      content: [] as { val: string; count: number }[],
+      weight: [] as { val: number; count: number }[],
+      pool: [
+        { val: UniDMTools.Pools.Def, count: 0 },
+        { val: UniDMTools.Pools.Sub, count: 0 },
+        { val: UniDMTools.Pools.Adv, count: 0 },
+        { val: UniDMTools.Pools.Ix, count: 0 },
+      ],
+      platform: [] as { val?: string; count: number }[],
+    }
+    type Stat = typeof default_stat
+    const stat = this.dans.reduce((s, d): Stat => {
+      const SOID = s.SOID.find((i) => i.val === d.SOID)
+      if (!SOID) {
+        s.SOID.push({ val: d.SOID, count: 1 })
+      } else {
+        SOID.count++
+      }
+      const mode = s.mode.find((i) => i.val === d.mode)
+      if (!mode) {
+        s.mode.push({ val: d.mode, count: 1 })
+      } else {
+        mode.count++
+      }
+      const fontsize = s.fontsize.find((i) => i.val === d.fontsize)
+      if (!fontsize) {
+        s.fontsize.push({ val: d.fontsize, count: 1 })
+      } else {
+        fontsize.count++
+      }
+      const color = s.color.find((i) => i.val === d.color)
+      if (!color) {
+        s.color.push({ val: d.color, count: 1 })
+      } else {
+        color.count++
+      }
+      const senderID = s.senderID.find((i) => i.val === d.senderID)
+      if (!senderID) {
+        s.senderID.push({ val: d.senderID, count: 1 })
+      } else {
+        senderID.count++
+      }
+      const content = s.content.find((i) => i.val === d.content)
+      if (!content) {
+        s.content.push({ val: d.content, count: 1 })
+      } else {
+        content.count++
+      }
+      const weight = s.weight.find((i) => i.val === d.weight)
+      if (!weight) {
+        s.weight.push({ val: d.weight, count: 1 })
+      } else {
+        weight.count++
+      }
+      const pool = s.pool.find((i) => i.val === d.pool)
+      if (!pool) {
+        s.pool.push({ val: d.pool, count: 1 })
+      } else {
+        pool.count++
+      }
+      const platform = s.platform.find((i) => i.val === d.platform)
+      if (!platform) {
+        s.platform.push({ val: d.platform, count: 1 })
+      } else {
+        platform.count++
+      }
+      return s
+    }, default_stat)
+    return stat
+  }
+  get most() {
+    const s = this.stat
+    return {
+      mode: s.mode.sort((a, b) => b.count - a.count)[0].val,
+      fontsize: s.fontsize.sort((a, b) => b.count - a.count)[0].val,
+      color: s.color.sort((a, b) => b.count - a.count)[0].val,
+      senderID: s.senderID.sort((a, b) => b.count - a.count)[0].val,
+      content: s.content.sort((a, b) => b.count - a.count)[0].val,
+      weight: s.weight.sort((a, b) => b.count - a.count)[0].val,
+      pool: s.pool.sort((a, b) => b.count - a.count)[0].val,
+      platform: s.platform.sort((a, b) => b.count - a.count)[0].val,
+    }
   }
   static create() {
     return new UniPool([])
@@ -125,7 +230,7 @@ export class UniPool {
   merge(lifetime = 0) {
     if (!this.shared.SOID) {
       console.error(
-        "本功能仅支持同弹幕库内使用，可先 .split('EPID') 在分别使用",
+        "本功能仅支持同弹幕库内使用，可先 .split('SOID') 在分别使用",
       )
       return this
     }
@@ -156,6 +261,8 @@ export class UniPool {
             count: senders.length,
             duration: danmaku.progress - cached.progress,
             senders,
+            taolu_count: senders.length,
+            taolu_senders: senders,
           }
           danmaku.extraStr = JSON.stringify(extra)
           cache[key] = danmaku
@@ -166,6 +273,8 @@ export class UniPool {
             count: 1,
             duration: 0,
             senders: [danmaku.senderID],
+            taolu_count: 1,
+            taolu_senders: [danmaku.senderID],
           }
           cache[key] = danmaku
           // 初始化merge信息，包含第一个sender
@@ -182,7 +291,7 @@ export class UniPool {
     // 处理结果，删除senders<=1的merge字段
     const [result, _cache, mergeObj] = mergeContext
     result.forEach((danmaku, i) => {
-      const key = ['content', 'mode', 'platform', 'pool', 'SOID']
+      const key = ['SOID', 'content', 'mode', 'platform', 'pool']
         .map((k) => danmaku[k as keyof UniDM])
         .join('|')
       const extra = result[i].extra,
@@ -209,10 +318,71 @@ export class UniPool {
               : undefined
         } else {
           result[i].senderID = 'merge[bot]@dan-any'
+          result[i].attr
+            ? result[i].attr.push('Protect')
+            : (result[i].attr = ['Protect'])
         }
       }
     })
     return new UniPool(result)
+  }
+  async detaolu(config?: DeTaoLuConfig) {
+    const p = await pakkujs(
+      {
+        objs: this.dans.map((d) => ({
+          time_ms: d.progress * 1000,
+          mode: d.mode, //TODO
+          content: d.content,
+          pool: d.pool,
+          // danuni_sender: d.senderID,
+          danuni_dan: d,
+        })),
+      },
+      config,
+    )
+    const selected = p.clusters.map((p) => {
+      if (p.danuni_dans.length === 1) {
+        return p.danuni_dans[0].danuni_dan
+      } else {
+        const dans = p.danuni_dans,
+          pool = new UniPool(dans.map((d) => d.danuni_dan))
+        function isAllBottomMode(p: UniPool) {
+          return p.dans.every((d) => d.mode === UniDMTools.Modes.Bottom)
+        }
+        const progess = pool.dans.map((d) => d.progress)
+        return UniDM.create({
+          SOID: pool.shared.SOID ?? pool.dans[0].SOID,
+          progress: dans[0].danuni_dan.progress,
+          mode:
+            pool.shared.mode ??
+            (isAllBottomMode(pool)
+              ? UniDMTools.Modes.Bottom
+              : UniDMTools.Modes.Top),
+          fontsize: dans.length > 0 ? 36 : 25,
+          color: pool.shared.color ?? pool.most.color,
+          senderID: 'detaolu[bot]@dan-any',
+          content: p.chosen_str,
+          weight: 10,
+          pool: pool.shared.pool ?? pool.most.pool,
+          attr: ['Protect'],
+          platform: pool.shared.platform ?? pool.most.platform,
+          extra: {
+            danuni: {
+              merge: {
+                count: p.danuni_count,
+                duration: Math.max(...progess) - Math.min(...progess),
+                senders: pool.dans
+                  .filter((d) => d.content === p.chosen_str)
+                  .map((d) => d.senderID),
+                taolu_count: pool.dans.length,
+                taolu_senders: pool.dans.map((d) => d.senderID),
+              },
+            },
+          },
+        })
+      }
+    })
+    return new UniPool(selected)
   }
   minify() {
     return this.dans.map((d) => d.minify())

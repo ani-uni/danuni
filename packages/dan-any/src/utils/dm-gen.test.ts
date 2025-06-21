@@ -1,4 +1,3 @@
-//基于以下注释，根据vitest生成测试用例
 import { describe, expect, it } from 'vitest'
 import type { UniDMObj } from './dm-gen'
 
@@ -24,7 +23,15 @@ describe('弹幕降级', () => {
     UniDM.create({
       content: 'test',
       extra: {
-        danuni: { merge: { count: 100, duration: 10, senders: [] } },
+        danuni: {
+          merge: {
+            count: 100,
+            duration: 10,
+            senders: [],
+            taolu_count: 100,
+            taolu_senders: [],
+          },
+        },
       },
     }),
     UniDM.create({
@@ -94,6 +101,8 @@ describe('其它', () => {
             count: 1,
             duration: 0,
             senders: ['test@du'],
+            taolu_count: 1,
+            taolu_senders: ['test@du'],
           },
         },
       },

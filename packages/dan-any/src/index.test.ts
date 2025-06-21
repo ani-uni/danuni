@@ -74,4 +74,8 @@ describe('其它', () => {
   it('合并范围内重复', () => {
     console.info(pool.merge(10).minify())
   })
+  it('反套路(基于pakku.js实现的弹幕去重)', async () => {
+    const d = (await pool.detaolu()).minify()
+    console.info(d)
+  })
 })

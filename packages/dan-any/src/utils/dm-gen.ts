@@ -240,6 +240,8 @@ export interface ExtraDanUniMerge {
   duration: number //持续时间(重复内容第一次出现时间开始到合并了的弹幕中最后一次出现的时间)
   count: number //重复次数
   senders: string[] //发送者
+  taolu_count: number //类似弹幕数量
+  taolu_senders: string[] //类似弹幕发送者
 }
 export enum ExtraDanUniChapterType {
   Chapter = 'ch', //其它片段(用于标记章节)

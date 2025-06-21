@@ -1,12 +1,12 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.3.7",
+  "version": "0.4.0",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
     "danmaku"
   ],
-  "license": "LGPL-3.0-or-later",
+  "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/ani-uni/danuni/tree/master/packages/dan-any#readme",
   "bugs": {
     "url": "https://github.com/ani-uni/danuni/issues"
