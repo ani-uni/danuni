@@ -1,7 +1,7 @@
 import type { Danmaku, RGB } from '../types'
 
 import { UniPool } from '../..'
-import { Modes } from '../../utils/dm-gen'
+import { Modes, UniDM } from '../../utils/dm-gen'
 import { DanmakuType } from '../types'
 
 function decimalToRGB888(decimal: number): RGB {
@@ -32,5 +32,5 @@ export function UniPool2DanmakuLists(UP: UniPool): Danmaku[] {
   })
 }
 export function DanmakuList2UniPool(d: Danmaku[]): UniPool {
-  return new UniPool(d.map((d) => d.extra))
+  return new UniPool(d.map((d) => UniDM.create(d.extra)))
 }

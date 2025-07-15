@@ -24,10 +24,8 @@ function cleanEmptyObjects(obj: object): object {
     const cleanedValue = cleanEmptyObjects(value)
     if (
       cleanedValue !== undefined &&
-      !(
-        typeof cleanedValue === 'object' &&
-        Object.keys(cleanedValue).length === 0
-      )
+      (typeof cleanedValue !== 'object' ||
+        Object.keys(cleanedValue).length !== 0)
     ) {
       cleaned[key] = cleanedValue
     }
@@ -137,7 +135,7 @@ const DMAttrUtils = {
 
 interface DMBili {
   id: bigint // xml 7
-  progress: number // xml 0
+  progress: number // xml 0 ; xml s, protobuf ms
   mode: number // xml 1
   fontsize: number // xml 2
   color: number // xml 3
@@ -368,9 +366,9 @@ export class UniDM {
      * 权重 用于屏蔽等级 区间:[1,10]
      * @description 参考B站，源弹幕有该参数则直接利用，
      * 本实现默认取5，再经过ruleset匹配加减分数
-     * @description 特殊情况下接受值为0，即设置0需转换为默认权重(5)
+     * @description 为0时表示暂时未计算权重
      */
-    public weight: number = 5,
+    public weight: number = 0,
     /**
      * 弹幕池 0:普通池 1:字幕池 2:特殊池(代码/BAS弹幕) 3:互动池(互动弹幕中选择投票快速发送的弹幕)
      */
@@ -400,7 +398,7 @@ export class UniDM {
     if (fontsize <= 0) this.fontsize = 25
     if (color <= 0) this.color = 16777215 //虽然不知道为0是否为可用值，但过为少见，利用其作为默认位
     // if (ctime <= 0n) this.ctime = BigInt(Date.now())
-    if (weight <= 0 || weight > 10) this.weight = 5
+    if (weight < 0 || weight > 10) this.weight = 5
     if (pool < Pools.Def || pool > Pools.Ix) this.pool = Pools.Def
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()

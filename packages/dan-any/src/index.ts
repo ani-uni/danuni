@@ -49,11 +49,11 @@ export interface DM_JSON_Dplayer {
 }
 export interface DM_JSON_Artplayer {
   text: string // 弹幕文本
-  time?: number // 弹幕时间, 默认为当前播放器时间
-  mode?: number // 弹幕模式: 0: 滚动(默认)，1: 顶部，2: 底部
+  time?: number // 弹幕时间，默认为当前播放器时间
+  mode?: number // 弹幕模式：0: 滚动 (默认)，1: 顶部，2: 底部
   color?: string // 弹幕颜色，默认为白色
-  border?: boolean // 弹幕是否有描边, 默认为 false
-  style?: {} // 弹幕自定义样式, 默认为空对象
+  border?: boolean // 弹幕是否有描边，默认为 false
+  style?: {} // 弹幕自定义样式，默认为空对象
 }
 export interface DM_JSON_DDPlay {
   count: number | string
@@ -83,8 +83,18 @@ type shareItems = Partial<
   >
 >
 
+interface Options {
+  dedupe?: boolean
+}
+
 export class UniPool {
-  constructor(public dans: UniDM[]) {}
+  constructor(
+    public dans: UniDM[],
+    public options: Options = {},
+  ) {
+    if (options.dedupe !== false) options.dedupe = true
+    return this.options.dedupe ? this.dedupe() : this
+  }
   get shared(): shareItems {
     const isShared = (key: keyof UniDMTools.UniDMObj) => {
       return this.dans.every((d) => d[key])
@@ -220,12 +230,23 @@ export class UniPool {
     if (this.shared[key]) return [this]
     const set = new Set(this.dans.map((d) => d[key]))
     return [...set].map((v) => {
-      return new UniPool(this.dans.filter((d) => d[key] === v))
+      return new UniPool(
+        this.dans.filter((d) => d[key] === v),
+        { dedupe: false },
+      )
     })
   }
   /**
+   * 基于DMID的基本去重功能，用于解决该class下dans为array而非Set的问题
+   */
+  private dedupe() {
+    const map = new Map()
+    this.dans.forEach((d) => map.set(d.DMID || d.toDMID(), d))
+    return new UniPool([...map.values()], { dedupe: false })
+  }
+  /**
    * 合并一定时间段内的重复弹幕，防止同屏出现过多
-   * @param lifetime 查重时间区段，单位秒 (默认为0，表示不查重)
+   * @param lifetime 查重时间区段，单位秒 (默认为 0，表示不查重)
    */
   merge(lifetime = 0) {
     if (!this.shared.SOID) {
@@ -497,12 +518,11 @@ export class UniPool {
       json = data.elems
     return new UniPool(
       json.map((d) => {
-        return UniDM.fromBili(d)
+        return UniDM.fromBili({ ...d, progress: d.progress / 1000 })
       }),
     )
   }
   /**
-   *
    * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
    */
   static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer) {
