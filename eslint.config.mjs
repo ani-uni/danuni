@@ -1,6 +1,12 @@
 import { sxzz } from '@sxzz/eslint-config'
 
 export default sxzz(
+  {
+    prettier: true,
+    markdown: true,
+    vue: false, // auto detection
+    unocss: false, // auto detection
+  },
   [
     {
       ignores: [
@@ -72,19 +78,13 @@ export default sxzz(
 
     {
       files: [
-        'apps/core/src/migration/**/*.ts',
-        'apps/core/src/modules/serverless/pack/**/*.ts',
-        'apps/core/test/**/*.ts',
+        'server/src/migration/**/*.ts',
+        'server/src/modules/serverless/pack/**/*.ts',
+        'server/test/**/*.ts',
       ],
       rules: {
         'import/no-default-export': 'off',
       },
     },
   ],
-  {
-    prettier: true,
-    markdown: true,
-    vue: false, // auto detection
-    unocss: false, // auto detection
-  },
 )
