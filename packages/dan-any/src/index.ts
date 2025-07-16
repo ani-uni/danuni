@@ -91,7 +91,7 @@ export class UniPool {
     public options: Options = {},
   ) {
     if (options.dedupe !== false) options.dedupe = true
-    return this.options.dedupe ? this.dedupe() : this
+    if (this.options.dedupe) this.dedupe()
   }
   get shared(): shareItems {
     const isShared = (key: keyof UniDMTools.UniDMObj) => {
@@ -240,7 +240,8 @@ export class UniPool {
   private dedupe() {
     const map = new Map()
     this.dans.forEach((d) => map.set(d.DMID || d.toDMID(), d))
-    return new UniPool([...map.values()], { dedupe: false })
+    this.dans = [...map.values()]
+    this.options.dedupe = false
   }
   /**
    * 合并一定时间段内的重复弹幕，防止同屏出现过多
