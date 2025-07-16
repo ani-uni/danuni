@@ -11,3 +11,9 @@
 `LGPL 3.0`  
 
 <https://github.com/ani-uni/danuni/tree/master/packages/dan-any>
+
+### dan-uni(server)
+
+弹幕服务器(开发中)
+
+`AGPL 3.0`
