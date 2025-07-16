@@ -35,8 +35,8 @@
 
 ## License 许可证
 
-Released under the GNU General Public License v3.0 (GPL-3.0 or later).  
-本库采用 GPL 3.0 or later 许可证发布。  
+Released under the GNU LESSER GENERAL PUBLIC LICENSE (LGPL) 3.0.  
+本库采用 LGPL 3.0 or later 许可证发布。  
 
 [^1]: 对于`src/ass-gen`内的文件，使用了[justorez/biliy](https://github.com/justorez/biliy)的代码(MIT LICENSE)，并使用了AI进行修改与修复，同时支持了更优的Raw还原功能。  
 

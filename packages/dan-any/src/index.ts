@@ -1,6 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
 import type { Options as AssGenOptions } from './ass-gen'
-import type { Config as DeTaoLuConfig } from './pakku.js'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
@@ -11,7 +10,6 @@ import {
 } from '@bufbuild/protobuf/wkt'
 
 import { generateASS, parseAssRawField } from './ass-gen'
-import pakkujs from './pakku.js'
 import {
   // DanmakuElem as DM_JSON_BiliGrpc,
   DmSegMobileReplySchema,
@@ -346,64 +344,6 @@ export class UniPool {
       }
     })
     return new UniPool(result)
-  }
-  async detaolu(config?: DeTaoLuConfig) {
-    const p = await pakkujs(
-      {
-        objs: this.dans.map((d) => ({
-          time_ms: d.progress * 1000,
-          mode: d.mode, //TODO
-          content: d.content,
-          pool: d.pool,
-          // danuni_sender: d.senderID,
-          danuni_dan: d,
-        })),
-      },
-      config,
-    )
-    const selected = p.clusters.map((p) => {
-      if (p.danuni_dans.length === 1) {
-        return p.danuni_dans[0].danuni_dan
-      } else {
-        const dans = p.danuni_dans,
-          pool = new UniPool(dans.map((d) => d.danuni_dan))
-        function isAllBottomMode(p: UniPool) {
-          return p.dans.every((d) => d.mode === UniDMTools.Modes.Bottom)
-        }
-        const progess = pool.dans.map((d) => d.progress)
-        return UniDM.create({
-          SOID: pool.shared.SOID ?? pool.dans[0].SOID,
-          progress: dans[0].danuni_dan.progress,
-          mode:
-            pool.shared.mode ??
-            (isAllBottomMode(pool)
-              ? UniDMTools.Modes.Bottom
-              : UniDMTools.Modes.Top),
-          fontsize: dans.length > 0 ? 36 : 25,
-          color: pool.shared.color ?? pool.most.color,
-          senderID: 'detaolu[bot]@dan-any',
-          content: p.chosen_str,
-          weight: 10,
-          pool: pool.shared.pool ?? pool.most.pool,
-          attr: ['Protect'],
-          platform: pool.shared.platform ?? pool.most.platform,
-          extra: {
-            danuni: {
-              merge: {
-                count: p.danuni_count,
-                duration: Math.max(...progess) - Math.min(...progess),
-                senders: pool.dans
-                  .filter((d) => d.content === p.chosen_str)
-                  .map((d) => d.senderID),
-                taolu_count: pool.dans.length,
-                taolu_senders: pool.dans.map((d) => d.senderID),
-              },
-            },
-          },
-        })
-      }
-    })
-    return new UniPool(selected)
   }
   minify() {
     return this.dans.map((d) => d.minify())

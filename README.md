@@ -8,6 +8,6 @@
 
 一个弹幕格式转换器  
 
-`GPL 3.0`  
+`LGPL 3.0`  
 
 <https://github.com/ani-uni/danuni/tree/master/packages/dan-any>
