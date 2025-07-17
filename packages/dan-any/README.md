@@ -30,6 +30,8 @@
 
 - [dan-any-plugin-detalu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detalu): 基于pakku.js的弹幕过滤器
 
+## 特殊字段提示
+
 ### ASS Raw 字段
 
 为便于由ASS格式还原，由本工具生成的ASS弹幕格式中，包含以下字段：`RawCompressType` `RawBaseType` `Raw`  
@@ -38,7 +40,8 @@
 
 ## TODO
 
-- [ ] 反向转换bili弹幕格式
+- [ ] 完善弹幕降级显示功能(使高级弹幕有损转换为普通弹幕)
+- [ ] 完善使用文档
 
 ## License 许可证
 
