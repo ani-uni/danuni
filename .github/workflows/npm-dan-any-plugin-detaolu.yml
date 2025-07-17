@@ -50,6 +50,9 @@ jobs:
       - name: Build @danuni/dan-any-plugin-detaolu
         run: |
           cd ${{ github.workspace }}
+          cd ./packages/dan-any/
+          pnpm run build
+          cd ${{ github.workspace }}
           cd ./packages/dan-any-plugin-detaolu/
           # pnpx conventional-changelog-cli -p angular -i CHANGELOG.md -s
           pnpm run lint

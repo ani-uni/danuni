@@ -122,19 +122,6 @@ importers:
         specifier: ^11.0.4
         version: 11.0.4
 
-  packages/dan-any-plus:
-    dependencies:
-      '@dan-uni/dan-any':
-        specifier: workspace:^
-        version: link:../dan-any
-      fs-extra:
-        specifier: ^11.3.0
-        version: 11.3.0
-    devDependencies:
-      '@types/fs-extra':
-        specifier: ^11.0.4
-        version: 11.0.4
-
   packages/ext-dan-puller: {}
 
 packages:
