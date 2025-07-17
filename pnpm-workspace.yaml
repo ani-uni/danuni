@@ -9,3 +9,7 @@ onlyBuiltDependencies:
   - sharp
   # - simple-git-hooks
   - unrs-resolver
+  - '@bufbuild/buf'
+  - canvas
+  - core-js
+  - protobufjs
