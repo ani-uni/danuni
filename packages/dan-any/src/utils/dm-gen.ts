@@ -711,6 +711,58 @@ export class UniDM {
         args.mode >= 7 ? JSON.stringify(extra, BigIntSerializer) : undefined,
     })
   }
+  toBiliXML() {
+    const recMode = (mode: Modes, extra?: ExtraBili) => {
+      switch (mode) {
+        case Modes.Normal:
+          return 1
+        case Modes.Bottom:
+          return 4
+        case Modes.Top:
+          return 5
+        case Modes.Reverse:
+          return 6
+        case Modes.Ext:
+          if (!extra) return 1
+          else if (extra.adv) return 7
+          else if (extra.code) return 8
+          else if (extra.bas) return 9
+          else return 1
+        default:
+          return 1
+      }
+    }
+    const rMode = recMode(this.mode, this.extra?.bili)
+    let content
+    switch (rMode) {
+      case 7:
+        content = this.extra?.bili?.adv
+        break
+      case 8:
+        content = this.extra?.bili?.code
+        break
+      case 9:
+        content = this.extra?.bili?.bas
+        break
+      default:
+        content = this.content
+        break
+    }
+    return {
+      '#text': content ?? this.content,
+      '@_p': [
+        this.progress,
+        rMode,
+        this.fontsize,
+        this.color,
+        this.ctime.getTime() / 1000,
+        this.pool, // 目前pool与bili兼容
+        this.senderID,
+        this.DMID || this.toDMID(),
+        this.weight,
+      ].join(','),
+    }
+  }
   static fromBiliCommand(args: DMBiliCommand, cid?: bigint) {
     if (args.oid && !cid) cid = args.oid
     const SOID = ID.fromBili({ cid }),

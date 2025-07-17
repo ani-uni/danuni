@@ -23,6 +23,10 @@ export class UniID {
      */
     public domain: PlatformSource | string,
   ) {}
+  static fromString(str: string) {
+    const [id, domain] = str.split('@')
+    return new UniID(id, domain)
+  }
   toString() {
     return `${this.id}@${this.domain}`
   }

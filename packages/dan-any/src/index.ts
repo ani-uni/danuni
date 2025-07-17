@@ -1,4 +1,4 @@
-import { XMLParser } from 'fast-xml-parser'
+import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import type { Options as AssGenOptions } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 
@@ -20,6 +20,7 @@ import { DanmakuReplySchema } from './proto/gen/danuni_pb'
 
 import { UniDM } from './utils/dm-gen'
 import * as UniDMTools from './utils/dm-gen'
+import { UniID as ID } from './utils/id-gen'
 import * as UniIDTools from './utils/id-gen'
 import * as platform from './utils/platform'
 
@@ -462,6 +463,33 @@ export class UniPool {
         )
       }),
     )
+  }
+  toBiliXML(): string {
+    const genCID = (id: string) => {
+      const UniID = ID.fromString(id)
+      if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
+        const cid = Number(UniID.id.replaceAll('def::', ''))
+        if (cid) return cid
+      }
+      return Number.parseInt(Buffer.from(id).toString('hex'), 16)
+    }
+    const builder = new XMLBuilder({ ignoreAttributes: false })
+    return builder.build({
+      '?xml': {
+        '@_version': '1.0',
+        '@_encoding': 'UTF-8',
+      },
+      i: {
+        chatserver: 'chat.bilibili.com',
+        chatid: genCID(this.dans[0].SOID),
+        mission: 0,
+        maxlimit: this.dans.length,
+        state: 0,
+        real_name: 0,
+        source: 'k-v',
+        d: this.dans.map((dan) => dan.toBiliXML()),
+      },
+    })
   }
   static fromBiliGrpc(bin: Uint8Array | ArrayBuffer) {
     const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin)),

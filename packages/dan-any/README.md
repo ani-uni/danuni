@@ -16,7 +16,7 @@
 `pb`指`protobuf`格式(grpc协议下的默认传输格式)
 
 - [x] DanUni(json,pb)
-- [x] bili(普通+高级弹幕,xml) `正向`
+- [x] bili(普通+高级弹幕,xml) `双向`
 - [x] bili(普通+高级弹幕,pb) `正向`
 - [x] bili(指令弹幕,pb) `正向`
 - [x] dplayer

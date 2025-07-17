@@ -28,12 +28,13 @@ const xml = `<i>
 <d p="13.499,1,25,16777215,1686301548,3,2848bf1c,1335553202649003264">不喜欢</d>
 </i>`
 describe('转化自', () => {
-  it('bili(xml)', () => {
+  it('bili(xml)[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
     console.info(xml)
     console.info(pool)
+    console.info(pool.toBiliXML())
   })
-  it('bili(json)', () => {
+  it('artplayer(json)', () => {
     const json = [
         {
           text: '', // 弹幕文本
@@ -48,7 +49,7 @@ describe('转化自', () => {
     console.info(json)
     console.info(pool)
   })
-  it('ass(双向)', () => {
+  it('ass[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
     const ass = pool.toASS()
     console.info(ass)
