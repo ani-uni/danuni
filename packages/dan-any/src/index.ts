@@ -81,6 +81,9 @@ type shareItems = Partial<
   >
 >
 
+type UniPoolPipe = (that: UniPool) => Promise<UniPool>
+type UniPoolPipeSync = (that: UniPool) => UniPool
+
 interface Options {
   dedupe?: boolean
 }
@@ -92,6 +95,12 @@ export class UniPool {
   ) {
     if (options.dedupe !== false) options.dedupe = true
     if (this.options.dedupe) this.dedupe()
+  }
+  async pipe(fn: UniPoolPipe): Promise<UniPool> {
+    return fn(this)
+  }
+  pipeSync(fn: UniPoolPipeSync): UniPool {
+    return fn(this)
   }
   get shared(): shareItems {
     const isShared = (key: keyof UniDMTools.UniDMObj) => {

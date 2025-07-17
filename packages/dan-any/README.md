@@ -9,6 +9,7 @@
 - 获取一组弹幕中的共通值
 - 对弹幕按一定key值进行分组
 - 合并较短时间内出现的重复弹幕
+- 管道式插件系统
 
 ## Formats 支持转换的格式
 
@@ -22,6 +23,12 @@
 - [x] artplayer
 - [x] 弹弹Play
 - [x] ASS `双向(部分支持，见下)`
+
+## Plguins 插件
+
+插件的使用方法参见对应路径下README.md  
+
+- [dan-any-plugin-detalu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detalu): 基于pakku.js的弹幕过滤器
 
 ### ASS Raw 字段
 
@@ -39,5 +46,3 @@ Released under the GNU LESSER GENERAL PUBLIC LICENSE (LGPL) 3.0.
 本库采用 LGPL 3.0 or later 许可证发布。  
 
 [^1]: 对于`src/ass-gen`内的文件，使用了[justorez/biliy](https://github.com/justorez/biliy)的代码(MIT LICENSE)，并使用了AI进行修改与修复，同时支持了更优的Raw还原功能。  
-
-[^2]: 对于`src/pakku.js`内的文件，使用了[xmcp/pakku.js](https://github.com/xmcp/pakku.js)的代码(GPL-3.0 LICENSE)，并对其进行了一定修改使其可在该项目下使用。  
