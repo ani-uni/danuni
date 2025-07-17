@@ -1,10 +1,10 @@
-name: Publish @dan-uni/dan-any
+name: Publish @dan-uni/dan-any-plugin-detaolu
 on:
   push:
     tags:
-      - 'dan-any@*.*.*'
+      - 'dan-any-plugin-detaolu@*.*.*'
     paths:
-      - packages/dan-any/package.json
+      - packages/dan-any-plugin-detaolu/package.json
   workflow_dispatch:
 jobs:
   build:
@@ -47,19 +47,19 @@ jobs:
           sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
           pnpm install --frozen-lockfile
 
-      - name: Build @danuni/dan-any
+      - name: Build @danuni/dan-any-plugin-detaolu
         run: |
           cd ${{ github.workspace }}
-          cd ./packages/dan-any/
+          cd ./packages/dan-any-plugin-detaolu/
           # pnpx conventional-changelog-cli -p angular -i CHANGELOG.md -s
           pnpm run lint
           pnpm run build
           pnpm run test
 
-      - name: Publish @danuni/dan-any
+      - name: Publish @danuni/dan-any-plugin-detaolu
         run: |
           cd ${{ github.workspace }}
-          cd ./packages/dan-any/
+          cd ./packages/dan-any-plugin-detaolu/
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
