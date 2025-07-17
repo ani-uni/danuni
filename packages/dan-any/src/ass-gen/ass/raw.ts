@@ -3,15 +3,13 @@ import {
   brotliDecompressSync,
   gunzipSync,
   gzipSync,
-  zstdCompressSync,
-  zstdDecompressSync,
 } from 'node:zlib'
 import * as base16384 from 'base16384'
 import type { Context, Danmaku, SubtitleStyle } from '../types'
 
-type compressType = 'zstd' | 'brotli' | 'gzip'
+type compressType = 'brotli' | 'gzip'
 type baseType = 'base64' | 'base18384'
-const compressTypes = ['zstd', 'brotli', 'gzip'],
+const compressTypes = ['brotli', 'gzip'],
   baseTypes = ['base64', 'base18384']
 
 export interface RawConfig {
@@ -31,14 +29,13 @@ export function raw(
   list: Danmaku[],
   config: SubtitleStyle,
   context: Context,
-  compressType: compressType = 'zstd',
+  compressType: compressType = 'brotli',
   baseType: baseType = 'base18384',
 ) {
   const raw = { list, config, context },
     rawText = JSON.stringify(raw)
   let compress = Buffer.from('')
-  if (compressType === 'zstd') compress = zstdCompressSync(rawText)
-  else if (compressType === 'brotli') compress = brotliCompressSync(rawText)
+  if (compressType === 'brotli') compress = brotliCompressSync(rawText)
   else compress = gzipSync(rawText)
   return `;RawCompressType: ${compressType}\n;RawBaseType: ${baseType}\n;Raw: ${baseType === 'base64' ? compress.toString('base64') : fromUint16Array(base16384.encode(compress))}`
 }
@@ -70,9 +67,7 @@ export function deRaw(ass: string):
               base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
             )
     let decompress = Buffer.from('')
-    if (compressType === 'zstd') decompress = zstdDecompressSync(buffer)
-    else if (compressType === 'brotli')
-      decompress = brotliDecompressSync(buffer)
+    if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
     else decompress = gunzipSync(buffer)
     try {
       return JSON.parse(decompress.toString('utf-8'))
