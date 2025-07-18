@@ -217,6 +217,7 @@ interface ExtraArtplayer {
 interface ExtraBili {
   mode?: number //原弹幕类型
   pool?: number //原弹幕池
+  dmid?: bigint //原弹幕ID
   adv?: string
   code?: string
   bas?: string
@@ -658,7 +659,9 @@ export class UniDM {
       senderID = ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
     const pool = args.pool, //暂时不做处理，兼容bili的pool格式
-      extra: TExtra = { bili: { mode: args.mode, pool: args.pool } }
+      extra: TExtra = {
+        bili: { mode: args.mode, pool: args.pool, dmid: args.id },
+      }
     //重复 transMode ，但此处有关于extra的额外处理
     switch (args.mode) {
       case 4:
@@ -687,9 +690,6 @@ export class UniDM {
         mode = Modes.Normal
         break
     }
-    // if (args.mode === 7) extra.bili.adv = args.content
-    // else if (args.mode === 8) extra.bili.code = args.content
-    // else if (args.mode === 9) extra.bili.bas = args.content
     return this.create({
       ...args,
       SOID: SOID.toString(),
@@ -732,7 +732,7 @@ export class UniDM {
           return 1
       }
     }
-    const rMode = recMode(this.mode, this.extra?.bili)
+    const rMode = this.extra.bili?.mode || recMode(this.mode, this.extra?.bili)
     let content
     switch (rMode) {
       case 7:
@@ -756,9 +756,9 @@ export class UniDM {
         this.fontsize,
         this.color,
         this.ctime.getTime() / 1000,
-        this.pool, // 目前pool与bili兼容
+        this.extra.bili?.pool || this.pool, // 目前pool与bili兼容
         this.senderID,
-        this.DMID || this.toDMID(),
+        this.extra.bili?.dmid || this.DMID || this.toDMID(),
         this.weight,
       ].join(','),
     }
