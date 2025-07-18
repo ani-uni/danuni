@@ -42,6 +42,11 @@ class SetBin {
     this.bin &= ~(1 << bit)
   }
 }
+
+/**
+ * 获得数字的二进制，每位以boolean(true/false)表示1/0，从低位向高位
+ * @param number 任意进制数字
+ */
 const toBits = (number: number) => {
   // 低速方案
   // return [...number.toString(2)].map(Number)
@@ -52,7 +57,7 @@ const toBits = (number: number) => {
     // bits.unshift(number & 1) // (0|1)[]
     number >>= 1
   } while (number)
-  return bits
+  return bits.reverse()
 }
 
 export type DMAttr =
@@ -339,9 +344,13 @@ export class UniDM {
     /**
      * 字号
      * @default 25
+     * - 12
+     * - 16
      * - 18：小
      * - 25：标准
      * - 36：大
+     * - 45
+     * - 64
      */
     public fontsize: number = 25,
     /**
@@ -396,10 +405,10 @@ export class UniDM {
     //TODO 引入class-validator
     if (progress < 0) this.progress = 0
     if (mode < Modes.Normal || mode > Modes.Ext) this.mode = Modes.Normal
-    if (fontsize <= 0) this.fontsize = 25
+    if (fontsize < 10 || fontsize > 127) this.fontsize = 25
     if (color <= 0) this.color = 16777215 //虽然不知道为0是否为可用值，但过为少见，利用其作为默认位
     // if (ctime <= 0n) this.ctime = BigInt(Date.now())
-    if (weight < 0 || weight > 10) this.weight = 5
+    if (weight < 0 || weight > 11) this.weight = 5
     if (pool < Pools.Def || pool > Pools.Ix) this.pool = Pools.Def
     // if (attr < 0 || attr > 0b111) this.attr = 0
     if (!DMID) DMID = this.toDMID()
