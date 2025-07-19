@@ -40,8 +40,8 @@
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.55.1",
-    "@bufbuild/protobuf": "^2.6.0",
-    "@bufbuild/protoc-gen-es": "^2.6.0",
+    "@bufbuild/protobuf": "^2.6.1",
+    "@bufbuild/protoc-gen-es": "^2.6.1",
     "@types/fs-extra": "^11.0.4",
     "@types/hh-mm-ss": "^1.2.3",
     "protobufjs": "^7.5.3"
