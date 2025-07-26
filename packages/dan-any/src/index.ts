@@ -296,7 +296,9 @@ export class UniPool {
           extra.danuni = extra.danuni || {}
           extra.danuni.merge = {
             count: senders.length,
-            duration: danmaku.progress - cached.progress,
+            duration: Number.parseFloat(
+              (danmaku.progress - cached.progress).toFixed(3),
+            ),
             senders,
             taolu_count: senders.length,
             taolu_senders: senders,
