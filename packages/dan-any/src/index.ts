@@ -467,10 +467,14 @@ export class UniPool {
     const genCID = (id: string) => {
       const UniID = ID.fromString(id)
       if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
-        const cid = Number(UniID.id.replaceAll('def::', ''))
+        const cid = UniID.id.replaceAll(
+          `def_${platform.PlatformVideoSource.Bilibili}+`,
+          '',
+        )
+
         if (cid) return cid
       }
-      return Number.parseInt(Buffer.from(id).toString('hex'), 16)
+      return Number.parseInt(Buffer.from(id).toString('hex'), 16).toString()
     }
     const builder = new XMLBuilder({ ignoreAttributes: false })
     return builder.build({

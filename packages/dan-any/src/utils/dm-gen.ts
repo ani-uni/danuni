@@ -731,7 +731,7 @@ export class UniDM {
       bili: ExtraBili
     }
     if (args.oid && !cid) cid = args.oid
-    const SOID = `def::${ID.fromBili({ cid })}`,
+    const SOID = `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
       senderID = ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
     const pool = args.pool, //暂时不做处理，兼容bili的pool格式

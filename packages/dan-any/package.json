@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
