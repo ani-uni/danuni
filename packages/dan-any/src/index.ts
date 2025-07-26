@@ -280,7 +280,7 @@ export class UniPool {
       ]
     >(
       ([result, cache, mergeObj], danmaku) => {
-        const key = ['SOID', 'content', 'mode', 'platform', 'pool']
+        const key = ['content', 'mode', 'platform', 'pool']
           .map((k) => danmaku[k as keyof UniDM])
           .join('|')
         const cached = cache[key]
@@ -288,7 +288,7 @@ export class UniPool {
         if (
           cached &&
           danmaku.progress - lastAppearTime <= lifetime &&
-          danmaku.isSameAs(cached)
+          danmaku.isSameAs(cached, { skipDanuniMerge: true })
         ) {
           const senders = mergeObj[key].senders
           senders.push(danmaku.senderID)
@@ -328,7 +328,7 @@ export class UniPool {
     // 处理结果，删除senders<=1的merge字段
     const [result, _cache, mergeObj] = mergeContext
     result.forEach((danmaku, i) => {
-      const key = ['SOID', 'content', 'mode', 'platform', 'pool']
+      const key = ['content', 'mode', 'platform', 'pool']
         .map((k) => danmaku[k as keyof UniDM])
         .join('|')
       const extra = result[i].extra,
