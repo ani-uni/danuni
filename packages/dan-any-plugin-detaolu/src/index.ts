@@ -48,7 +48,9 @@ async function detaolu(that: UniPool, config?: DeTaoLuConfig) {
           danuni: {
             merge: {
               count: p.danuni_count,
-              duration: Math.max(...progess) - Math.min(...progess),
+              duration: Number.parseFloat(
+                (Math.max(...progess) - Math.min(...progess)).toFixed(3),
+              ),
               senders: pool.dans
                 .filter((d) => d.content === p.chosen_str)
                 .map((d) => d.senderID),
