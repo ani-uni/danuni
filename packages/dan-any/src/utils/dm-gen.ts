@@ -478,6 +478,20 @@ export class UniDM {
         cleanEmptyObjects(JSON.parse(this.extraStr)),
       )
     if (this.extraStr === '{}') this.extraStr = undefined
+    else if (this.mode !== Modes.Ext) {
+      const checkExtraBili = (obj?: ExtraBili) =>
+        obj
+          ? (['adv', 'bas', 'code', 'command'] as (keyof ExtraBili)[]).some(
+              (k) => obj[k],
+            )
+          : false
+      if (
+        this.extra.artplayer ||
+        this.extra.danuni?.chapter ||
+        checkExtraBili(this.extra.bili)
+      )
+        this.mode = Modes.Ext
+    }
     return this
   }
   @Expose()
@@ -526,7 +540,11 @@ export class UniDM {
     return createDMID(this.content, this.senderID, this.ctime, this.extraStr)
   }
   @Expose()
-  isSameAs(dan: UniDM, _check2 = false): boolean {
+  isSameAs(dan: UniDM): boolean {
+    // 不支持比较高级弹幕
+    if (this.mode === Modes.Ext || dan.mode === Modes.Ext) return false
+    // 合并过视为不同
+    if (this.extra.danuni?.merge || dan.extra.danuni?.merge) return false
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
       checks = (
         [
@@ -537,38 +555,8 @@ export class UniDM {
           'pool',
         ] satisfies (keyof UniDMObj)[]
       ).every((k) => isSame(k))
-    // 如果两个对象的extra都是空对象，只检查基本字段
-    if (
-      JSON.stringify(this.extra) === '{}' &&
-      JSON.stringify(dan.extra) === '{}'
-    ) {
-      return checks
-    }
-    // 特殊情况：只包含danuni.merge的情况
-    const thisHasOnlyMerge =
-      this.extra.danuni?.merge &&
-      !this.extra.artplayer &&
-      !this.extra.bili &&
-      !this.extra.danuni.chapter
-    const danHasOnlyMerge =
-      dan.extra.danuni?.merge &&
-      !dan.extra.artplayer &&
-      !dan.extra.bili &&
-      !dan.extra.danuni.chapter
-    if (thisHasOnlyMerge && danHasOnlyMerge) {
-      return checks
-    }
-    if (_check2) {
-      return isSame('extraStr') && checks
-    }
-    const a = { ...this.extra }
-    const b = { ...dan.extra }
-    if (a.danuni) delete a.danuni.merge
-    if (b.danuni) delete b.danuni.merge
-    return UniDM.create({
-      ...a,
-      extraStr: JSON.stringify(a),
-    }).isSameAs(UniDM.create({ ...b, extraStr: JSON.stringify(b) }), true)
+    // 忽略使用了extra字段却不在mode里标记的弹幕
+    return checks
   }
   @Expose()
   minify() {
