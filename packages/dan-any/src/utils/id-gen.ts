@@ -66,10 +66,13 @@ export function createDMID(
   content: string = '',
   senderID: string,
   ctime: ctime,
+  extraStr?: string,
   slice = 8,
 ) {
   return new jsSHA('SHA3-256', 'TEXT')
-    .update(content + senderID + UniDM.transCtime(ctime).toISOString())
+    .update(
+      `${content}|${senderID}|${UniDM.transCtime(ctime).toISOString()}|${extraStr}`,
+    )
     .getHash('HEX')
     .slice(0, slice)
 }
