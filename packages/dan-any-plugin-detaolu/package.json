@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any-plugin-detaolu",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A filter, dedupe and anti-spam plugin of dan-any, a danmaku transformer lib, based on pakku.js.",
   "keywords": [
     "bangumi",
@@ -17,8 +17,8 @@
   },
   "author": "rinne",
   "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/src/index.d.ts",
+  "module": "src/index.ts",
+  "types": "dist/index.d.ts",
   "browser": "dist/index.umd.min.js",
   "scripts": {
     "test": "vitest",
