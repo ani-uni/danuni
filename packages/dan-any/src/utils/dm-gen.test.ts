@@ -114,13 +114,16 @@ describe('其它', () => {
       UniDM.create({ ...commonSample }),
       UniDM.create({ ...commonSample, extra: { artplayer: { border: true } } }),
     ]
+    let counter = 0
     for (const pool of pool2) {
       console.info(pool.extraStr)
       console.info(pool2[0].isSameAs(pool))
+      if (counter <= 2) expect(pool2[0].extraStr).toBe(undefined)
+      counter++
     }
     expect(pool2[0].isSameAs(pool2[1])).toBe(true)
     expect(pool2[0].isSameAs(pool2[2])).toBe(true)
-    expect(pool2[0].isSameAs(pool2[3])).toBe(true)
+    expect(pool2[0].isSameAs(pool2[3])).toBe(false)
     expect(pool2[0].isSameAs(pool2[4])).toBe(false)
   })
 })

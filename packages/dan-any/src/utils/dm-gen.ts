@@ -543,7 +543,7 @@ export class UniDM {
   isSameAs(dan: UniDM): boolean {
     // 不支持比较高级弹幕
     if (this.mode === Modes.Ext || dan.mode === Modes.Ext) return false
-    // 合并过视为不同
+    // 合并过视为不同，防止存在合并完成弹幕后再次合并造成计数错误
     if (this.extra.danuni?.merge || dan.extra.danuni?.merge) return false
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
       checks = (
