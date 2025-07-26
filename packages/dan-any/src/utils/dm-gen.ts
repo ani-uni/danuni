@@ -484,7 +484,6 @@ export class UniDM {
   async validate() {
     return validateOrReject(this)
   }
-  @Expose()
   static create(pjson?: Partial<UniDMObj>) {
     return pjson
       ? plainToInstance(
