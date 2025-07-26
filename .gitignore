@@ -58,3 +58,5 @@ gen
 
 .rslib
 test
+
+tsconfig.tsbuildinfo

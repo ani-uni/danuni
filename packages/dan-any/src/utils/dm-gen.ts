@@ -1,4 +1,19 @@
+import { Expose, plainToInstance } from 'class-transformer'
+import {
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  validateOrReject,
+} from 'class-validator'
 import TimeFormat from 'hh-mm-ss'
+import JSONbig from 'json-bigint'
 import type { DM_JSON_BiliCommandGrpc } from '..'
 import type { PlatformDanmakuSource } from './platform'
 
@@ -9,8 +24,7 @@ import {
   PlatformVideoSource,
 } from './platform'
 
-const BigIntSerializer = (k: string, v: any) =>
-  typeof v === 'bigint' ? v.toString() : v
+const JSON = JSONbig({ useNativeBigInt: true })
 
 function cleanEmptyObjects(obj: object): object {
   if (obj === null || typeof obj !== 'object') {
@@ -60,23 +74,24 @@ const toBits = (number: number) => {
   return bits.reverse()
 }
 
-export type DMAttr =
-  | 'Protect'
-  | 'FromLive'
-  | 'HighLike'
-  | 'Compatible' // 由dan-any进行过兼容处理的弹幕，可能丢失部分信息
-  | 'Reported' // 在DanUni上被多人举报过的弹幕
-  | 'Unchecked' // 在DanUni上未被审核过的弹幕
-  | 'HasEvent' // 该弹幕当前在DanUni上存在事件(如点赞/举报等)
-  | 'Hide' // 由于其它原因需要隐藏的弹幕(建议在server端不返回该类弹幕)
+export enum DMAttr {
+  Protect = 'Protect',
+  FromLive = 'FromLive',
+  HighLike = 'HighLike',
+  Compatible = 'Compatible', // 由dan-any进行过兼容处理的弹幕，可能丢失部分信息
+  Reported = 'Reported', // 在DanUni上被多人举报过的弹幕
+  Unchecked = 'Unchecked', // 在DanUni上未被审核过的弹幕
+  HasEvent = 'HasEvent', // 该弹幕当前在DanUni上存在事件(如点赞/举报等)
+  Hide = 'Hide', // 由于其它原因需要隐藏的弹幕(建议在server端不返回该类弹幕)
+}
 const DMAttrUtils = {
   fromBin(bin: number = 0, format?: PlatformDanmakuSource) {
     const array = toBits(bin),
       attr: DMAttr[] = []
     if (format === 'bili') {
-      if (array[0]) attr.push('Protect')
-      if (array[1]) attr.push('FromLive')
-      if (array[2]) attr.push('HighLike')
+      if (array[0]) attr.push(DMAttr.Protect)
+      if (array[1]) attr.push(DMAttr.FromLive)
+      if (array[2]) attr.push(DMAttr.HighLike)
     }
     return attr
   },
@@ -91,9 +106,9 @@ const DMAttrUtils = {
   ) {
     const bin = new SetBin(0)
     if (format === 'bili') {
-      if (attr.includes('Protect')) bin.set1(0)
-      if (attr.includes('FromLive')) bin.set1(1)
-      if (attr.includes('HighLike')) bin.set1(2)
+      if (attr.includes(DMAttr.Protect)) bin.set1(0)
+      if (attr.includes(DMAttr.FromLive)) bin.set1(1)
+      if (attr.includes(DMAttr.HighLike)) bin.set1(2)
     }
     return bin.bin
   },
@@ -319,133 +334,181 @@ export interface UniDMObj {
   DMID: string
 }
 
-/**
- * 所有 number/bigint 值设为0自动转换为默认
- */
 export class UniDM {
   /**
-   * 同步时确认位置的参数
+   * 资源ID
+   * @description 由某一danuni服务确定的某一剧集下不同资源(不同视频站/字幕组具有细节差异)的ID
    */
-  // syncAnchor = BigInt(Date.now())
-  constructor(
-    /**
-     * 资源ID
-     * @description 由某一danuni服务确定的某一剧集下不同资源(不同视频站/字幕组具有细节差异)的ID
-     */
-    public SOID: string,
-    /**
-     * 弹幕出现位置(单位s;精度为ms,即保留三位小数)
-     */
-    public progress: number = 0,
-    /**
-     * 弹幕类型
-     */
-    public mode: Modes = Modes.Normal,
-    /**
-     * 字号
-     * @default 25
-     * - 12
-     * - 16
-     * - 18：小
-     * - 25：标准
-     * - 36：大
-     * - 45
-     * - 64
-     */
-    public fontsize: number = 25,
-    /**
-     * 颜色
-     * @description 为DEC值(十进制RGB888值)，默认白色
-     * @default 16777215
-     */
-    public color: number = 16777215,
-    /**
-     * 发送者 senderID
-     */
-    public senderID: string = ID.fromNull().toString(),
-    /**
-     * 正文
-     */
-    public content: string = '',
-    /**
-     * 发送时间
-     */
-    // public ctime: bigint = BigInt(Date.now()),
-    public ctime: Date = new Date(),
-    /**
-     * 权重 用于屏蔽等级 区间:[1,10]
-     * @description 参考B站，源弹幕有该参数则直接利用，
-     * 本实现默认取5，再经过ruleset匹配加减分数
-     * @description 为0时表示暂时未计算权重
-     */
-    public weight: number = 0,
-    /**
-     * 弹幕池 0:普通池 1:字幕池 2:特殊池(代码/BAS弹幕) 3:互动池(互动弹幕中选择投票快速发送的弹幕)
-     */
-    public pool: Pools = Pools.Def,
-    /**
-     * 弹幕属性位(bin求AND)
-     * bit0:保护 bit1:直播 bit2:高赞
-     */
-    public attr: DMAttr[] = [],
-    /**
-     * 初始来源平台
-     * `danuni`与任意空值(可隐式转换为false的值)等价
-     */
-    public platform?: PlatformDanmakuSource | string,
-    /**
-     * 弹幕原始数据(不推荐使用)
-     * @description 适用于无法解析的B站代码弹幕、Artplayer弹幕样式等
-     * @description 初步约定:
-     * - Artplayer: style不为空时，将其JSON.stringify()存入
-     */
-    public extraStr?: string,
-    public DMID?: string,
-  ) {
-    //TODO 引入class-validator
-    if (progress < 0) this.progress = 0
-    if (mode < Modes.Normal || mode > Modes.Ext) this.mode = Modes.Normal
-    if (fontsize < 10 || fontsize > 127) this.fontsize = 25
-    if (color <= 0) this.color = 16777215 //虽然不知道为0是否为可用值，但过为少见，利用其作为默认位
-    // if (ctime <= 0n) this.ctime = BigInt(Date.now())
-    if (weight < 0 || weight > 11) this.weight = 5
-    if (pool < Pools.Def || pool > Pools.Ix) this.pool = Pools.Def
-    // if (attr < 0 || attr > 0b111) this.attr = 0
-    if (!DMID) DMID = this.toDMID()
+  @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty()
+  @Expose()
+  public SOID: string = ID.fromNull().toString()
+  /**
+   * 弹幕出现位置(单位s;精度为ms,即保留三位小数)
+   */
+  @Min(0)
+  @IsNumber()
+  @IsNotEmpty()
+  @Expose()
+  public progress: number = 0
+  /**
+   * 弹幕类型
+   */
+  @IsEnum(Modes)
+  @IsNotEmpty()
+  @Expose()
+  public mode: Modes = Modes.Normal
+  /**
+   * 字号
+   * @default 25
+   * - 12
+   * - 16
+   * - 18：小
+   * - 25：标准
+   * - 36：大
+   * - 45
+   * - 64
+   */
+  @Max(64)
+  @Min(12)
+  @IsNumber()
+  @IsNotEmpty()
+  @Expose()
+  public fontsize: number = 25
+  /**
+   * 颜色
+   * @description 为DEC值(十进制RGB888值)，默认白色
+   * @default 16777215
+   */
+  @IsNumber()
+  @IsNotEmpty()
+  @Expose()
+  public color: number = 16777215
+  /**
+   * 发送者 senderID
+   */
+  @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty()
+  @Expose()
+  public senderID: string = ID.fromNull().toString()
+  /**
+   * 正文
+   */
+  @IsString()
+  @IsNotEmpty()
+  @Expose()
+  public content: string = ''
+  /**
+   * 发送时间
+   */
+  @IsDate()
+  @IsNotEmpty()
+  @Expose()
+  public ctime: Date = new Date()
+  /**
+   * 权重 用于屏蔽等级 区间:[0,11]
+   * @description 参考B站，源弹幕有该参数则直接利用，
+   * 本实现默认取5，再经过ruleset匹配加减分数
+   * @description 为0时表示暂时未计算权重
+   */
+  @Max(11)
+  @Min(0)
+  @IsInt()
+  @IsNotEmpty()
+  @Expose()
+  public weight: number = 0
+  /**
+   * 弹幕池 0:普通池 1:字幕池 2:特殊池(代码/BAS弹幕) 3:互动池(互动弹幕中选择投票快速发送的弹幕)
+   */
+  @IsEnum(Pools)
+  @IsNotEmpty()
+  @Expose()
+  public pool: Pools = Pools.Def
+  /**
+   * 弹幕属性位(bin求AND)
+   * bit0:保护 bit1:直播 bit2:高赞
+   */
+  @IsEnum(DMAttr, { each: true })
+  @IsNotEmpty()
+  @Expose()
+  public attr: DMAttr[] = []
+  /**
+   * 初始来源平台
+   * `danuni`与任意空值(可隐式转换为false的值)等价
+   */
+  @IsString()
+  @IsOptional()
+  @Expose()
+  public platform?: PlatformDanmakuSource | string
+  /**
+   * 弹幕原始数据(不推荐使用)
+   * @description 适用于无法解析的B站代码弹幕、Artplayer弹幕样式等
+   * @description 初步约定:
+   * - Artplayer: style不为空时，将其JSON.stringify()存入
+   */
+  @IsString()
+  @IsOptional()
+  @Expose()
+  public extraStr?: string
+  @IsString()
+  @IsOptional()
+  @Expose()
+  public DMID?: string
+  @Expose()
+  init() {
+    const def = new UniDM()
+    if (!this.SOID) this.SOID = def.SOID
+    if (!this.progress) this.progress = def.progress
+    if (!this.mode) this.mode = def.mode
+    if (!this.fontsize) this.fontsize = def.mode
+    if (!this.color) this.color = def.color
+    if (!this.senderID) this.senderID = def.senderID
+    if (!this.content) this.content = def.content
+    if (!this.ctime) this.ctime = def.ctime
+    if (!this.weight) this.weight = def.weight
+    if (!this.pool) this.pool = def.pool
+    if (!this.attr) this.attr = def.attr
 
-    this.progress = Number.parseFloat(progress.toFixed(3))
-    if (extraStr)
-      this.extraStr = JSON.stringify(cleanEmptyObjects(JSON.parse(extraStr)))
-    if (extraStr === '{}') this.extraStr = undefined
+    if (!this.DMID) this.DMID = this.toDMID()
+    this.progress = Number.parseFloat(this.progress.toFixed(3))
+    if (this.extraStr)
+      this.extraStr = JSON.stringify(
+        cleanEmptyObjects(JSON.parse(this.extraStr)),
+      )
+    if (this.extraStr === '{}') this.extraStr = undefined
+    return this
   }
-  static create(args?: Partial<UniDMObj>) {
-    return args
-      ? new UniDM(
-          args.SOID || ID.fromNull().toString(),
-          args.progress,
-          args.mode,
-          args.fontsize,
-          args.color,
-          args.senderID,
-          args.content,
-          args.ctime,
-          args.weight,
-          args.pool,
-          args.attr,
-          args.platform,
-          typeof args.extra === 'object'
-            ? JSON.stringify(args.extra)
-            : args.extra || args.extraStr,
-          args.DMID,
-        )
-      : new UniDM(ID.fromNull().toString())
+  @Expose()
+  async validate() {
+    return validateOrReject(this)
   }
+  @Expose()
+  static create(pjson?: Partial<UniDMObj>) {
+    return pjson
+      ? plainToInstance(
+          UniDM,
+          pjson.extra
+            ? {
+                ...pjson,
+                extraStr: pjson.extra
+                  ? JSON.stringify(pjson.extra)
+                  : pjson.extraStr,
+              }
+            : pjson,
+          { excludeExtraneousValues: true },
+        ).init()
+      : new UniDM()
+  }
+  @Expose()
   get extra(): Extra {
     const extra = JSON.parse(this.extraStr || '{}')
     // this.extraStr = JSON.stringify(cleanEmptyObjects(extra))
     return extra
     // return cleanEmptyObjects(extra) as Extra
   }
+  @Expose()
   get isFrom3rdPlatform() {
     if (
       this.platform &&
@@ -459,9 +522,11 @@ export class UniDM {
    * @description sha3-256(content+senderID+ctime)截取前8位
    * @description 同一SOID下唯一
    */
+  @Expose()
   toDMID() {
-    return createDMID(this.content, this.senderID, this.ctime)
+    return createDMID(this.content, this.senderID, this.ctime, this.extraStr)
   }
+  @Expose()
   isSameAs(dan: UniDM, _check2 = false): boolean {
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
       checks = (
@@ -501,11 +566,12 @@ export class UniDM {
     const b = { ...dan.extra }
     if (a.danuni) delete a.danuni.merge
     if (b.danuni) delete b.danuni.merge
-    return UniDM.create({ ...a, extraStr: JSON.stringify(a) }).isSameAs(
-      UniDM.create({ ...b, extraStr: JSON.stringify(b) }),
-      true,
-    )
+    return UniDM.create({
+      ...a,
+      extraStr: JSON.stringify(a),
+    }).isSameAs(UniDM.create({ ...b, extraStr: JSON.stringify(b) }), true)
   }
+  @Expose()
   minify() {
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'SOID'>
     const def: UObj = UniDM.create(),
@@ -525,6 +591,7 @@ export class UniDM {
     }
     return JSON.parse(JSON.stringify(dan)) as UObj
   }
+  @Expose()
   downgradeAdvcancedDan(
     {
       include,
@@ -570,7 +637,7 @@ export class UniDM {
         }
       }
       clone.senderID = 'compat[bot]@dan-any'
-      clone.attr.push('Compatible')
+      clone.attr.push(DMAttr.Compatible)
       if (cleanExtra) clone.extraStr = undefined
       return clone
     }
@@ -716,11 +783,14 @@ export class UniDM {
       // 需改进，7=>advanced 8=>code 9=>bas 互动=>command
       // 同时塞进无法/无需直接解析的数据
       // 另开一个解析器，为大部分播放器（无法解析该类dm）做文本类型降级处理
-      extra:
-        args.mode >= 7 ? JSON.stringify(extra, BigIntSerializer) : undefined,
+      extra,
     })
   }
-  toBiliXML() {
+  @Expose()
+  toBiliXML(options?: { skipBiliCommand: boolean }) {
+    if (options?.skipBiliCommand && this.extra.bili?.command) {
+      return null
+    }
     const recMode = (mode: Modes, extra?: ExtraBili) => {
       switch (mode) {
         case Modes.Normal:
@@ -788,16 +858,13 @@ export class UniDM {
       ctime: new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
       weight: 10,
       pool: Pools.Adv,
-      attr: ['Protect'],
+      attr: [DMAttr.Protect],
       platform: PlatformVideoSource.Bilibili,
-      extra: JSON.stringify(
-        {
-          bili: {
-            command: args,
-          },
+      extra: {
+        bili: {
+          command: args,
         },
-        BigIntSerializer,
-      ),
+      },
     })
   }
   static fromDplayer(args: DMDplayer, playerID: string, domain: string) {
@@ -815,6 +882,7 @@ export class UniDM {
       platform: domain,
     })
   }
+  @Expose()
   toDplayer(): DMDplayer {
     let mode = 0
     if (this.mode === Modes.Top) mode = 1
@@ -851,9 +919,10 @@ export class UniDM {
       senderID: senderID.toString(),
       // content: args.content,
       platform: domain,
-      extra: JSON.stringify(extra, BigIntSerializer), //optional BigINt parser
+      extra, //optional BigINt parser
     })
   }
+  @Expose()
   toArtplayer(): DMArtplayer {
     let mode = 0
     if (this.mode === Modes.Top) mode = 1
@@ -885,6 +954,7 @@ export class UniDM {
       DMID: args.cid.toString(), //无需 new ID() 获取带suffix的ID
     })
   }
+  @Expose()
   toDDplay(): DMDDplay {
     let mode = 1
     if (this.mode === Modes.Top) mode = 5

@@ -1,4 +1,7 @@
+import 'reflect-metadata/lite'
+
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
+import JSONbig from 'json-bigint'
 import type { Options as AssGenOptions } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 
@@ -23,6 +26,10 @@ import * as UniDMTools from './utils/dm-gen'
 import { UniID as ID } from './utils/id-gen'
 import * as UniIDTools from './utils/id-gen'
 import * as platform from './utils/platform'
+
+const JSON = JSONbig({
+  useNativeBigInt: true,
+})
 
 export interface DM_XML_Bili {
   i: {
@@ -349,8 +356,8 @@ export class UniPool {
         } else {
           result[i].senderID = 'merge[bot]@dan-any'
           result[i].attr
-            ? result[i].attr.push('Protect')
-            : (result[i].attr = ['Protect'])
+            ? result[i].attr.push(UniDMTools.DMAttr.Protect)
+            : (result[i].attr = [UniDMTools.DMAttr.Protect])
         }
       }
     })
@@ -389,24 +396,14 @@ export class UniPool {
   static fromPb(bin: Uint8Array | ArrayBuffer) {
     const data = fromBinary(DanmakuReplySchema, new Uint8Array(bin))
     return new UniPool(
-      data.danmakus.map(
-        (d) =>
-          new UniDM(
-            d.SOID,
-            d.progress,
-            d.mode as number,
-            d.fontsize,
-            d.color,
-            d.senderID,
-            d.content,
-            timestampDate(d.ctime || timestampNow()),
-            d.weight,
-            d.pool as number,
-            d.attr as UniDMTools.DMAttr[],
-            d.platform,
-            d.extra,
-            d.DMID,
-          ),
+      data.danmakus.map((d) =>
+        UniDM.create({
+          ...d,
+          mode: d.mode as number,
+          ctime: timestampDate(d.ctime || timestampNow()),
+          pool: d.pool as number,
+          attr: d.attr as UniDMTools.DMAttr[],
+        }),
       ),
     )
   }
@@ -443,25 +440,27 @@ export class UniPool {
       oriData: DM_XML_Bili = parser.parse(xml),
       dans = oriData.i.d
     return new UniPool(
-      dans.map((d) => {
-        const p_str = d['@_p'],
-          p_arr = p_str.split(',')
-        return UniDM.fromBili(
-          {
-            content: d['#text'],
-            progress: Number.parseFloat(p_arr[0]),
-            mode: Number.parseInt(p_arr[1]),
-            fontsize: Number.parseInt(p_arr[2]),
-            color: Number.parseInt(p_arr[3]),
-            ctime: BigInt(p_arr[4]),
-            pool: Number.parseInt(p_arr[5]),
-            midHash: p_arr[6],
-            id: BigInt(p_arr[7]),
-            weight: Number.parseInt(p_arr[8]),
-          },
-          BigInt(oriData.i.chatid),
-        )
-      }),
+      dans
+        .map((d) => {
+          const p_str = d['@_p'],
+            p_arr = p_str.split(',')
+          return UniDM.fromBili(
+            {
+              content: d['#text'],
+              progress: Number.parseFloat(p_arr[0]),
+              mode: Number.parseInt(p_arr[1]),
+              fontsize: Number.parseInt(p_arr[2]),
+              color: Number.parseInt(p_arr[3]),
+              ctime: BigInt(p_arr[4]),
+              pool: Number.parseInt(p_arr[5]),
+              midHash: p_arr[6],
+              id: BigInt(p_arr[7]),
+              weight: Number.parseInt(p_arr[8]),
+            },
+            BigInt(oriData.i.chatid),
+          )
+        })
+        .filter((d) => d !== null),
     )
   }
   toBiliXML(): string {
