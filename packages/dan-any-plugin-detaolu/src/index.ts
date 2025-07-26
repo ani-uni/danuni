@@ -42,7 +42,7 @@ async function detaolu(that: UniPool, config?: DeTaoLuConfig) {
         content: p.chosen_str,
         weight: 10,
         pool: pool.shared.pool ?? pool.most.pool,
-        attr: ['Protect'],
+        attr: [UniDMTools.DMAttr.Protect],
         platform: pool.shared.platform ?? pool.most.platform,
         extra: {
           danuni: {
