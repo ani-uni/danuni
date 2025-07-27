@@ -931,7 +931,10 @@ export class UniDM {
     episodeId: string,
     domain = PlatformDanmakuOnlySource.DanDanPlay,
   ) {
-    const SOID = ID.fromUnknown(`def::${episodeId}`, domain)
+    const SOID = ID.fromUnknown(
+      `def_${PlatformDanmakuOnlySource.DanDanPlay}+${episodeId}`,
+      domain,
+    )
     return this.create({
       ...args,
       SOID: SOID.toString(),
