@@ -9,7 +9,7 @@ let ptr_buf: number
 
 const MAX_STRING_LEN = 16005
 
-export async function init(wasm_module: ArrayBuffer) {
+export async function init(wasm_module: ArrayBuffer | NonSharedBuffer) {
   module = await generated_promise({ wasm: wasm_module })
   ptr_buf = module._malloc(MAX_STRING_LEN * 2 + 7)
   if (ptr_buf % 2)
