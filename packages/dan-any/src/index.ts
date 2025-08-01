@@ -94,6 +94,7 @@ type UniPoolPipeSync = (that: UniPool) => UniPool
 
 interface Options {
   dedupe?: boolean
+  dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
 
 export class UniPool {
@@ -223,8 +224,8 @@ export class UniPool {
       platform: s.platform.sort((a, b) => b.count - a.count)[0].val,
     }
   }
-  static create() {
-    return new UniPool([])
+  static create(options?: Options) {
+    return new UniPool([], options)
   }
   /**
    * 合并弹幕/弹幕库
@@ -395,18 +396,22 @@ export class UniPool {
       }
     }
   }
-  static fromPb(bin: Uint8Array | ArrayBuffer) {
+  static fromPb(bin: Uint8Array | ArrayBuffer, options?: Options) {
     const data = fromBinary(DanmakuReplySchema, new Uint8Array(bin))
     return new UniPool(
       data.danmakus.map((d) =>
-        UniDM.create({
-          ...d,
-          mode: d.mode as number,
-          ctime: timestampDate(d.ctime || timestampNow()),
-          pool: d.pool as number,
-          attr: d.attr as UniDMTools.DMAttr[],
-        }),
+        UniDM.create(
+          {
+            ...d,
+            mode: d.mode as number,
+            ctime: timestampDate(d.ctime || timestampNow()),
+            pool: d.pool as number,
+            attr: d.attr as UniDMTools.DMAttr[],
+          },
+          options,
+        ),
       ),
+      options,
     )
   }
   /**
@@ -437,7 +442,7 @@ export class UniPool {
       }),
     )
   }
-  static fromBiliXML(xml: string) {
+  static fromBiliXML(xml: string, options?: Options) {
     const parser = new XMLParser({ ignoreAttributes: false }),
       oriData: DM_XML_Bili = parser.parse(xml),
       dans = oriData.i.d
@@ -460,9 +465,11 @@ export class UniPool {
               weight: Number.parseInt(p_arr[8]),
             },
             BigInt(oriData.i.chatid),
+            options,
           )
         })
         .filter((d) => d !== null),
+      options,
     )
   }
   toBiliXML(): string {
@@ -496,31 +503,38 @@ export class UniPool {
       },
     })
   }
-  static fromBiliGrpc(bin: Uint8Array | ArrayBuffer) {
+  static fromBiliGrpc(bin: Uint8Array | ArrayBuffer, options?: Options) {
     const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin)),
       json = data.elems
     return new UniPool(
       json.map((d) => {
-        return UniDM.fromBili({ ...d, progress: d.progress / 1000 })
+        return UniDM.fromBili(
+          { ...d, progress: d.progress / 1000 },
+          d.oid,
+          options,
+        )
       }),
+      options,
     )
   }
   /**
    * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
    */
-  static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer) {
+  static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer, options?: Options) {
     const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin)),
       json = data.commandDms
     return new UniPool(
       json.map((d) => {
-        return UniDM.fromBiliCommand(d)
+        return UniDM.fromBiliCommand(d, d.oid, options)
       }),
+      options,
     )
   }
   static fromDplayer(
     json: DM_JSON_Dplayer,
     playerID: string,
     domain = 'other',
+    options?: Options,
   ) {
     return new UniPool(
       json.data.map((d) => {
@@ -537,8 +551,10 @@ export class UniPool {
           },
           playerID,
           domain,
+          options,
         )
       }),
+      options,
     )
   }
   toDplayer(): DM_JSON_Dplayer {
@@ -554,6 +570,7 @@ export class UniPool {
     json: DM_JSON_Artplayer[],
     playerID: string,
     domain = 'other',
+    options?: Options,
   ) {
     return new UniPool(
       json.map((d) => {
@@ -570,8 +587,10 @@ export class UniPool {
           },
           playerID,
           domain,
+          options,
         )
       }),
+      options,
     )
   }
   toArtplayer(): DM_JSON_Artplayer[] {
@@ -587,7 +606,11 @@ export class UniPool {
       }
     })
   }
-  static fromDDPlay(json: DM_JSON_DDPlay, episodeId: string) {
+  static fromDDPlay(
+    json: DM_JSON_DDPlay,
+    episodeId: string,
+    options?: Options,
+  ) {
     return new UniPool(
       json.comments.map((d) => {
         const p_arr = d.p.split(',')
@@ -601,8 +624,11 @@ export class UniPool {
             uid: p_arr[3],
           },
           episodeId,
+          undefined, //使用默认
+          options,
         )
       }),
+      options,
     )
   }
   toDDplay(): DM_JSON_DDPlay {

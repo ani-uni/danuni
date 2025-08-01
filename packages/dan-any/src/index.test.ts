@@ -75,4 +75,26 @@ describe('其它', () => {
   it('合并范围内重复', () => {
     console.info(pool.merge(10).minify())
   })
+  it('禁止DMID生成', () => {
+    console.info(
+      UniPool.fromBiliXML(xml, {
+        dmid: false,
+      }),
+    )
+  })
+  it('自定义DMID生成长度', () => {
+    console.info(
+      UniPool.fromBiliXML(xml, {
+        dmid: 64,
+      }),
+    )
+  })
+  it('自定义DMID生成器', () => {
+    console.info(
+      UniPool.fromBiliXML(xml, {
+        dmid: (_content, _senderID, ctime = new Date(), _extraStr) =>
+          ctime.toString() + Math.random(),
+      }),
+    )
+  })
 })

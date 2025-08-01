@@ -62,10 +62,18 @@ export class UniID {
   }
 }
 
+export type DMIDGenerator = (
+  content?: string,
+  senderID?: string,
+  ctime?: ctime,
+  extraStr?: string,
+  slice?: number,
+) => string
+
 export function createDMID(
   content: string = '',
-  senderID: string,
-  ctime: ctime,
+  senderID: string = UniID.fromNull().toString(),
+  ctime: ctime = new Date().toISOString(),
   extraStr?: string,
   slice = 8,
 ) {

@@ -17,7 +17,7 @@ import JSONbig from 'json-bigint'
 import type { DM_JSON_BiliCommandGrpc } from '..'
 import type { PlatformDanmakuSource } from './platform'
 
-import { createDMID, UniID as ID } from './id-gen'
+import { createDMID, DMIDGenerator, UniID as ID } from './id-gen'
 import {
   PlatformDanmakuOnlySource,
   PlatformDanmakuSources,
@@ -334,6 +334,10 @@ export interface UniDMObj {
   DMID: string
 }
 
+interface Options {
+  dmid?: boolean | number | DMIDGenerator
+}
+
 export class UniDM {
   /**
    * 资源ID
@@ -456,9 +460,15 @@ export class UniDM {
   @IsOptional()
   @Expose()
   public DMID?: string
+  private options: Options = { dmid: createDMID }
   @Expose()
-  init() {
+  init(options?: Options) {
+    this.options = options || this.options
     const def = new UniDM()
+
+    if (this.options.dmid === undefined || this.options.dmid === true)
+      this.options.dmid = createDMID
+
     if (!this.SOID) this.SOID = def.SOID
     if (!this.progress) this.progress = def.progress
     if (!this.mode) this.mode = def.mode
@@ -471,7 +481,7 @@ export class UniDM {
     if (!this.pool) this.pool = def.pool
     if (!this.attr) this.attr = def.attr
 
-    if (!this.DMID) this.DMID = this.toDMID()
+    if (!this.DMID && this.options.dmid !== false) this.DMID = this.toDMID()
     this.progress = Number.parseFloat(this.progress.toFixed(3))
     if (this.extraStr)
       this.extraStr = JSON.stringify(
@@ -498,7 +508,7 @@ export class UniDM {
   async validate() {
     return validateOrReject(this)
   }
-  static create(pjson?: Partial<UniDMObj>) {
+  static create(pjson?: Partial<UniDMObj>, options?: Options) {
     return pjson
       ? plainToInstance(
           UniDM,
@@ -511,7 +521,7 @@ export class UniDM {
               }
             : pjson,
           { excludeExtraneousValues: true },
-        ).init()
+        ).init(options)
       : new UniDM()
   }
   @Expose()
@@ -537,7 +547,23 @@ export class UniDM {
    */
   @Expose()
   toDMID() {
-    return createDMID(this.content, this.senderID, this.ctime, this.extraStr)
+    if (this.options.dmid === false) return
+    else if (this.options.dmid === true)
+      return createDMID(this.content, this.senderID, this.ctime, this.extraStr)
+    else if (typeof this.options.dmid === 'number')
+      return createDMID(
+        this.content,
+        this.senderID,
+        this.ctime,
+        this.extraStr,
+        this.options.dmid,
+      )
+    return this.options.dmid!(
+      this.content,
+      this.senderID,
+      this.ctime,
+      this.extraStr,
+    )
   }
   @Expose()
   isSameAs(dan: UniDM, options?: { skipDanuniMerge?: boolean }): boolean {
@@ -717,7 +743,7 @@ export class UniDM {
     }
     return mode
   }
-  static fromBili(args: DMBili, cid?: bigint) {
+  static fromBili(args: DMBili, cid?: bigint, options?: Options) {
     interface TExtra extends Extra {
       bili: ExtraBili
     }
@@ -757,25 +783,28 @@ export class UniDM {
         mode = Modes.Normal
         break
     }
-    return this.create({
-      ...args,
-      SOID: SOID.toString(),
-      // progress: args.progress,
-      mode,
-      // fontsize: args.fontsize,
-      // color: args.color,
-      senderID: senderID.toString(),
-      // content: args.content,
-      ctime: this.transCtime(args.ctime, 's'),
-      weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
-      pool,
-      attr: DMAttrUtils.fromBin(args.attr, PlatformVideoSource.Bilibili),
-      platform: PlatformVideoSource.Bilibili,
-      // 需改进，7=>advanced 8=>code 9=>bas 互动=>command
-      // 同时塞进无法/无需直接解析的数据
-      // 另开一个解析器，为大部分播放器（无法解析该类dm）做文本类型降级处理
-      extra,
-    })
+    return this.create(
+      {
+        ...args,
+        SOID: SOID.toString(),
+        // progress: args.progress,
+        mode,
+        // fontsize: args.fontsize,
+        // color: args.color,
+        senderID: senderID.toString(),
+        // content: args.content,
+        ctime: this.transCtime(args.ctime, 's'),
+        weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
+        pool,
+        attr: DMAttrUtils.fromBin(args.attr, PlatformVideoSource.Bilibili),
+        platform: PlatformVideoSource.Bilibili,
+        // 需改进，7=>advanced 8=>code 9=>bas 互动=>command
+        // 同时塞进无法/无需直接解析的数据
+        // 另开一个解析器，为大部分播放器（无法解析该类dm）做文本类型降级处理
+        extra,
+      },
+      options,
+    )
   }
   @Expose()
   toBiliXML(options?: { skipBiliCommand: boolean }) {
@@ -833,45 +862,56 @@ export class UniDM {
       ].join(','),
     }
   }
-  static fromBiliCommand(args: DMBiliCommand, cid?: bigint) {
+  static fromBiliCommand(args: DMBiliCommand, cid?: bigint, options?: Options) {
     if (args.oid && !cid) cid = args.oid
     const SOID = ID.fromBili({ cid }),
       senderID = ID.fromBili({ mid: args.mid })
-    return this.create({
-      ...args,
-      SOID: SOID.toString(),
-      // progress: args.progress,
-      mode: Modes.Ext,
-      // fontsize: args.fontsize,
-      // color: args.color,
-      senderID: senderID.toString(),
-      // content: args.content,
-      ctime: new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
-      weight: 10,
-      pool: Pools.Adv,
-      attr: [DMAttr.Protect],
-      platform: PlatformVideoSource.Bilibili,
-      extra: {
-        bili: {
-          command: args,
+    return this.create(
+      {
+        ...args,
+        SOID: SOID.toString(),
+        // progress: args.progress,
+        mode: Modes.Ext,
+        // fontsize: args.fontsize,
+        // color: args.color,
+        senderID: senderID.toString(),
+        // content: args.content,
+        ctime: new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
+        weight: 10,
+        pool: Pools.Adv,
+        attr: [DMAttr.Protect],
+        platform: PlatformVideoSource.Bilibili,
+        extra: {
+          bili: {
+            command: args,
+          },
         },
       },
-    })
+      options,
+    )
   }
-  static fromDplayer(args: DMDplayer, playerID: string, domain: string) {
+  static fromDplayer(
+    args: DMDplayer,
+    playerID: string,
+    domain: string,
+    options?: Options,
+  ) {
     const SOID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown(args.midHash, domain)
-    return this.create({
-      ...args,
-      SOID: SOID.toString(),
-      // progress: args.progress,
-      mode: this.transMode(args.mode, 'dplayer'),
-      // fontsize: 25,
-      // color: args.color,
-      senderID: senderID.toString(),
-      // content: args.content,
-      platform: domain,
-    })
+    return this.create(
+      {
+        ...args,
+        SOID: SOID.toString(),
+        // progress: args.progress,
+        mode: this.transMode(args.mode, 'dplayer'),
+        // fontsize: 25,
+        // color: args.color,
+        senderID: senderID.toString(),
+        // content: args.content,
+        platform: domain,
+      },
+      options,
+    )
   }
   @Expose()
   toDplayer(): DMDplayer {
@@ -886,7 +926,12 @@ export class UniDM {
       content: this.content,
     }
   }
-  static fromArtplayer(args: DMArtplayer, playerID: string, domain: string) {
+  static fromArtplayer(
+    args: DMArtplayer,
+    playerID: string,
+    domain: string,
+    options?: Options,
+  ) {
     const SOID = ID.fromUnknown(playerID, domain),
       senderID = ID.fromUnknown('', domain)
     let extra = args.border
@@ -900,18 +945,21 @@ export class UniDM {
         }
       else extra = { artplayer: { style: args.style } }
     }
-    return this.create({
-      ...args,
-      SOID: SOID.toString(),
-      // progress: args.progress,
-      mode: this.transMode(args.mode, 'artplayer'),
-      // fontsize: 25,
-      // color: args.color,
-      senderID: senderID.toString(),
-      // content: args.content,
-      platform: domain,
-      extra, //optional BigINt parser
-    })
+    return this.create(
+      {
+        ...args,
+        SOID: SOID.toString(),
+        // progress: args.progress,
+        mode: this.transMode(args.mode, 'artplayer'),
+        // fontsize: 25,
+        // color: args.color,
+        senderID: senderID.toString(),
+        // content: args.content,
+        platform: domain,
+        extra, //optional BigINt parser
+      },
+      options,
+    )
   }
   @Expose()
   toArtplayer(): DMArtplayer {
@@ -930,23 +978,27 @@ export class UniDM {
     args: DMDDplay,
     episodeId: string,
     domain = PlatformDanmakuOnlySource.DanDanPlay,
+    options?: Options,
   ) {
     const SOID = ID.fromUnknown(
       `def_${PlatformDanmakuOnlySource.DanDanPlay}+${episodeId}`,
       domain,
     )
-    return this.create({
-      ...args,
-      SOID: SOID.toString(),
-      // progress: args.progress,
-      mode: this.transMode(args.mode, 'ddplay'),
-      // fontsize: 25,
-      // color: args.color,
-      senderID: args.uid,
-      content: args.m,
-      platform: domain,
-      DMID: args.cid.toString(), //无需 new ID() 获取带suffix的ID
-    })
+    return this.create(
+      {
+        ...args,
+        SOID: SOID.toString(),
+        // progress: args.progress,
+        mode: this.transMode(args.mode, 'ddplay'),
+        // fontsize: 25,
+        // color: args.color,
+        senderID: args.uid,
+        content: args.m,
+        platform: domain,
+        DMID: args.cid.toString(), //无需 new ID() 获取带suffix的ID
+      },
+      options,
+    )
   }
   @Expose()
   toDDplay(): DMDDplay {
