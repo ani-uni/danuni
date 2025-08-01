@@ -34,7 +34,7 @@ export function raw(
 ) {
   const raw = { list, config, context },
     rawText = JSON.stringify(raw)
-  let compress = Buffer.from('')
+  let compress: Buffer
   if (compressType === 'brotli') compress = brotliCompressSync(rawText)
   else compress = gzipSync(rawText)
   return `;RawCompressType: ${compressType}\n;RawBaseType: ${baseType}\n;Raw: ${baseType === 'base64' ? compress.toString('base64') : fromUint16Array(base16384.encode(compress))}`
@@ -66,7 +66,7 @@ export function deRaw(ass: string):
           : Buffer.from(
               base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
             )
-    let decompress = Buffer.from('')
+    let decompress: Buffer
     if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
     else decompress = gunzipSync(buffer)
     try {
