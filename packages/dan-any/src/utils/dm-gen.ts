@@ -71,7 +71,7 @@ const toBits = (number: number) => {
     // bits.unshift(number & 1) // (0|1)[]
     number >>= 1
   } while (number)
-  return bits.reverse()
+  return bits.toReversed()
 }
 
 export enum DMAttr {
