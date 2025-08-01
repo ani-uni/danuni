@@ -786,7 +786,7 @@ export class UniDM {
     return this.create(
       {
         ...args,
-        SOID: SOID.toString(),
+        SOID,
         // progress: args.progress,
         mode,
         // fontsize: args.fontsize,
@@ -864,12 +864,12 @@ export class UniDM {
   }
   static fromBiliCommand(args: DMBiliCommand, cid?: bigint, options?: Options) {
     if (args.oid && !cid) cid = args.oid
-    const SOID = ID.fromBili({ cid }),
+    const SOID = `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
       senderID = ID.fromBili({ mid: args.mid })
     return this.create(
       {
         ...args,
-        SOID: SOID.toString(),
+        SOID,
         // progress: args.progress,
         mode: Modes.Ext,
         // fontsize: args.fontsize,
