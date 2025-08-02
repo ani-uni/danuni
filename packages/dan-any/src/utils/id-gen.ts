@@ -66,7 +66,7 @@ export type DMIDGenerator = (dan: UniDM, slice?: number) => string
 export function createDMID(dan: UniDM, slice = 8) {
   return new jsSHA('SHA3-256', 'TEXT')
     .update(
-      `${dan.content}|${dan.senderID}|${UniDM.transCtime(dan.ctime).toISOString()}|${dan.extraStr}`,
+      `${dan.content}|${dan.mode}|${dan.pool}|${dan.platform}|${dan.extraStr}|${dan.senderID}|${UniDM.transCtime(dan.ctime).toISOString()}`,
     )
     .getHash('HEX')
     .slice(0, slice)

@@ -283,7 +283,7 @@ export class UniPool {
       ]
     >(
       ([result, cache, mergeObj], danmaku) => {
-        const key = ['content', 'mode', 'platform', 'pool']
+        const key = ['content', 'mode', 'pool', 'platform']
           .map((k) => danmaku[k as keyof UniDM])
           .join('|')
         const cached = cache[key]

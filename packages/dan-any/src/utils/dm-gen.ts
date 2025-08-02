@@ -569,8 +569,8 @@ export class UniDM {
           'SOID',
           'content',
           'mode',
-          'platform',
           'pool',
+          'platform',
         ] satisfies (keyof UniDMObj)[]
       ).every((k) => isSame(k))
     // 忽略使用了extra字段却不在mode里标记的弹幕
