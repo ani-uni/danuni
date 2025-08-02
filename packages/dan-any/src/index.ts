@@ -256,9 +256,11 @@ export class UniPool {
    * 基于DMID的基本去重功能，用于解决该class下dans为array而非Set的问题
    */
   private dedupe() {
-    const map = new Map()
-    this.dans.forEach((d) => map.set(d.DMID || d.toDMID(), d))
-    this.dans = [...map.values()]
+    if (this.options.dmid !== false) {
+      const map = new Map()
+      this.dans.forEach((d) => map.set(d.DMID || d.toDMID(), d))
+      this.dans = [...map.values()]
+    }
     this.options.dedupe = false
   }
   /**
