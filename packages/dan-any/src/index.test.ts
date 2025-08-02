@@ -92,8 +92,7 @@ describe('其它', () => {
   it('自定义DMID生成器', () => {
     console.info(
       UniPool.fromBiliXML(xml, {
-        dmid: (_content, _senderID, ctime = new Date(), _extraStr) =>
-          ctime.toString() + Math.random(),
+        dmid: (dan) => dan.ctime.toString() + Math.random(),
       }),
     )
   })

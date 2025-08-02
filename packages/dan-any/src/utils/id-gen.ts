@@ -1,5 +1,4 @@
 import jsSHA from 'jssha'
-import type { ctime } from './dm-gen'
 import type { PlatformSource } from './platform'
 
 import { UniDM } from './dm-gen'
@@ -62,24 +61,12 @@ export class UniID {
   }
 }
 
-export type DMIDGenerator = (
-  content?: string,
-  senderID?: string,
-  ctime?: ctime,
-  extraStr?: string,
-  slice?: number,
-) => string
+export type DMIDGenerator = (dan: UniDM, slice?: number) => string
 
-export function createDMID(
-  content: string = '',
-  senderID: string = UniID.fromNull().toString(),
-  ctime: ctime = new Date().toISOString(),
-  extraStr?: string,
-  slice = 8,
-) {
+export function createDMID(dan: UniDM, slice = 8) {
   return new jsSHA('SHA3-256', 'TEXT')
     .update(
-      `${content}|${senderID}|${UniDM.transCtime(ctime).toISOString()}|${extraStr}`,
+      `${dan.content}|${dan.senderID}|${UniDM.transCtime(dan.ctime).toISOString()}|${dan.extraStr}`,
     )
     .getHash('HEX')
     .slice(0, slice)

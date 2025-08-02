@@ -548,22 +548,10 @@ export class UniDM {
   @Expose()
   toDMID() {
     if (this.options.dmid === false) return
-    else if (this.options.dmid === true)
-      return createDMID(this.content, this.senderID, this.ctime, this.extraStr)
+    else if (this.options.dmid === true) return createDMID(this)
     else if (typeof this.options.dmid === 'number')
-      return createDMID(
-        this.content,
-        this.senderID,
-        this.ctime,
-        this.extraStr,
-        this.options.dmid,
-      )
-    return this.options.dmid!(
-      this.content,
-      this.senderID,
-      this.ctime,
-      this.extraStr,
-    )
+      return createDMID(this, this.options.dmid)
+    return this.options.dmid!(this)
   }
   @Expose()
   isSameAs(dan: UniDM, options?: { skipDanuniMerge?: boolean }): boolean {
