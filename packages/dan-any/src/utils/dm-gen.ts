@@ -469,6 +469,8 @@ export class UniDM {
     if (this.options.dmid === undefined || this.options.dmid === true)
       this.options.dmid = createDMID
 
+    this.content = String(this.content)
+
     if (!this.SOID) this.SOID = def.SOID
     if (!this.progress) this.progress = def.progress
     if (!this.mode) this.mode = def.mode
