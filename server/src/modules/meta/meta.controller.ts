@@ -54,7 +54,9 @@ export class MetaController {
     @Query('id') id: string,
     @Param('type') type?: 'ep' | 'so',
   ) {
-    if (platform in PF.PlatformDanmakuSources) {
+    if (
+      PF.PlatformDanmakuSources.includes(platform as PF.PlatformDanmakuSource)
+    ) {
       const so = await this.metaSourceService.findSo(
         id,
         platform as PF.PlatformDanmakuSource,
@@ -64,13 +66,17 @@ export class MetaController {
         if (so.exact) return this.metaService.getEp(so.exact.EPID)
         else throw new NotFoundException('未找到该剧集')
       }
-    } else if (platform in PF.PlatformInfoSources) {
+    } else if (
+      PF.PlatformInfoSources.includes(platform as PF.PlatformInfoSource)
+    ) {
+      if (type === 'so')
+        throw new NotFoundException('未找到该资源(信息平台ID只能查找到剧集)')
       const ep = await this.metaService.findEp(
         id,
         platform as PF.PlatformInfoSource,
       )
       return ep
-    }
+    } else throw new NotFoundException('未找到该平台')
   }
   @Get(['/:type/hash', '/hash'])
   @Authn({ role: [Roles.guest] })

@@ -58,12 +58,12 @@ export enum BusinessEvents {
 
   // ARTICLE_READ_COUNT_UPDATE = 'ARTICLE_READ_COUNT_UPDATE',
 }
-export enum EventScope {
-  TO_VISITOR = 1 << 0,
-  TO_ADMIN = 1 << 1,
-  TO_SYSTEM = 1 << 2,
-  TO_VISITOR_ADMIN = (1 << 0) | (1 << 1),
-  TO_SYSTEM_VISITOR = (1 << 0) | (1 << 2),
-  TO_SYSTEM_ADMIN = (1 << 1) | (1 << 2),
-  ALL = (1 << 0) | (1 << 1) | (1 << 2),
-}
+// export enum EventScope {
+//   TO_VISITOR = Math.trunc(1),
+//   TO_ADMIN = 1 << 1,
+//   TO_SYSTEM = 1 << 2,
+//   TO_VISITOR_ADMIN = Math.trunc(1) | (1 << 1),
+//   TO_SYSTEM_VISITOR = Math.trunc(1) | (1 << 2),
+//   TO_SYSTEM_ADMIN = (1 << 1) | (1 << 2),
+//   ALL = Math.trunc(1) | (1 << 1) | (1 << 2),
+// }

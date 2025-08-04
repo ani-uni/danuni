@@ -32,8 +32,6 @@ import { AuthModule } from './modules/auth/auth.module'
 // import { CommentModule } from './modules/comment/comment.module'
 import { ConfigsModule } from './modules/configs/configs.module'
 import { DanmakuModule } from './modules/danmaku/danmaku.module'
-// import { WebhookModule } from './modules/webhook/webhook.module'
-import { MetaModule } from './modules/meta/meta.module'
 // import { DebugModule } from './modules/debug/debug.module'
 // import { DemoModule } from './modules/demo/demo.module'
 // import { DependencyModule } from './modules/dependency/dependency.module'
@@ -41,7 +39,9 @@ import { MetaModule } from './modules/meta/meta.module'
 // import { FileModule } from './modules/file/file.module'
 // import { HealthModule } from './modules/health/health.module'
 // import { HelperModule as BizHelperModule } from './modules/helper/helper.module'
-// import { InitModule } from './modules/init/init.module'
+import { InitModule } from './modules/init/init.module'
+// import { WebhookModule } from './modules/webhook/webhook.module'
+import { MetaModule } from './modules/meta/meta.module'
 // import { LinkModule } from './modules/link/link.module'
 // import { MarkdownModule } from './modules/markdown/markdown.module'
 // import { NoteModule } from './modules/note/note.module'
@@ -93,6 +93,7 @@ import { RedisModule } from './processors/redis/redis.module'
     // FeedModule,
     // FileModule,
     // HealthModule,
+    InitModule,
     // LinkModule,
     // MarkdownModule,
     // NoteModule,
@@ -171,11 +172,11 @@ import { RedisModule } from './processors/redis/redis.module'
   ],
 })
 export class AppModule implements NestModule {
-  // static register(isInit: boolean): DynamicModule {
-  static register(_isInit: boolean): DynamicModule {
+  static register(isInit: boolean): DynamicModule {
+    // static register(_isInit: boolean): DynamicModule {
     return {
       module: AppModule,
-      // imports: [!isInit && InitModule].filter(Boolean) as Type<NestModule>[],
+      imports: [!isInit && InitModule].filter(Boolean) as Type<NestModule>[],
     }
   }
   configure(consumer: MiddlewareConsumer) {

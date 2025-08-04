@@ -25,10 +25,10 @@ class MetaSourceHashModel {
 }
 
 class MetaSourceInfoModel {
-  @prop({ required: true, unique: true, sparse: true, trim: true })
+  @prop({ required: true, trim: true, unique: true })
   platform: PF.PlatformDanmakuSource
 
-  @prop({ required: true, trim: true })
+  @prop({ required: true, trim: true, unique: true })
   id: string
 }
 
@@ -52,6 +52,6 @@ export class MetaSourceModel extends BaseModel {
   @prop({ type: MetaSourceHashModel })
   hash?: MetaSourceHashModel[]
 
-  @prop({ type: MetaSourceInfoModel })
+  @prop({ type: MetaSourceInfoModel, _id: false })
   externalIds?: MetaSourceInfoModel[]
 }

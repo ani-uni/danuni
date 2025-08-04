@@ -9,7 +9,8 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify'
 
 import { Logger } from '@innei/pretty-logger-nestjs'
 import { NestFactory } from '@nestjs/core'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+
+// import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 // import { apiReference } from '@scalar/nestjs-api-reference'
 
@@ -42,27 +43,31 @@ export async function bootstrap() {
           ? (['debug'] as any as LogLevel[])
           : ([] as LogLevel[]),
       ) as LogLevel[],
+      // rawBody: true,
     },
   )
 
-  const config = new DocumentBuilder()
-    .setTitle('DanUni')
-    .setDescription('')
-    // .setVersion('1.0')
-    // .addTag('cats')
-    .build()
-  const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup('swagger', app, document, {
-    jsonDocumentUrl: 'swagger/json',
-  })
-  // const OpenApiSpecification = app.use(
-  //   '/reference',
-  //   apiReference({
-  //     spec: {
-  //       content: document,
-  //     },
-  //   }),
-  // )
+  // app.useBodyParser('application/json', { bodyLimit: 10 * 1000 * 1024 }) // 10mb
+  // app.useBodyParser('text/plain')
+
+  // const config = new DocumentBuilder()
+  //   .setTitle('DanUni')
+  //   .setDescription('')
+  //   // .setVersion('1.0')
+  //   // .addTag('cats')
+  //   .build()
+  // const document = SwaggerModule.createDocument(app, config)
+  // SwaggerModule.setup('swagger', app, document, {
+  //   jsonDocumentUrl: 'swagger/json',
+  // })
+  // // const OpenApiSpecification = app.use(
+  // //   '/reference',
+  // //   apiReference({
+  // //     spec: {
+  // //       content: document,
+  // //     },
+  // //   }),
+  // // )
 
   const allowAllCors: FastifyCorsOptions = {
     credentials: true,

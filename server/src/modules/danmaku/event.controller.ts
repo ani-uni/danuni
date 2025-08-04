@@ -41,7 +41,9 @@ export class DanmakuEventController {
   @Authn({ role: [Roles.user, Roles.bot] })
   async getDanEvent(@Param('DMID') PID: string) {
     return this.danmakuEventService.fmtEvent(
-      await this.danmakuEventService.getDanEvent(IdPrefixPreHandlers.dm(PID)),
+      await this.danmakuEventService.getDanEvent(
+        PID ? IdPrefixPreHandlers.dm(PID) : undefined,
+      ),
     )
   }
   // @Get(['', '/list'])

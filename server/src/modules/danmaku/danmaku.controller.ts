@@ -102,14 +102,17 @@ export class DanmakuController {
     scope: [Scopes.danmakuDel],
   })
   async deleteDan(@Param('ID') _ID: string, @Param('DMID') DMID: string) {
-    return await this.danmakuService.delDan(DMID)
+    return await this.danmakuService.delDan(DMID, 'addHideAttr')
   }
 
   @Put('/diff')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuImport] })
-  async diffEp(@Body() metaImportDto: DanmakuImportDto) {
-    return this.danmakuService.diffDan(metaImportDto.units, metaImportDto.sign)
+  async diffEp(@Body() danmakuImportDto: DanmakuImportDto) {
+    return this.danmakuService.diffDan(
+      danmakuImportDto.units,
+      danmakuImportDto.sign,
+    )
   }
   @Put('/batch-del')
   @HttpCache({ disable: true })
@@ -120,8 +123,8 @@ export class DanmakuController {
   @Put('/import')
   @HttpCache({ disable: true })
   @Authn({ role: [Roles.user, Roles.bot], scope: [Scopes.danmakuImport] })
-  async importEp(@Body() metaImportJwt: string) {
-    return this.danmakuService.importDan(metaImportJwt)
+  async importEp(@Body('jwt') danmakuImportJwt: string) {
+    return this.danmakuService.importDan(danmakuImportJwt)
   }
   @Get('/export')
   @Authn({ role: [Roles.bot], scope: [Scopes.danmakuExport] })

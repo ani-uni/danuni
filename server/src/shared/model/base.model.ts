@@ -19,6 +19,7 @@ import { mongooseLeanId } from './plugins/lean-id'
       updatedAt: false,
     },
     versionKey: false,
+    id: false,
   },
 })
 @index({ created: -1 })
@@ -26,9 +27,9 @@ import { mongooseLeanId } from './plugins/lean-id'
 export class BaseModel {
   created?: Date
 
-  id: string
+  // id: string
 
   static get protectedKeys() {
-    return ['created', 'id', '_id']
+    return ['created', '_id']
   }
 }

@@ -52,8 +52,8 @@ export class BaseDto {
 
 @JSONSchema({ title: 'Oauth2单元设置' })
 export class Oauth2UnitDto {
-  @IsString()
   @IsEnum(Oauth2Provider)
+  @IsString()
   @IsNotEmpty()
   @JSONSchemaPlainField('Ouath2 提供者')
   provider: string
@@ -77,8 +77,8 @@ export class Oauth2UnitDto {
 }
 @JSONSchema({ title: 'Oauth2设置' })
 export class Oauth2Dto {
-  @IsArray()
   @ArrayUnique()
+  @IsArray()
   @Type(() => Oauth2UnitDto)
   @IsOptional()
   @JSONSchemaArrayField('Oauth2 单元')
@@ -99,8 +99,8 @@ export class BotAuthUnitDto {
 }
 @JSONSchema({ title: 'BotAuth设置' })
 export class BotAuthDto {
-  @IsArray()
   @ArrayUnique()
+  @IsArray()
   @Type(() => BotAuthUnitDto)
   @IsOptional()
   @JSONSchemaArrayField('BotAuth单元')
@@ -112,38 +112,38 @@ export class MetaDto {}
 
 @JSONSchema({ title: '权限分配设置' })
 export class ScopeDto {
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv1所需注册时长')
   lv1: number
 
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv2所需注册时长')
   lv2: number
 
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv3所需注册时长')
   lv3: number
 
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv4所需注册时长')
   lv4: number
 
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv5所需注册时长')
   lv5: number
 
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('lv6所需注册时长')
   lv6: number
@@ -151,8 +151,8 @@ export class ScopeDto {
 
 @JSONSchema({ title: '弹幕设置' })
 export class DanmakuDto {
-  @IsInt()
   @Min(0)
+  @IsInt()
   @IsNotEmpty()
   @JSONSchemaNumberField('弹幕处于缓冲区的时间', {
     description:

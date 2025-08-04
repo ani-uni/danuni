@@ -20,6 +20,7 @@ import { ConfigsService } from '../configs/configs.service'
 import { AUTH_JS_USER_COLLECTION, AuthInstanceInjectKey } from './auth.constant'
 import { InjectAuthInstance } from './auth.interface'
 import { BotAuthUnitDto } from './bot-auth.dto'
+import { InitNewAdminDto } from './init-auth.dto'
 
 @Injectable()
 export class AuthService {
@@ -32,6 +33,30 @@ export class AuthService {
 
   get authInstancePublic() {
     return this.authInstance.get()
+  }
+
+  async hasAdmin() {
+    const user = await this.databaseService.db
+      .collection(AUTH_JS_USER_COLLECTION)
+      .findOne({
+        role: 'admin',
+      })
+    return !!user
+  }
+
+  async newAdmin(init: InitNewAdminDto) {
+    const hasAdmin = await this.hasAdmin()
+    if (hasAdmin) {
+      throw new BadRequestException('admin already exists')
+    }
+    const user = await this.authInstancePublic.api.createUser({
+      body: { ...init, role: 'admin' },
+    })
+    if (user.user.id) {
+      return 'OK'
+    } else {
+      throw new InternalServerErrorException('create admin failed')
+    }
   }
 
   async getSessionUser(

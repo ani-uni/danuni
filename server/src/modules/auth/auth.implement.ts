@@ -1,8 +1,14 @@
 import { IncomingMessage } from 'node:http'
-import { betterAuth } from 'better-auth'
+import { APIError, betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { toNodeHandler } from 'better-auth/node'
-import { admin, apiKey, genericOAuth, openAPI } from 'better-auth/plugins'
+import {
+  admin,
+  apiKey,
+  createAuthMiddleware,
+  genericOAuth,
+  openAPI,
+} from 'better-auth/plugins'
 import { MongoClient } from 'mongodb'
 import type { BetterAuthOptions } from 'better-auth'
 import type { ServerResponse } from 'node:http'
@@ -164,6 +170,9 @@ export async function CreateAuth(
   })
   const auth = betterAuth({
     database: mongodbAdapter(db),
+    emailAndPassword: {
+      enabled: true,
+    },
     socialProviders: providers,
     basePath: isDev ? '/auth' : `/api/v${API_VERSION}/auth`,
     trustedOrigins: CROSS_DOMAIN.allowedOrigins.reduce(
@@ -187,6 +196,15 @@ export async function CreateAuth(
     },
     appName: 'danuni',
     secret: SECURITY.jwtSecret,
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === '/sign-up/email') {
+          throw new APIError('BAD_REQUEST', {
+            message: 'Using email to sign-up is not allowed!',
+          })
+        }
+      }),
+    },
     plugins: [
       apiKey({
         defaultPrefix: 'danuni_',

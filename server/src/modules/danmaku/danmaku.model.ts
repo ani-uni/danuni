@@ -12,7 +12,7 @@ export type DanmakuDocument = DocumentType<DanmakuModel>
   options: { customName: DANMAKU_COLLECTION_NAME, allowMixed: Severity.ALLOW },
 })
 export class DanmakuModel extends BaseModel {
-  @prop({ alias: 'id' })
+  @prop({ required: true, trim: true, unique: true })
   DMID!: string
 
   @prop({ required: true, trim: true })
@@ -39,19 +39,19 @@ export class DanmakuModel extends BaseModel {
   // 或可直接调用 created 参数
   // @prop({ default: BigInt(Date.now()) })
   @prop({ required: true })
-  ctime!: string
+  ctime!: Date
   // ctime?: bigint = BigInt(Number(this.created))
 
-  @prop({ default: 5, min: 1, max: 10 })
+  @prop({ default: 0, min: 0, max: 11 })
   weight?: number
 
   @prop({ default: UniDMTools.Pools.Def, enum: UniDMTools.Pools })
   pool?: number
 
-  @prop({ type: String })
+  @prop({ type: () => [String] })
   attr?: UniDMTools.DMAttr[]
 
-  @prop({ trim: true })
+  @prop({ trim: true, type: String })
   platform?: platform.PlatformDanmakuSource
 
   @prop({ trim: true })

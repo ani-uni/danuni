@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer'
 import {
   ArrayUnique,
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
@@ -22,13 +23,14 @@ import { platform as PF } from '@dan-uni/dan-any'
 import { HashAlgorithm } from './source.constant'
 
 class MetaExternalIdInfoDto {
-  @IsNotEmpty({ message: '剧集信息源平台?' })
   @IsEnum(PF.PlatformInfoSource)
+  @IsNotEmpty({ message: '剧集信息源平台?' })
   platform: PF.PlatformInfoSource
 
-  @IsNotEmpty({ message: '剧集信息源ID?' })
-  @IsString()
   @Length(0, 32)
+  @IsString()
+  @Type(() => String)
+  @IsNotEmpty({ message: '剧集信息源ID?' })
   id: string
 }
 
@@ -40,19 +42,18 @@ export class MetaDto {
   // // @IsNotEmpty({ message: '弹幕库ID?' })
   // readonly EPID: string
 
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   duration?: number
 
   // @IsEmail({ require_tld: false })
   // @IsOptional()
   // maintainer?: string
 
-  @IsOptional()
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => MetaExternalIdInfoDto)
+  @IsOptional()
   externalIds?: MetaExternalIdInfoDto[]
 
   // @IsBoolean()
@@ -61,54 +62,53 @@ export class MetaDto {
 }
 
 class MetaImportUnitDto extends MetaDto {
-  @IsNotEmpty({ message: '所属剧集?' })
-  @IsString()
   @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty({ message: '所属剧集?' })
   EPID: string
 
-  @IsOptional()
   @IsEmail({ require_tld: false })
+  @IsOptional()
   maintainer?: string
 
   // @IsOptional()
-  @IsNotEmpty({ message: '是否为PGC?' })
   @IsBoolean()
+  @IsNotEmpty({ message: '是否为PGC?' })
   pgc: boolean
 }
 
 export class MetaImportDto {
-  @IsNotEmpty({ message: '导入剧集单元?' })
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => MetaImportUnitDto)
+  @IsNotEmpty({ message: '导入剧集单元?' })
   units: MetaImportUnitDto[]
 
-  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   @IsBoolean()
+  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   sign: boolean
 }
 
 export class MetaBatchDelOrExportDto {
-  @IsNotEmpty({ message: '批量删除/导出 的 剧集/资源 单元?' })
+  @IsString({ each: true })
   @ArrayUnique()
-  @ValidateNested({ each: true })
-  @Type(() => String)
+  @IsArray()
+  @IsNotEmpty({ message: '批量删除/导出 的 剧集/资源 单元?' })
   units: string[]
 }
 
 class MetaSourceHashDto {
-  @IsNotEmpty({ message: 'Hash?' })
-  @IsString()
-  @Length(5, 128, { message: '请输入正确的Hash(长度错误)' })
   @Matches(
     /^[a-f0-9]{32}$|^[a-f0-9]{40}$|^[a-f0-9]{48}$|^[a-f0-9]{56}$|^[a-f0-9]{64}$|^[a-f0-9]{96}$|^[a-f0-9]{128}$/i,
     { message: '请输入正确的Hash(格式/长度错误)' },
   )
+  @Length(5, 128, { message: '请输入正确的Hash(长度错误)' })
+  @IsString()
+  @IsNotEmpty({ message: 'Hash?' })
   hash!: string
 
-  @IsNotEmpty({ message: 'Hash算法?' })
   @IsEnum(HashAlgorithm)
+  @IsNotEmpty({ message: 'Hash算法?' })
   algorithm!: HashAlgorithm
 
   // @IsNumber()
@@ -120,20 +120,22 @@ class MetaSourceHashDto {
 }
 
 class MetaExternalIdDanmakuDto {
-  @IsNotEmpty({ message: '资源弹幕源平台?' })
   @IsIn(PF.PlatformDanmakuSources)
+  @IsString()
+  @IsNotEmpty({ message: '资源弹幕源平台?' })
   platform: PF.PlatformDanmakuSource
 
-  @IsNotEmpty({ message: '资源弹幕源ID?' })
-  @IsString()
   @Length(0, 256)
+  @IsString()
+  @Type(() => String)
+  @IsNotEmpty({ message: '资源弹幕源ID?' })
   id: string
 }
 
 export class MetaSourceDto {
-  @IsNotEmpty({ message: '所属剧集?' })
-  @IsString()
   @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty({ message: '所属剧集?' })
   readonly EPID: string
 
   // @IsString()
@@ -141,50 +143,47 @@ export class MetaSourceDto {
   // @IsOptional()
   // SOID?: string
 
-  @IsOptional()
-  @IsString()
   @Length(2, 30)
+  @IsString()
+  @IsOptional()
   subGroup?: string
 
-  @IsOptional()
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => MetaSourceHashDto)
+  @IsOptional()
   hash?: MetaSourceHashDto[]
 
-  @IsOptional()
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => MetaExternalIdDanmakuDto)
+  @IsOptional()
   externalIds?: MetaExternalIdDanmakuDto[]
 }
 
 class MetaSourceImportUnitDto extends MetaSourceDto {
-  @IsNotEmpty({ message: '所属资源?' })
-  @IsString()
   @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty({ message: '所属资源?' })
   SOID: string
 }
 
 export class MetaSourceImportDto {
-  @IsNotEmpty({ message: '导入资源单元?' })
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => MetaSourceImportUnitDto)
+  @IsNotEmpty({ message: '导入资源单元?' })
   units: MetaSourceImportUnitDto[]
 
-  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   @IsBoolean()
+  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   sign: boolean
 }
 
 export class MetaTransferDto {
-  @IsNotEmpty({ message: '所属剧集?' })
-  @IsString()
   @IsEmail({ require_tld: false })
+  @IsString()
+  @IsNotEmpty({ message: '新所属维护者?' })
   sid: string
 }
 

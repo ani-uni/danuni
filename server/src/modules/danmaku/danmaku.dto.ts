@@ -3,7 +3,7 @@ import {
   ArrayUnique,
   IsArray,
   IsBoolean,
-  IsDateString,
+  IsDate,
   IsEmail,
   IsEmpty,
   IsEnum,
@@ -23,37 +23,39 @@ import {
 import { platform, UniDMTools } from '@dan-uni/dan-any'
 
 export class DanmakuDto {
-  @IsNotEmpty({ message: '弹幕进度?' })
   @IsNumber()
+  @Type(() => Number)
+  @IsNotEmpty({ message: '弹幕进度?' })
   progress: number
 
-  @IsOptional()
   @IsEnum(UniDMTools.Modes)
-  // @IsNotEmpty({ message: '弹幕类型?' })
-  mode?: UniDMTools.Modes
+  @IsInt()
+  // @IsOptional()
+  @IsNotEmpty({ message: '弹幕类型?' })
+  mode?: number
 
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   fontsize?: number
 
-  @IsOptional()
   @IsInt()
+  @IsOptional()
   color?: number
 
-  @IsOptional()
   @IsString() // TODO 这一文件里3个content上regex关键词检查
+  @IsOptional()
   content?: string
 }
 
 export class DanmakuStdDto extends DanmakuDto {
-  @IsNotEmpty({ message: '弹幕内容?' })
   @IsString()
+  @IsNotEmpty({ message: '弹幕内容?' })
   content!: string
 }
 
 export class DanmakuAdvDto extends DanmakuDto {
-  @IsOptional()
   @IsString()
+  @IsOptional()
   extraStr?: string
 }
 
@@ -72,12 +74,13 @@ export class DanmakuMarkChapterDto extends DanmakuDto {
   // @IsOptional()
   // chpt_seg_start: number // alia of progress
 
-  @IsNotEmpty({ message: '章节持续时间?' })
   @IsNumber()
+  @IsNotEmpty({ message: '章节持续时间?' })
   chpt_duration: number
 
-  @IsNotEmpty({ message: '章节类型?' })
   @IsEnum(UniDMTools.ExtraDanUniChapterType)
+  @IsString()
+  @IsNotEmpty({ message: '章节类型?' })
   chpt_type: UniDMTools.ExtraDanUniChapterType
 
   // @IsEnum(UniDMTools.ExtraDanUniChapterAction)
@@ -86,12 +89,12 @@ export class DanmakuMarkChapterDto extends DanmakuDto {
 }
 
 export class DanmakuFullDto extends DanmakuAdvDto {
+  @IsEmail({ require_tld: false })
   @IsNotEmpty({ message: '资源ID?' })
-  @IsEmail()
   SOID: string
 
+  @IsEmail({ require_tld: false })
   @IsNotEmpty({ message: '发送者ID?' })
-  @IsEmail()
   senderID!: string
 
   // // 或可直接调用 created 参数
@@ -99,57 +102,59 @@ export class DanmakuFullDto extends DanmakuAdvDto {
   // ctime?: bigint
   // // ctime?: bigint = BigInt(Number(this.created))
 
-  @IsOptional()
+  @Max(11)
+  @Min(0)
   @IsInt()
-  @Min(1)
-  @Max(10)
+  @IsOptional()
   weight?: number
 
-  @IsNotEmpty({ message: '弹幕池?' })
   @IsEnum(UniDMTools.Pools)
+  @IsInt()
+  @IsNotEmpty({ message: '弹幕池?' })
   pool?: UniDMTools.Pools
 
-  @IsOptional()
-  @IsArray()
-  @ArrayUnique()
   @IsString({ each: true })
+  @ArrayUnique()
+  @IsArray()
+  @IsOptional()
   // @Type(() => String)
   attr?: UniDMTools.DMAttr[]
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   platform?: platform.PlatformDanmakuSource
 }
 
 class DanmakuImportUnitDto extends DanmakuFullDto {
-  @IsNotEmpty({ message: '弹幕ID?' })
   @IsString()
-  DMID!: string
+  @IsOptional({ message: '待修改弹幕的原弹幕ID?' })
+  oriDMID!: string
 
-  @IsNotEmpty({ message: '发送时间?' })
   // @IsOptional()
-  @IsDateString()
-  ctime: string
+  @IsDate()
+  @Type(() => Date)
+  @IsNotEmpty({ message: '发送时间?' })
+  // @IsDateString()
+  ctime: Date
 }
 
 export class DanmakuImportDto {
-  @IsNotEmpty({ message: '导入剧集单元?' })
-  @IsNonPrimitiveArray()
-  @ArrayUnique()
   @ValidateNested({ each: true })
+  @IsNonPrimitiveArray()
   @Type(() => DanmakuImportUnitDto)
+  @IsNotEmpty({ message: '导入剧集单元?' })
   units: DanmakuImportUnitDto[]
 
-  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   @IsBoolean()
+  @IsNotEmpty({ message: '是否需要签名批量操作?' })
   sign: boolean
 }
 
 export class DanmakuBatchDelOrExportDto {
-  @IsNotEmpty({ message: '批量删除/导出的弹幕单元?' })
+  @IsString({ each: true })
   @ArrayUnique()
-  @ValidateNested({ each: true })
-  @Type(() => String)
+  @IsArray()
+  @IsNotEmpty({ message: '批量删除/导出的弹幕单元?' })
   units: string[]
 }
 

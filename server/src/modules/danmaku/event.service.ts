@@ -1,3 +1,4 @@
+import { UniDMTools } from '@dan-uni/dan-any'
 import {
   BadRequestException,
   Injectable,
@@ -77,8 +78,8 @@ export class DanmakuEventService {
       const dan = await this.danmakuService.getDan(PID)
       if (
         dan && //存在弹幕
-        !dan.attr?.includes('Protect') && //弹幕不受保护
-        !dan.attr?.includes('HasEvent') && //弹幕目前未创建事件
+        !dan.attr?.includes(UniDMTools.DMAttr.Protect) && //弹幕不受保护
+        !dan.attr?.includes(UniDMTools.DMAttr.HasEvent) && //弹幕目前未创建事件
         // !dan.attr?.includes('Unchecked') && //弹幕已被检查
         // !dan.attr?.includes('Hide') && //弹幕非临时隐藏
         !this.danmakuService.fmtSingleDan(dan).isFrom3rdPlatform //且不来自3rd平台
@@ -129,9 +130,11 @@ export class DanmakuEventService {
 
   // async operateDan(action: DanmakuEventDto, ctx: FastifyBizRequest) {
   async operateDan(action: DanmakuEventDto) {
-    if (!action.PID) throw new BadRequestException('未找到该弹幕')
+    if (!action.PID) throw new NotFoundException('未找到该弹幕')
     let event = await this.eventModel.findOne({ PID: action.PID })
     if (!event) {
+      if (action.action === DanmakuEventAction.Dislike)
+        throw new BadRequestException('无法发起该类型的事件')
       if (!(await this.canAccessEvent(action.PID, 'new')))
         throw new BadRequestException('事件已存在 或 弹幕来自其它平台或受保护')
       event = await this.eventModel.create({
@@ -139,7 +142,9 @@ export class DanmakuEventService {
         label: DanmakuEventLabel.UserCreate,
         pub: true,
       })
-      await this.danmakuService.setDanProp(event.PID, ['HasEvent'])
+      await this.danmakuService.setDanProp(event.PID, [
+        UniDMTools.DMAttr.HasEvent,
+      ])
     }
     return this.voteAction(event, action.action)
   }
@@ -165,12 +170,15 @@ export class DanmakuEventService {
       weight: authn.weight,
       action: this.actionStr2Num(action),
     }
-    if (!v) throw new BadRequestException('未知的操作')
-    const res = await this.eventModel.updateOne(event._id, {
-      $addToSet: {
-        votes: v,
+    // if (!v) throw new BadRequestException('未知的操作')
+    const res = await this.eventModel.updateOne(
+      { PID: event.PID },
+      {
+        $addToSet: {
+          votes: v,
+        },
       },
-    })
+    )
     if (res.acknowledged) {
       await this.finishEvent(event)
       return 'OK'
@@ -185,7 +193,11 @@ export class DanmakuEventService {
     const action = actionStr ? this.actionStr2Num(actionStr) : undefined
 
     const rmHasEventAttr = async () =>
-      await this.danmakuService.setDanProp(event.PID, ['HasEvent'], true)
+      await this.danmakuService.setDanProp(
+        event.PID,
+        [UniDMTools.DMAttr.HasEvent],
+        true,
+      )
     async function resConstructor(
       type: -1 | 0 | 1,
       operator: 'admin' | 'vote',
@@ -212,7 +224,9 @@ export class DanmakuEventService {
         p: async (operator: 'admin' | 'vote') => {
           await this.danmakuService.setDanProp(
             event.PID,
-            operator === 'admin' ? ['Hide', 'Reported'] : ['Reported'],
+            operator === 'admin'
+              ? [UniDMTools.DMAttr.Hide, UniDMTools.DMAttr.Reported]
+              : [UniDMTools.DMAttr.Reported],
             true,
           )
         },
@@ -232,7 +246,9 @@ export class DanmakuEventService {
       }
     } else if (event.action === DanmakuEventAction.Like) {
       if (action === 1) {
-        await this.danmakuService.setDanProp(event.PID, ['HighLike'])
+        await this.danmakuService.setDanProp(event.PID, [
+          UniDMTools.DMAttr.HighLike,
+        ])
         return resConstructor(1, 'admin', '高赞', event)
       } else {
         const pre = await this.preEvent(),
@@ -240,7 +256,9 @@ export class DanmakuEventService {
         if (event.votes.length < pre.danmakuEventConf.participantNum)
           return resConstructor(0, 'vote', '参与人数过少,无弹幕操作')
         else if (ratio.positive * 100 >= pre.danmakuEventConf.positiveRatio) {
-          await this.danmakuService.setDanProp(event.PID, ['HighLike'])
+          await this.danmakuService.setDanProp(event.PID, [
+            UniDMTools.DMAttr.HighLike,
+          ])
           return resConstructor(1, 'vote', '高赞', event)
         } else if (ratio.positive * 100 >= pre.danmakuEventConf.negativeRatio) {
           return resConstructor(-1, 'vote', '无弹幕操作', event)
@@ -248,7 +266,7 @@ export class DanmakuEventService {
       }
     } else if (event.action === DanmakuEventAction.Report) {
       if (action === -1) {
-        await this.danmakuService.delDan(event.PID)
+        await this.danmakuService.delDan(event.PID, 'addHideAttr', true)
         return resConstructor(-1, 'admin', '删除/隐藏弹幕', event)
       } else {
         const pre = await this.preEvent(),
@@ -256,10 +274,12 @@ export class DanmakuEventService {
         if (event.votes.length < pre.danmakuEventConf.participantNum)
           return resConstructor(0, 'vote', '参与人数过少,无弹幕操作')
         else if (ratio.negative * 100 >= pre.danmakuEventConf.autoDelRatio) {
-          await this.danmakuService.delDan(event.PID)
-          return resConstructor(-1, 'vote', '删除弹幕', event)
+          await this.danmakuService.delDan(event.PID, 'addHideAttr', true)
+          return resConstructor(-1, 'vote', '删除/隐藏弹幕', event)
         } else if (ratio.negative * 100 >= pre.danmakuEventConf.negativeRatio) {
-          await this.danmakuService.setDanProp(event.PID, ['Reported'])
+          await this.danmakuService.setDanProp(event.PID, [
+            UniDMTools.DMAttr.Reported,
+          ])
           await event.set('label', DanmakuEventLabel.VoteCreate).save()
           return resConstructor(
             -1,

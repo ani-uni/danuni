@@ -66,7 +66,7 @@ export class JSONTransformInterceptor implements NestInterceptor {
         return obj
       }
 
-      batDel(obj, ['__v', '_id', 'id', 'created'])
+      batDel(obj, ['__v', '_id', 'created'])
       // Reflect.deleteProperty(obj, '__v')
 
       const keys = Object.keys(obj)
@@ -85,7 +85,7 @@ export class JSONTransformInterceptor implements NestInterceptor {
             idPrefixAdd(obj, key, obj[key])
             continue
           }
-          batDel(obj[key], ['__v', '_id', 'id', 'created'])
+          batDel(obj[key], ['__v', '_id', 'created'])
           // Reflect.deleteProperty(obj[key], '__v')
         }
         obj[key] = this.serialize(obj[key])

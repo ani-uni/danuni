@@ -1,4 +1,5 @@
 import { zstdCompressSync, zstdDecompressSync } from 'node:zlib'
+import { arrayNotEmpty } from 'class-validator'
 import { jwtVerify, SignJWT } from 'jose'
 import { AnyBulkWriteOperation } from 'mongoose'
 import { nanoid } from 'nanoid'
@@ -38,6 +39,13 @@ export class MetaSourceService {
     // .lean({ virtuals: true })
     if (!so) throw new NotFoundException('未找到该资源')
     return so
+  }
+
+  async listEpContainedSo(EPID: string) {
+    const res = await this.model
+      .find({ EPID }, { SOID: 1 })
+      .lean({ virtuals: true })
+    return res.map((i) => i.SOID)
   }
 
   async findSo(
@@ -226,15 +234,17 @@ export class MetaSourceService {
     }
     let jwt: string | undefined = undefined
     if (sign)
-      jwt = await new SignJWT({
-        bulkOperations: zstdCompressSync(
-          Buffer.from(JSON.stringify(bulkOperations)),
-        ).toString('utf-8'),
-      })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
-        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+      jwt = arrayNotEmpty(bulkOperations)
+        ? await new SignJWT({
+            bulkOperations: zstdCompressSync(
+              Buffer.from(JSON.stringify(bulkOperations)),
+            ).toString('base64'),
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+            .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+        : undefined
     return {
       new: newItems,
       updated: updatedItems,
@@ -259,15 +269,17 @@ export class MetaSourceService {
     ]
     let jwt: string | undefined = undefined
     if (sign)
-      jwt = await new SignJWT({
-        bulkOperations: zstdCompressSync(
-          Buffer.from(JSON.stringify(bulkOperations)),
-        ).toString('utf-8'),
-      })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
-        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+      jwt = arrayNotEmpty(bulkOperations)
+        ? await new SignJWT({
+            bulkOperations: zstdCompressSync(
+              Buffer.from(JSON.stringify(bulkOperations)),
+            ).toString('base64'),
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+            .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+        : undefined
     return {
       missing: Array.from(missingSOIDSet),
       jwt,
@@ -275,6 +287,7 @@ export class MetaSourceService {
   }
 
   async importSo(jwt: string) {
+    if (!jwt) throw new BadRequestException('jwt 不能为空')
     const decoded = await jwtVerify(
       jwt,
       new TextEncoder().encode(SECURITY.jwtSecret),
@@ -283,22 +296,11 @@ export class MetaSourceService {
     })
     const bulkOperations = JSON.safeParse(
       zstdDecompressSync(
-        Buffer.from(decoded.payload.bulkOperations as string),
+        Buffer.from(decoded.payload.bulkOperations as string, 'base64'),
       ).toString('utf-8'),
     )
     if (bulkOperations && bulkOperations.length > 0) {
-      const session = await this.model.db.startSession()
-      await session
-        .withTransaction(async (currentSession) => {
-          await this.model.bulkWrite(bulkOperations, {
-            ordered: false,
-            session: currentSession,
-          })
-        })
-        .catch(() => {
-          throw new BadRequestException('导入失败，操作已回滚')
-        })
-        .finally(async () => await session.endSession())
+      await this.model.bulkWrite(bulkOperations, { ordered: false })
       return 'OK'
     } else throw new BadRequestException('jwt 验证失败')
   }

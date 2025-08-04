@@ -1,24 +1,19 @@
-import { UniDMTools } from '@dan-uni/dan-any'
+import { UniDM, UniDMTools } from '@dan-uni/dan-any'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-
-import { InjectModel } from '~/transformers/model.transformer'
 
 import {
   DanmakuAdvDto,
   DanmakuMarkChapterDto,
   DanmakuStdDto,
 } from './danmaku.dto'
-import { DanmakuModel } from './danmaku.model'
 import { DanmakuService } from './danmaku.service'
 
 @Injectable()
 export class DanmakuSendService {
   private Logger = new Logger(DanmakuSendService.name)
-  constructor(
-    @InjectModel(DanmakuModel)
-    private readonly danmakuService: DanmakuService,
-  ) {}
+  constructor(private readonly danmakuService: DanmakuService) {}
   async sendDanStd(ID: string, dan: DanmakuAdvDto, adv = false) {
+    dan = UniDM.create(dan, { dmid: false }) // 进行Mode合规检查
     if (!adv && dan.mode === UniDMTools.Modes.Ext)
       throw new BadRequestException('该接口不支持高级弹幕')
     const pre = await this.danmakuService.preDan(ID)
@@ -26,7 +21,7 @@ export class DanmakuSendService {
     const newDan = await this.danmakuService.sendDan(
       {
         ...dan,
-        EPID: pre.ID.EPID,
+        // EPID: pre.ID.EPID,
         SOID: pre.ID.SOID,
         // senderID: pre.uid + pre.suffix,
         senderID: authn.sid,
@@ -40,13 +35,14 @@ export class DanmakuSendService {
     return newDan
   }
   async sendDanSub(ID: string, dan: DanmakuStdDto) {
+    dan = UniDM.create(dan, { dmid: false })
     if (dan.mode === UniDMTools.Modes.Ext)
       throw new BadRequestException('该接口不支持高级弹幕')
     const pre = await this.danmakuService.preDan(ID),
       authn = this.danmakuService.currentAuthn,
       danFull = {
         ...dan,
-        EPID: pre.ID.EPID,
+        // EPID: pre.ID.EPID,
         SOID: pre.ID.SOID,
         // senderID: pre.uid + pre.suffix,
         senderID: authn.sid,
@@ -69,7 +65,7 @@ export class DanmakuSendService {
     return this.danmakuService.sendDan(
       {
         ...dan,
-        EPID: pre.ID.EPID,
+        // EPID: pre.ID.EPID,
         SOID: pre.ID.SOID,
         // senderID: pre.uid + pre.suffix,
         senderID: authn.sid,

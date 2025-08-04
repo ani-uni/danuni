@@ -1,6 +1,6 @@
 // import { compareSync } from 'bcryptjs'
 import { zstdCompressSync, zstdDecompressSync } from 'node:zlib'
-import { isInt } from 'class-validator'
+import { arrayNotEmpty, isInt } from 'class-validator'
 import { jwtVerify, SignJWT } from 'jose'
 import { AnyBulkWriteOperation } from 'mongoose'
 import type { DanmakuDocument } from './danmaku.model'
@@ -13,7 +13,6 @@ import type { DanmakuDocument } from './danmaku.model'
 //   UniDM,
 // } from '@dan-uni/dan-any/src/utils/dm-gen'
 import { UniDM, UniDMTools, UniPool } from '@dan-uni/dan-any'
-import { DMAttr } from '@dan-uni/dan-any/dist/src/utils/dm-gen'
 // import { createDMID } from '@dan-uni/dan-any/src/utils/id-gen'
 import {
   BadRequestException,
@@ -89,22 +88,28 @@ export class DanmakuService {
   fmtSingleDan(dan: DanmakuDocument) {
     // dan = this.modelPostHook(dan)
     // console.log(String(dan._id))
-    return new UniDM(
-      IdPrefixPostHandlers.ep(dan.SOID),
-      dan.progress,
-      dan.mode,
-      dan.fontsize,
-      dan.color,
-      dan.senderID,
-      dan.content,
-      new Date(dan.ctime),
-      dan.weight,
-      dan.pool,
-      dan.attr,
-      dan.platform,
-      dan.extraStr,
-      IdPrefixPostHandlers.dm(dan.DMID),
-    )
+    return UniDM.create({
+      ...dan.toJSON(),
+      SOID: IdPrefixPostHandlers.so(dan.SOID),
+      ctime: new Date(dan.ctime),
+      DMID: IdPrefixPostHandlers.dm(dan.DMID),
+    })
+    // return new UniDM(
+    //   IdPrefixPostHandlers.ep(dan.SOID),
+    //   dan.progress,
+    //   dan.mode,
+    //   dan.fontsize,
+    //   dan.color,
+    //   dan.senderID,
+    //   dan.content,
+    //   new Date(dan.ctime),
+    //   dan.weight,
+    //   dan.pool,
+    //   dan.attr,
+    //   dan.platform,
+    //   dan.extraStr,
+    //   IdPrefixPostHandlers.dm(dan.DMID),
+    // )
   }
   fmt2Uni(dans: DanmakuDocument[]): UniDM[] {
     return new UniPoolExt(dans.map((dan) => this.fmtSingleDan(dan))).dans
@@ -124,9 +129,13 @@ export class DanmakuService {
   //   if (!dan) return null
   //   return dan
   // }
-  async getDan(oid: string) {
-    const dan = await this.danmakuModel.findById(IdPrefixPreHandlers.dm(oid))
+  async getDan(oid: string, checkHide?: boolean) {
+    const dan = await this.danmakuModel.findOne({
+      DMID: IdPrefixPreHandlers.dm(oid),
+    })
     if (!dan) throw new NotFoundException('未找到该弹幕')
+    if (dan.attr?.includes(UniDMTools.DMAttr.Hide) && !checkHide)
+      throw new ForbiddenException('该弹幕已被删除/隐藏')
     // if (!dan) return null
     return dan
   }
@@ -143,20 +152,24 @@ export class DanmakuService {
     // SOID?: string
     seg?: number
   }) {
-    const id = checkID(ID, ['ep', 'so']),
-      EPID: string | undefined = id.type === 'ep' ? id.id : undefined,
-      SOID: string | undefined = id.type === 'so' ? id.id : undefined
+    const id = checkID(ID, ['ep', 'so'])
     if (seg && (seg < 0 || !isInt(seg)))
       throw new BadRequestException('seg应为自然数')
-    let query: object = {
-        EPID,
-        SOID,
-        attr: { $not: { $in: ['Hide'] satisfies DMAttr[] } },
+    let query: any = {
+        SOID:
+          id.type === 'so'
+            ? id.id
+            : { $in: await this.metaSourceService.listEpContainedSo(id.id) },
+        attr: {
+          $not: { $in: [UniDMTools.DMAttr.Hide] satisfies UniDMTools.DMAttr[] },
+        },
       }, //TODO undefined测试是否符合预期ID结果
-      pool1Query: object = {
+      pool1Query: any = {
         ...query,
         pool: UniDMTools.Pools.Sub,
-        attr: { $not: { $in: ['Hide'] satisfies DMAttr[] } },
+        attr: {
+          $not: { $in: [UniDMTools.DMAttr.Hide] satisfies UniDMTools.DMAttr[] },
+        },
       }
     if (seg > 0) {
       const progress = {
@@ -166,11 +179,15 @@ export class DanmakuService {
       query = { ...query, progress }
       pool1Query = { ...pool1Query, progress }
     }
+    if (id.type === 'ep') {
+      pool1Query.SOID.$in = pool1Query.SOID.$in.map(IdPrefixPreHandlers.so)
+      query.SOID.$in = query.SOID.$in.map(IdPrefixPreHandlers.so)
+    }
     const pool1Dans = await this.danmakuModel
-        .find(IdPrefixPreHandler(pool1Query))
-        .sort({ ctime: -1, progress: 1 }),
+        .find(pool1Query)
+        .sort({ ctime: -1, progress: 1, weight: -1 }),
       dans = await this.danmakuModel
-        .find(IdPrefixPreHandler(query))
+        .find(query)
         .sort({ ctime: -1, progress: 1 })
         .limit(3000)
     // .lean({ virtuals: true })
@@ -231,8 +248,8 @@ export class DanmakuService {
   async sendDan(dan: DanmakuFullDto, meta: MetaDocument) {
     if (meta.duration && dan.progress > meta.duration)
       throw new BadRequestException('弹幕时间超出视频长度')
-    const newUniDM = UniDM.create(dan)
-    newUniDM.attr.push('Unchecked')
+    const newUniDM = UniDM.create(dan, { dmid: 64 })
+    newUniDM.attr.push(UniDMTools.DMAttr.Unchecked)
     const newDan = await this.danmakuModel.create(IdPrefixPreHandler(newUniDM))
     return this.fmtSingleDan(newDan)
   }
@@ -250,7 +267,11 @@ export class DanmakuService {
         if (res.acknowledged) return 'OK'
         else throw new BadRequestException('弹幕删除失败')
       } else {
-        if (OnFail === 'addHideAttr') await this.setDanProp(dan.id, ['Hide'])
+        if (OnFail === 'addHideAttr') {
+          const res = await this.setDanProp(dan.DMID, [UniDMTools.DMAttr.Hide])
+          if (res?.DMID) return 'OK'
+          else throw new BadRequestException('弹幕隐藏失败')
+        }
         throw new ForbiddenException('弹幕已从缓冲区入库(超出弹幕可操作时间)')
       }
     } else throw new ForbiddenException('无删除权限')
@@ -268,86 +289,145 @@ export class DanmakuService {
   }
 
   async setDanProp(
-    oid: string,
+    DMID: string,
     prop: UniDMTools.DMAttr[],
     rm: boolean = false,
   ) {
-    oid = IdPrefixPreHandlers.dm(oid)
+    DMID = IdPrefixPreHandlers.dm(DMID)
     if (rm)
-      return this.danmakuModel.findByIdAndUpdate(oid, {
-        $pull: { attr: { $in: prop } },
-      })
+      return this.danmakuModel.findOneAndUpdate(
+        { DMID },
+        {
+          $pull: { attr: { $in: prop } },
+        },
+      )
     else
-      return this.danmakuModel.findByIdAndUpdate(oid, {
-        $addToSet: { attr: { $each: prop } },
-      })
+      return this.danmakuModel.findOneAndUpdate(
+        { DMID },
+        {
+          $addToSet: { attr: { $each: prop } },
+        },
+      )
   }
 
-  async diffDan(data: Omit<DanmakuModel, 'id'>[], sign = false) {
-    data = data.map(IdPrefixPreHandler) as Omit<DanmakuModel, 'id'>[]
-    const inDMID = data.map((d) => d.DMID)
-    const existingDan = await this.model
-      .find({ DMID: { $in: inDMID } })
+  async diffDan(
+    input: (Omit<DanmakuModel, '_id' | 'DMID'> & { oriDMID?: string })[],
+    sign = false,
+  ) {
+    const data = input.map((d) =>
+      UniDM.create(IdPrefixPreHandler(d), { dmid: 64 }),
+    )
+    const toUpdatedDMID = new Set<string>(),
+      newDan = new Set<Omit<DanmakuModel, '_id'>>(),
+      inUpdatedDan = new Set<Omit<DanmakuModel, '_id'>>()
+    data.forEach((d) => {
+      toUpdatedDMID.add(d.DMID!)
+      inUpdatedDan.add(d as Omit<DanmakuModel, '_id'>)
+    })
+    const toUpdatedDan = await this.model
+      .find({ DMID: { $in: [...toUpdatedDMID] } })
       .lean({ virtuals: true })
-    const existingDanMap = new Map(existingDan.map((d) => [d.DMID, d]))
+    const toUpdatedDanMap = new Map(toUpdatedDan.map((d) => [d.DMID, d]))
 
-    const newItems: Omit<DanmakuModel, 'id'>[] = [],
-      updatedItems: {
+    const updatedItems: {
         updatedFields: (keyof DanmakuModel)[]
-        newData: Omit<DanmakuModel, 'id'>
+        newData: Omit<DanmakuModel, '_id'>
       }[] = [],
       duplicatedDMID: string[] = [],
       bulkOperations: AnyBulkWriteOperation[] = []
-    for (const d of data) {
-      const existingDoc = existingDanMap.get(d.DMID)
-      // 新增项
-      if (!existingDoc) {
-        newItems.push(d)
+    for (const d of inUpdatedDan) {
+      const oriDan = toUpdatedDanMap.get(d.DMID)
+      if (!oriDan) {
+        newDan.add(d)
         if (sign)
           bulkOperations.push({
             insertOne: {
               document: d,
             },
           })
-      } else {
-        // 已存在，比较字段以确定是否更新
+      } else if (d.DMID === oriDan!.DMID) duplicatedDMID.push(oriDan!.DMID)
+      else {
         const updatedFields: (keyof DanmakuModel)[] = []
-        let isModified = false
         // 比较每个 key (除了 _id)
         for (const key in d) {
-          if (key !== '_id' && d[key] !== existingDoc[key]) {
+          if (key !== '_id' && key !== 'DMID' && d[key] !== oriDan![key]) {
             updatedFields.push(key as keyof DanmakuModel)
-            isModified = true
           }
         }
-        if (isModified) {
-          updatedItems.push({
-            updatedFields,
-            newData: d,
+        updatedItems.push({
+          updatedFields,
+          newData: d,
+        })
+        if (sign)
+          bulkOperations.push({
+            updateOne: {
+              filter: { DMID: oriDan!.DMID },
+              update: { $set: d }, // 使用 $set 更新整个文档
+            },
           })
-          if (sign)
-            bulkOperations.push({
-              updateOne: {
-                filter: { DMID: d.DMID },
-                update: { $set: d }, // 使用 $set 更新整个文档
-              },
-            })
-        } else duplicatedDMID.push(d.DMID)
       }
     }
+    // for (const d of data) {
+    //   if (!d.DMID) throw new BadRequestException('无法计算DMID')
+    //   const existingDoc = existingDanMap.get(d.DMID)data
+    //   // 新增项
+    //   if (!existingDoc) {
+    //     newItems.push(
+    //       d as UniDM & {
+    //         DMID: string
+    //         platform: platform.PlatformDanmakuSource
+    //       },
+    //     )
+    //     if (sign)
+    //       bulkOperations.push({
+    //         insertOne: {
+    //           document: d,
+    //         },
+    //       })
+    //   } else {
+    //     // 已存在，比较字段以确定是否更新
+    //     const updatedFields: (keyof DanmakuModel)[] = []
+    //     let isModified = false
+    //     // 比较每个 key (除了 _id)
+    //     for (const key in d) {
+    //       if (key !== '_id' && key !== 'DMID' && d[key] !== existingDoc[key]) {
+    //         updatedFields.push(key as keyof DanmakuModel)
+    //         isModified = true
+    //       }
+    //     }
+    //     if (isModified) {
+    //       updatedItems.push({
+    //         updatedFields,
+    //         newData: d as UniDM & {
+    //           DMID: string
+    //           platform: platform.PlatformDanmakuSource
+    //         },
+    //       })
+    //       if (sign)
+    //         bulkOperations.push({
+    //           updateOne: {
+    //             filter: { DMID: d.DMID },
+    //             update: { $set: d }, // 使用 $set 更新整个文档
+    //           },
+    //         })
+    //     } else duplicatedDMID.push(d.DMID)
+    //   }
+    // }
     let jwt: string | undefined = undefined
     if (sign)
-      jwt = await new SignJWT({
-        bulkOperations: zstdCompressSync(
-          Buffer.from(JSON.stringify(bulkOperations)),
-        ).toString('utf-8'),
-      })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
-        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+      jwt = arrayNotEmpty(bulkOperations)
+        ? await new SignJWT({
+            bulkOperations: zstdCompressSync(
+              Buffer.from(JSON.stringify(bulkOperations)),
+            ).toString('base64'),
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+            .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+        : undefined
     return {
-      new: newItems,
+      new: [...newDan],
       updated: updatedItems,
       duplicated: duplicatedDMID,
       jwt,
@@ -370,15 +450,17 @@ export class DanmakuService {
     ]
     let jwt: string | undefined = undefined
     if (sign)
-      jwt = await new SignJWT({
-        bulkOperations: zstdCompressSync(
-          Buffer.from(JSON.stringify(bulkOperations)),
-        ).toString('utf-8'),
-      })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
-        .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+      jwt = arrayNotEmpty(bulkOperations)
+        ? await new SignJWT({
+            bulkOperations: zstdCompressSync(
+              Buffer.from(JSON.stringify(bulkOperations)),
+            ).toString('base64'),
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime(Math.floor(Date.now() / 1000) + 10)
+            .sign(new TextEncoder().encode(SECURITY.jwtSecret))
+        : undefined
     return {
       missing: Array.from(missingDMIDSet),
       jwt,
@@ -386,6 +468,7 @@ export class DanmakuService {
   }
 
   async importDan(jwt: string) {
+    if (!jwt) throw new BadRequestException('jwt 不能为空')
     const decoded = await jwtVerify(
       jwt,
       new TextEncoder().encode(SECURITY.jwtSecret),
@@ -394,22 +477,24 @@ export class DanmakuService {
     })
     const bulkOperations = JSON.safeParse(
       zstdDecompressSync(
-        Buffer.from(decoded.payload.bulkOperations as string),
+        Buffer.from(decoded.payload.bulkOperations as string, 'base64'),
       ).toString('utf-8'),
     )
     if (bulkOperations && bulkOperations.length > 0) {
-      const session = await this.model.db.startSession()
-      await session
-        .withTransaction(async (currentSession) => {
-          await this.model.bulkWrite(bulkOperations, {
-            ordered: false,
-            session: currentSession,
-          })
-        })
-        .catch(() => {
-          throw new BadRequestException('导入失败，操作已回滚')
-        })
-        .finally(async () => await session.endSession())
+      // console.log('bulkOperations', bulkOperations[0])
+      await this.model.bulkWrite(bulkOperations, { ordered: false })
+      // const session = await this.model.db.startSession()
+      // await session
+      //   .withTransaction(async (currentSession) => {
+      //     await this.model.bulkWrite(bulkOperations, {
+      //       ordered: false,
+      //       session: currentSession,
+      //     })
+      //   })
+      //   .catch((e) => {
+      //     throw new BadRequestException('导入失败，操作已回滚' + e)
+      //   })
+      //   .finally(async () => await session.endSession())
       return 'OK'
     } else throw new BadRequestException('jwt 验证失败')
   }

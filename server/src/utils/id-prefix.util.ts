@@ -47,8 +47,7 @@ export function checkID(
 }
 
 export const IdPrefixPreHandlers = {
-  ctime: (ctime: ctime) =>
-    ctime ? new Date(ctime).toISOString() : new Date().toISOString(),
+  ctime: (ctime: ctime) => (ctime ? new Date(ctime) : new Date()),
   ep: (id: string) => checkID(id, ['ep', 'no']).id,
   so: (id: string) => checkID(id, ['so', 'no']).id,
   dm: (id: string) => checkID(id, ['dm', 'no']).id,
@@ -77,15 +76,14 @@ export const IdPrefixPreHandler = (obj: Partial<O>) => {
   if (obj.EPID) obj.EPID = IdPrefixPreHandlers.ep(obj.EPID)
   if (obj.SOID) obj.SOID = IdPrefixPreHandlers.so(obj.SOID)
   if (obj.DMID) obj.DMID = IdPrefixPreHandlers.dm(obj.DMID)
-  return obj
+  return obj as Partial<O> & { ctime?: Date }
 }
 
 export const IdPrefixPostHandler = (obj: Partial<O>) => {
   if (obj.EPID) obj.EPID = IdPrefixPostHandlers.ep(obj.EPID)
   if (obj.SOID) obj.SOID = IdPrefixPostHandlers.so(obj.SOID)
-  if (obj.DMID)
-    obj.DMID = IdPrefixPostHandlers.dm(obj.DMID || obj.id || obj._id)
-  if (obj.PID) obj.PID = IdPrefixPostHandlers.dm(obj.PID || obj.id || obj._id)
+  if (obj.DMID) obj.DMID = IdPrefixPostHandlers.dm(obj.DMID)
+  if (obj.PID) obj.PID = IdPrefixPostHandlers.dm(obj.PID)
   return obj
 }
 

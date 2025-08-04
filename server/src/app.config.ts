@@ -132,7 +132,7 @@ export const AXIOS_CONFIG: AxiosRequestConfig = {
 }
 
 export const SECURITY = {
-  jwtSecret: argv.jwt_secret || argv.jwtSecret,
+  jwtSecret: argv.jwt_secret || argv.jwtSecret || machineIdSync(),
   // jwtExpire: +argv.jwt_expire || 14,
 }
 
