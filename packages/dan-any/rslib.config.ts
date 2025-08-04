@@ -18,6 +18,7 @@ export default defineConfig({
       output: {
         filename: { js: 'index.umd.min.js' },
         target: 'web',
+        externals: ['fabric/node'],
       },
       dts: true,
       umdName: pkg.name,

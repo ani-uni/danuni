@@ -1,4 +1,5 @@
-import { createCanvas } from 'canvas'
+import { Canvas as WebCanvas } from 'fabric'
+import { StaticCanvas as NodeCanvas } from 'fabric/node'
 import type { UniPool } from '../..'
 import type { Danmaku, SubtitleStyle } from '../types'
 
@@ -78,7 +79,17 @@ const splitGrids = ({
 }
 
 export const measureTextWidth = (() => {
-  const canvasContext = createCanvas(50, 50).getContext('2d')
+  let isWeb
+  try {
+    isWeb = !!window
+  } catch {
+    isWeb = false
+  }
+  const Canvas = isWeb ? WebCanvas : NodeCanvas
+  const canvasContext = new Canvas(undefined, {
+    width: 50,
+    height: 50,
+  }).getContext()
   const supportTextMeasure = !!canvasContext.measureText('中')
 
   if (supportTextMeasure) {

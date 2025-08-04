@@ -1,4 +1,4 @@
-import { assertType, it } from 'vitest'
+import { assert, assertType, it } from 'vitest'
 
 import { measureTextWidth } from '../util/layout'
 
@@ -7,5 +7,5 @@ it('canvas measureTextWidth', () => {
   const width = measureTextWidth('SimHei', 25, false, text)
   assertType<number>(width)
   console.info(width, text.length)
-  // assert(width >= 25 * text.length)
+  assert(width >= 25 * text.length)
 })
