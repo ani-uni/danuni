@@ -1,5 +1,5 @@
 import type { UniPool } from '../..'
-import type { Danmaku, SubtitleStyle } from '../types'
+import type { CanvasCtx, Danmaku, SubtitleStyle } from '../types'
 
 import { DanmakuType, FontSize } from '../types'
 import { DanmakuList2UniPool, UniPool2DanmakuLists } from './danconvert'
@@ -76,9 +76,7 @@ const splitGrids = ({
   }
 }
 
-export const measureTextWidthConstructor = (
-  canvasContext: CanvasRenderingContext2D,
-) => {
+export const measureTextWidthConstructor = (canvasContext: CanvasCtx) => {
   const supportTextMeasure = !!canvasContext.measureText('中')
 
   if (supportTextMeasure) {
@@ -138,10 +136,7 @@ const resolveAvailableScrollGrid = (
   return -1
 }
 
-const initializeLayout = (
-  config: SubtitleStyle,
-  canvasCtx: CanvasRenderingContext2D,
-) => {
+const initializeLayout = (config: SubtitleStyle, canvasCtx: CanvasCtx) => {
   const {
     playResX,
     playResY,
@@ -236,7 +231,7 @@ const initializeLayout = (
 export const layoutDanmaku = (
   inputList: UniPool,
   config: SubtitleStyle,
-  canvasCtx: CanvasRenderingContext2D,
+  canvasCtx: CanvasCtx,
 ): UniPool => {
   const list = [...UniPool2DanmakuLists(inputList)].sort(
     (x, y) => x.time - y.time,

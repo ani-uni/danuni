@@ -1,4 +1,5 @@
 //基于以下注释，根据vitest生成测试用例
+import { createCanvas } from 'canvas'
 import { describe, it } from 'vitest'
 
 import { UniPool } from './index'
@@ -50,8 +51,9 @@ describe('转化自', () => {
     console.info(pool)
   })
   it('ass[双向]', () => {
+    const canvas = createCanvas(50, 50)
     const pool = UniPool.fromBiliXML(xml)
-    const ass = pool.toASS()
+    const ass = pool.toASS(canvas.getContext('2d'))
     console.info(ass)
     console.info(UniPool.fromASS(ass))
   })

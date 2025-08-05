@@ -1,6 +1,6 @@
 // import parse from './parse/bilibili'
 import type { RawConfig } from './ass/raw'
-import type { SubtitleStyle } from './types'
+import type { CanvasCtx, SubtitleStyle } from './types'
 
 import { UniPool } from '..'
 import ass from './ass/create'
@@ -8,36 +8,14 @@ import { deRaw } from './ass/raw'
 import getConfig from './config'
 import { DanmakuList2UniPool, layoutDanmaku } from './util'
 
+export { CanvasCtx }
+
 export type Options = {
   filename?: string
   title?: string
   substyle?: Partial<SubtitleStyle>
   raw?: RawConfig
 }
-
-/**
- * 请根据您的使用环境提供一个 50x50 的 2D Canvas 上下文
- * @example
- * // Node.js + canvas
- * import { createCanvas } from 'canvas'
- * const canvas = createCanvas(50, 50)
- * const ctx = canvas.getContext('2d')
- * @example
- * // Node.js + Fabric.js
- * import { StaticCanvas } from 'fabric/node'
- * const ctx = new StaticCanvas(null, { width: 50, height: 50 }).getContext()
- * @example
- * // Browser + Native Canvas
- * const canvas = document.createElement('canvas')
- * canvas.width = 50
- * canvas.height = 50
- * const ctx = canvas.getContext('2d')
- * @example
- * // Browser + Fabric.js
- * import { Canvas } from 'fabric'
- * const ctx = new Canvas('canvas', { width: 50, height: 50 }).getContext()
- */
-export type CanvasCtx = CanvasRenderingContext2D
 
 /**
  * 使用bilibili弹幕(XMl)生成ASS字幕文件
