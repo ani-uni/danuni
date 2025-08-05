@@ -57,6 +57,11 @@ describe('转化自', () => {
     console.info(ass)
     console.info(UniPool.fromASS(ass))
   })
+  it('pb[双向]', () => {
+    const pool = UniPool.fromBiliXML(xml)
+    const pb = pool.toPb()
+    console.info(UniPool.fromPb(pb))
+  })
 })
 
 describe('共通值', () => {
