@@ -115,7 +115,7 @@ export class UniPool {
   constructor(
     public dans: UniDM[],
     public options: Options = {},
-    private info = {
+    public info = {
       /**
        * 是否从已被转换过的第三方格式弹幕再次转换而来
        */
