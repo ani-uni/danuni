@@ -405,6 +405,7 @@ export class UniPool {
         UniDM.create(
           {
             ...d,
+            progress: d.progress / 1000,
             mode: d.mode as number,
             ctime: timestampDate(d.ctime || timestampNow()),
             pool: d.pool as number,
@@ -427,7 +428,7 @@ export class UniPool {
           return {
             SOID: d.SOID,
             DMID: d.DMID,
-            progress: d.progress,
+            progress: d.progress * 1000,
             mode: d.mode as number,
             fontsize: d.fontsize,
             color: d.color,
