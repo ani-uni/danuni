@@ -1009,7 +1009,9 @@ export class UniDM {
       color: this.color,
       uid: this.senderID,
       m: this.content,
-      cid: Number(this.DMID) || 1,
+      cid: this.DMID
+        ? Number.parseInt(Buffer.from(this.DMID).toString('hex'), 16)
+        : 0,
     }
   }
 }
