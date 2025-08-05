@@ -797,7 +797,13 @@ export class UniDM {
     )
   }
   @Expose()
-  toBiliXML(options?: { skipBiliCommand: boolean }) {
+  toBiliXML(options?: {
+    skipBiliCommand?: boolean
+    /**
+     * 见 ../index.ts UniPool.toBiliXML() 的 options，该option不宜手动调用，判断逻辑未封装
+     */
+    avoidSenderIDWithAt?: boolean
+  }) {
     if (options?.skipBiliCommand && this.extra.bili?.command) {
       return null
     }
@@ -846,7 +852,9 @@ export class UniDM {
         this.color,
         this.ctime.getTime() / 1000,
         this.extra.bili?.pool || this.pool, // 目前pool与bili兼容
-        this.senderID,
+        options?.avoidSenderIDWithAt
+          ? this.senderID.replaceAll(`@${PlatformVideoSource.Bilibili}`, '')
+          : this.senderID,
         this.extra.bili?.dmid || this.DMID || this.toDMID(),
         this.weight,
       ].join(','),

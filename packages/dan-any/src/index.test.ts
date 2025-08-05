@@ -34,6 +34,7 @@ describe('转化自', () => {
     console.info(xml)
     console.info(pool)
     console.info(pool.toBiliXML())
+    console.info(pool.toBiliXML({ avoidSenderIDWithAt: true }))
   })
   it('artplayer(json)', () => {
     const json = [

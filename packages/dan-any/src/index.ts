@@ -475,7 +475,14 @@ export class UniPool {
       options,
     )
   }
-  toBiliXML(): string {
+  toBiliXML(options?: {
+    /**
+     * 当仅含有来自bili的弹幕时，启用将保持发送者标识不含`@`
+     * @description
+     * bili的弹幕含midHash(crc)，不启用该处使用senderID填充，启用则去除`@bili`部分，提高兼容性
+     */
+    avoidSenderIDWithAt?: boolean
+  }): string {
     const genCID = (id: string) => {
       const UniID = ID.fromString(id)
       if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
@@ -487,6 +494,12 @@ export class UniPool {
         if (cid) return cid
       }
       return Number.parseInt(Buffer.from(id).toString('hex'), 16).toString()
+    }
+    if (options?.avoidSenderIDWithAt) {
+      const ok = this.dans.every((d) =>
+        d.senderID.endsWith(`@${platform.PlatformVideoSource.Bilibili}`),
+      )
+      if (!ok) throw new Error('存在其他来源的senderID，请关闭该功能再试！')
     }
     const builder = new XMLBuilder({ ignoreAttributes: false })
     return builder.build({
@@ -502,7 +515,7 @@ export class UniPool {
         state: 0,
         real_name: 0,
         source: 'k-v',
-        d: this.dans.map((dan) => dan.toBiliXML()),
+        d: this.dans.map((dan) => dan.toBiliXML(options)),
       },
     })
   }
