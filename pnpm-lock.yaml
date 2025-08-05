@@ -86,18 +86,12 @@ importers:
       base16384:
         specifier: ^1.0.0
         version: 1.0.0
-      canvas:
-        specifier: ^3.1.2
-        version: 3.1.2
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
       class-validator:
         specifier: ^0.14.2
         version: 0.14.2
-      fabric:
-        specifier: ^6.7.1
-        version: 6.7.1
       fast-xml-parser:
         specifier: ^5.2.5
         version: 5.2.5
@@ -132,6 +126,9 @@ importers:
       '@types/json-bigint':
         specifier: ^1.0.4
         version: 1.0.4
+      canvas:
+        specifier: ^3.1.2
+        version: 3.1.2
       protobufjs:
         specifier: ^7.5.3
         version: 7.5.3
@@ -3825,10 +3822,6 @@ packages:
     resolution: {integrity: sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==}
     engines: {node: '>= 10.17.0'}
     hasBin: true
-
-  fabric@6.7.1:
-    resolution: {integrity: sha512-dLxSmIvN4InJf4xOjbl1LFWh8WGOUIYtcuDIGs2IN0Z9lI0zGobfesDauyEhI1+owMLTPCCiEv01rpYXm7g2EQ==}
-    engines: {node: '>=16.20.0'}
 
   fast-decode-uri-component@1.0.1:
     resolution: {integrity: sha512-WKgKWg5eUxvRZGwW8FvfbaH7AXSh2cL+3j5fMGzUMCxWBJ3dV3a7Wz8y2f/uQ0e3B6WmodD3oS54jTQ9HVTIIg==}
@@ -10865,16 +10858,6 @@ snapshots:
       '@types/yauzl': 2.10.3
     transitivePeerDependencies:
       - supports-color
-
-  fabric@6.7.1:
-    optionalDependencies:
-      canvas: 2.11.2
-      jsdom: 20.0.3(canvas@2.11.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - supports-color
-      - utf-8-validate
 
   fast-decode-uri-component@1.0.1: {}
 

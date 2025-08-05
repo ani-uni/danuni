@@ -16,6 +16,30 @@ export type Options = {
 }
 
 /**
+ * 请根据您的使用环境提供一个 50x50 的 2D Canvas 上下文
+ * @example
+ * // Node.js + canvas
+ * import { createCanvas } from 'canvas'
+ * const canvas = createCanvas(50, 50)
+ * const ctx = canvas.getContext('2d')
+ * @example
+ * // Node.js + Fabric.js
+ * import { StaticCanvas } from 'fabric/node'
+ * const ctx = new StaticCanvas(null, { width: 50, height: 50 }).getContext()
+ * @example
+ * // Browser + Native Canvas
+ * const canvas = document.createElement('canvas')
+ * canvas.width = 50
+ * canvas.height = 50
+ * const ctx = canvas.getContext('2d')
+ * @example
+ * // Browser + Fabric.js
+ * import { Canvas } from 'fabric'
+ * const ctx = new Canvas('canvas', { width: 50, height: 50 }).getContext()
+ */
+export type CanvasCtx = CanvasRenderingContext2D
+
+/**
  * 使用bilibili弹幕(XMl)生成ASS字幕文件
  * @param {string} danmaku XML弹幕文件内容
  * @param {Options} options 杂项
@@ -32,13 +56,17 @@ const assText = generateASS(xmlText, { filename, title: 'Quick Example' })
 fs.writeFileSync(`${filename}.ass`, assText, 'utf-8')
 ```
  */
-export function generateASS(danmaku: UniPool, options: Options): string {
+export function generateASS(
+  danmaku: UniPool,
+  options: Options,
+  canvasCtx: CanvasCtx,
+): string {
   //   const result = parse(text)
   const config = getConfig(options.substyle)
   // const filteredList = filterDanmaku(result.list, config.block)
   // const mergedList = mergeDanmaku(result.list, config.mergeIn)
   const mergedList = danmaku.merge(config.mergeIn)
-  const layoutList = layoutDanmaku(mergedList, config)
+  const layoutList = layoutDanmaku(mergedList, config, canvasCtx)
   const content = ass(
     layoutList,
     danmaku,

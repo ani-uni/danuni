@@ -2,7 +2,7 @@ import 'reflect-metadata/lite'
 
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import JSONbig from 'json-bigint'
-import type { Options as AssGenOptions } from './ass-gen'
+import type { Options as AssGenOptions, CanvasCtx } from './ass-gen'
 import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
@@ -377,8 +377,8 @@ export class UniPool {
         return this.dans
       case 'danuni.bin':
         return this.toPb()
-      // case 'bili.xml':
-      //   return this.toBiliXML()
+      case 'bili.xml':
+        return this.toBiliXML()
       // case 'bili.bin':
       //   return this.toBiliBin()
       // case 'bili.cmd.bin':
@@ -389,8 +389,8 @@ export class UniPool {
         return this.toArtplayer()
       case 'ddplay.json':
         return this.toDDplay()
-      case 'common.ass':
-        return this.toASS()
+      // case 'common.ass':
+      //   return this.toASS()
       default: {
         const message = '(err) Unknown format or unsupported now!'
         if (continue_on_error) return message
@@ -649,9 +649,15 @@ export class UniPool {
   static fromASS(ass: string) {
     return parseAssRawField(ass)
   }
-  toASS(options: AssGenOptions = { substyle: {} }): string {
+  /**
+   * 转换为ASS字幕格式的弹幕，需播放器支持多行ASS渲染
+   */
+  toASS(
+    canvasCtx: CanvasCtx,
+    options: AssGenOptions = { substyle: {} },
+  ): string {
     const fn = this.shared.SOID
-    return generateASS(this, { filename: fn, title: fn, ...options })
+    return generateASS(this, { filename: fn, title: fn, ...options }, canvasCtx)
   }
 }
 

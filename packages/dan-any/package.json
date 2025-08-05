@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "keywords": [
     "bangumi",
@@ -33,10 +33,8 @@
   "dependencies": {
     "@bufbuild/protobuf": "^2.6.2",
     "base16384": "^1.0.0",
-    "canvas": "^3.1.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "fabric": "^6.7.1",
     "fast-xml-parser": "^5.2.5",
     "fs-extra": "^11.3.0",
     "hh-mm-ss": "^1.2.0",
@@ -50,6 +48,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/json-bigint": "^1.0.4",
+    "canvas": "^3.1.2",
     "protobufjs": "^7.5.3"
   }
 }

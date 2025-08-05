@@ -1,5 +1,3 @@
-import { Canvas as WebCanvas } from 'fabric'
-import { StaticCanvas as NodeCanvas } from 'fabric/node'
 import type { UniPool } from '../..'
 import type { Danmaku, SubtitleStyle } from '../types'
 
@@ -78,18 +76,9 @@ const splitGrids = ({
   }
 }
 
-export const measureTextWidth = (() => {
-  let isWeb
-  try {
-    isWeb = !!window
-  } catch {
-    isWeb = false
-  }
-  const Canvas = isWeb ? WebCanvas : NodeCanvas
-  const canvasContext = new Canvas(undefined, {
-    width: 50,
-    height: 50,
-  }).getContext()
+export const measureTextWidthConstructor = (
+  canvasContext: CanvasRenderingContext2D,
+) => {
   const supportTextMeasure = !!canvasContext.measureText('中')
 
   if (supportTextMeasure) {
@@ -110,7 +99,7 @@ export const measureTextWidth = (() => {
   )
   return (_fontName: string, fontSize: number, _bold: boolean, text: string) =>
     text.length * fontSize
-})()
+}
 
 // 找到能用的行
 const resolveAvailableFixGrid = (grids: FixGrid[], time: number) => {
@@ -149,7 +138,10 @@ const resolveAvailableScrollGrid = (
   return -1
 }
 
-const initializeLayout = (config: SubtitleStyle) => {
+const initializeLayout = (
+  config: SubtitleStyle,
+  canvasCtx: CanvasRenderingContext2D,
+) => {
   const {
     playResX,
     playResY,
@@ -171,7 +163,12 @@ const initializeLayout = (config: SubtitleStyle) => {
     const targetGrids = grids[danmaku.type as keyof DanmakuGrids]
     const danmakuFontSize = fontSize[danmaku.fontSizeType]
     const rectWidth =
-      measureTextWidth(fontName, danmakuFontSize, bold, danmaku.content) +
+      measureTextWidthConstructor(canvasCtx)(
+        fontName,
+        danmakuFontSize,
+        bold,
+        danmaku.content,
+      ) +
       paddingLeft +
       paddingRight
     const verticalOffset =
@@ -239,11 +236,12 @@ const initializeLayout = (config: SubtitleStyle) => {
 export const layoutDanmaku = (
   inputList: UniPool,
   config: SubtitleStyle,
+  canvasCtx: CanvasRenderingContext2D,
 ): UniPool => {
   const list = [...UniPool2DanmakuLists(inputList)].sort(
     (x, y) => x.time - y.time,
   )
-  const layout = initializeLayout(config)
+  const layout = initializeLayout(config, canvasCtx)
 
   return DanmakuList2UniPool(list.map(layout).filter((danmaku) => !!danmaku))
 }
