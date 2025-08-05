@@ -12,6 +12,7 @@ import {
   timestampNow,
 } from '@bufbuild/protobuf/wkt'
 
+import pkg from '../package.json'
 import { generateASS, parseAssRawField } from './ass-gen'
 import {
   // DanmakuElem as DM_JSON_BiliGrpc,
@@ -30,6 +31,17 @@ import * as platform from './utils/platform'
 const JSON = JSONbig({
   useNativeBigInt: true,
 })
+
+const DanUniConvertTipTemplate: DanUniConvertTip = {
+  meassage: 'Converted by DanUni!',
+  version: `JS/TS ${pkg.name} (v${pkg.version})`,
+}
+
+interface DanUniConvertTip {
+  meassage: string
+  version: string
+  data?: string
+}
 
 export interface DM_XML_Bili {
   i: {
@@ -54,12 +66,14 @@ export interface DM_JSON_Dplayer {
   data: [number, number, number, string, string][]
 }
 export interface DM_JSON_Artplayer {
-  text: string // 弹幕文本
-  time?: number // 弹幕时间，默认为当前播放器时间
-  mode?: number // 弹幕模式：0: 滚动 (默认)，1: 顶部，2: 底部
-  color?: string // 弹幕颜色，默认为白色
-  border?: boolean // 弹幕是否有描边，默认为 false
-  style?: {} // 弹幕自定义样式，默认为空对象
+  danmuku: {
+    text: string // 弹幕文本
+    time?: number // 弹幕时间，默认为当前播放器时间
+    mode?: number // 弹幕模式：0: 滚动 (默认)，1: 顶部，2: 底部
+    color?: string // 弹幕颜色，默认为白色
+    border?: boolean // 弹幕是否有描边，默认为 false
+    style?: {} // 弹幕自定义样式，默认为空对象
+  }[]
 }
 export interface DM_JSON_DDPlay {
   count: number | string
@@ -101,6 +115,12 @@ export class UniPool {
   constructor(
     public dans: UniDM[],
     public options: Options = {},
+    private info = {
+      /**
+       * 是否从已被转换过的第三方格式弹幕再次转换而来
+       */
+      fromConverted: false,
+    },
   ) {
     if (options.dedupe !== false) options.dedupe = true
     if (this.options.dedupe) this.dedupe()
@@ -232,11 +252,15 @@ export class UniPool {
    */
   assign(dans: UniPool | UniDM | UniDM[]) {
     if (dans instanceof UniPool) {
-      return new UniPool([...this.dans, ...dans.dans])
+      return new UniPool(
+        [...this.dans, ...dans.dans],
+        { ...this.options, ...dans.options },
+        { ...this.info, ...dans.info },
+      )
     } else if (dans instanceof UniDM) {
-      return new UniPool([...this.dans, dans])
+      return new UniPool([...this.dans, dans], this.options, this.info)
     } else if (Array.isArray(dans) && dans.every((d) => d instanceof UniDM)) {
-      return new UniPool([...this.dans, ...dans])
+      return new UniPool([...this.dans, ...dans], this.options, this.info)
     } else return this
   }
   /**
@@ -248,7 +272,8 @@ export class UniPool {
     return [...set].map((v) => {
       return new UniPool(
         this.dans.filter((d) => d[key] === v),
-        { dedupe: false },
+        { ...this.options, dedupe: false },
+        this.info,
       )
     })
   }
@@ -366,7 +391,7 @@ export class UniPool {
         }
       }
     })
-    return new UniPool(result)
+    return new UniPool(result, this.options, this.info)
   }
   minify() {
     return this.dans.map((d) => d.minify())
@@ -447,8 +472,10 @@ export class UniPool {
   }
   static fromBiliXML(xml: string, options?: Options) {
     const parser = new XMLParser({ ignoreAttributes: false }),
-      oriData: DM_XML_Bili = parser.parse(xml),
-      dans = oriData.i.d
+      oriData: DM_XML_Bili & { danuni?: DanUniConvertTip } = parser.parse(xml),
+      dans = oriData.i.d,
+      fromConverted = !!oriData.danuni,
+      cid = BigInt(oriData.i.chatid)
     return new UniPool(
       dans
         .map((d) => {
@@ -467,15 +494,21 @@ export class UniPool {
               id: BigInt(p_arr[7]),
               weight: Number.parseInt(p_arr[8]),
             },
-            BigInt(oriData.i.chatid),
+            cid,
             options,
+            fromConverted ? oriData.danuni?.data : undefined,
           )
         })
         .filter((d) => d !== null),
       options,
+      { fromConverted },
     )
   }
   toBiliXML(options?: {
+    /**
+     * 当SOID非来源bili时，若此处指定则使用该值为cid，否则使用SOID
+     */
+    cid?: bigint
     /**
      * 当仅含有来自bili的弹幕时，启用将保持发送者标识不含`@`
      * @description
@@ -493,7 +526,7 @@ export class UniPool {
 
         if (cid) return cid
       }
-      return Number.parseInt(Buffer.from(id).toString('hex'), 16).toString()
+      return !options?.cid || id
     }
     if (options?.avoidSenderIDWithAt) {
       const ok = this.dans.every((d) =>
@@ -507,6 +540,7 @@ export class UniPool {
         '@_version': '1.0',
         '@_encoding': 'UTF-8',
       },
+      danuni: { ...DanUniConvertTipTemplate, data: this.shared.SOID },
       i: {
         chatserver: 'chat.bilibili.com',
         chatid: genCID(this.dans[0].SOID),
@@ -547,7 +581,7 @@ export class UniPool {
     )
   }
   static fromDplayer(
-    json: DM_JSON_Dplayer,
+    json: DM_JSON_Dplayer & { danuni?: DanUniConvertTip },
     playerID: string,
     domain = 'other',
     options?: Options,
@@ -571,11 +605,13 @@ export class UniPool {
         )
       }),
       options,
+      { fromConverted: !!json.danuni },
     )
   }
-  toDplayer(): DM_JSON_Dplayer {
+  toDplayer(): DM_JSON_Dplayer & { danuni?: DanUniConvertTip } {
     return {
       code: 0,
+      danuni: DanUniConvertTipTemplate,
       data: this.dans.map((dan) => {
         const d = dan.toDplayer()
         return [d.progress, d.mode, d.color, d.midHash, d.content]
@@ -583,13 +619,13 @@ export class UniPool {
     }
   }
   static fromArtplayer(
-    json: DM_JSON_Artplayer[],
+    json: DM_JSON_Artplayer & { danuni?: DanUniConvertTip },
     playerID: string,
     domain = 'other',
     options?: Options,
   ) {
     return new UniPool(
-      json.map((d) => {
+      json.danmuku.map((d) => {
         // let TYPE = 0
         // if (d.mode === 1) TYPE = 5
         // else if (d.mode === 2) TYPE = 4
@@ -607,23 +643,27 @@ export class UniPool {
         )
       }),
       options,
+      { fromConverted: !!json.danuni },
     )
   }
-  toArtplayer(): DM_JSON_Artplayer[] {
-    return this.dans.map((dan) => {
-      const d = dan.toArtplayer()
-      return {
-        text: d.content,
-        time: d.progress,
-        mode: d.mode as 0 | 1 | 2,
-        color: `#${d.color.toString(16).toUpperCase() || 'FFFFFF'}`,
-        border: d.border,
-        style: d.style,
-      }
-    })
+  toArtplayer(): DM_JSON_Artplayer & { danuni?: DanUniConvertTip } {
+    return {
+      danuni: DanUniConvertTipTemplate,
+      danmuku: this.dans.map((dan) => {
+        const d = dan.toArtplayer()
+        return {
+          text: d.content,
+          time: d.progress,
+          mode: d.mode as 0 | 1 | 2,
+          color: `#${d.color.toString(16).toUpperCase() || 'FFFFFF'}`,
+          border: d.border,
+          style: d.style,
+        }
+      }),
+    }
   }
   static fromDDPlay(
-    json: DM_JSON_DDPlay,
+    json: DM_JSON_DDPlay & { danuni?: DanUniConvertTip },
     episodeId: string,
     options?: Options,
   ) {
@@ -645,10 +685,12 @@ export class UniPool {
         )
       }),
       options,
+      { fromConverted: !!json.danuni },
     )
   }
-  toDDplay(): DM_JSON_DDPlay {
+  toDDplay(): DM_JSON_DDPlay & { danuni?: DanUniConvertTip } {
     return {
+      danuni: DanUniConvertTipTemplate,
       count: this.dans.length,
       comments: this.dans.map((dan) => {
         const d = dan.toDDplay()

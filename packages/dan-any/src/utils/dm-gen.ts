@@ -2,6 +2,7 @@ import { Expose, plainToInstance } from 'class-transformer'
 import {
   IsDate,
   IsEmail,
+  isEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -733,13 +734,22 @@ export class UniDM {
     }
     return mode
   }
-  static fromBili(args: DMBili, cid?: bigint, options?: Options) {
+  static fromBili(
+    args: DMBili,
+    cid?: bigint,
+    options?: Options,
+    recSOID?: string,
+  ) {
     interface TExtra extends Extra {
       bili: ExtraBili
     }
     if (args.oid && !cid) cid = args.oid
-    const SOID = `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
-      senderID = ID.fromBili({ midHash: args.midHash })
+    const SOID =
+        recSOID ||
+        `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
+      senderID = isEmail(args.midHash, { require_tld: false })
+        ? args.midHash
+        : ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
     const pool = args.pool, //暂时不做处理，兼容bili的pool格式
       extra: TExtra = {

@@ -37,16 +37,18 @@ describe('转化自', () => {
     console.info(pool.toBiliXML({ avoidSenderIDWithAt: true }))
   })
   it('artplayer(json)', () => {
-    const json = [
-        {
-          text: 'artplayer测试弹幕', // 弹幕文本
-          time: 10, // 弹幕时间, 默认为当前播放器时间
-          mode: 0, // 弹幕模式: 0: 滚动(默认)，1: 顶部，2: 底部
-          color: '#FFFFFF', // 弹幕颜色，默认为白色
-          border: false, // 弹幕是否有描边, 默认为 false
-          style: { border: '10rem' }, // 弹幕自定义样式, 默认为空对象
-        },
-      ],
+    const json = {
+        danmuku: [
+          {
+            text: 'artplayer测试弹幕', // 弹幕文本
+            time: 10, // 弹幕时间, 默认为当前播放器时间
+            mode: 0, // 弹幕模式: 0: 滚动(默认)，1: 顶部，2: 底部
+            color: '#FFFFFF', // 弹幕颜色，默认为白色
+            border: false, // 弹幕是否有描边, 默认为 false
+            style: { border: '10rem' }, // 弹幕自定义样式, 默认为空对象
+          },
+        ],
+      },
       pool = UniPool.fromArtplayer(json, 'playerid-test', 'acfun')
     console.info(json)
     console.info(pool)
@@ -62,6 +64,11 @@ describe('转化自', () => {
     const pool = UniPool.fromBiliXML(xml)
     const pb = pool.toPb()
     console.info(UniPool.fromPb(pb))
+  })
+  it('DDplay[双向]', () => {
+    const pool = UniPool.fromBiliXML(xml)
+    const ddplay = pool.toDDplay()
+    console.info(UniPool.fromDDPlay(ddplay, '1'))
   })
 })
 
