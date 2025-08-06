@@ -1,5 +1,6 @@
 import 'reflect-metadata/lite'
 
+import { isJSON, isObject, isString } from 'class-validator'
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import JSONbig from 'json-bigint'
 import type { Options as AssGenOptions, CanvasCtx } from './ass-gen'
@@ -394,6 +395,106 @@ export class UniPool {
   }
   minify() {
     return this.dans.map((d) => d.minify())
+  }
+  static import(
+    file: unknown,
+    options?: Options,
+  ): { pool: UniPool; fmt: DM_format } {
+    const err = '无法识别该文件，请手动指定格式！'
+    const parseJSON = (
+      json: DM_JSON_Artplayer &
+        DM_JSON_DDPlay &
+        DM_JSON_Dplayer & { danuni?: DanUniConvertTip },
+    ): { pool: UniPool; fmt: DM_format } | undefined => {
+      try {
+        if (Array.isArray(json) && json.every((d) => d.SOID)) {
+          return { pool: new UniPool(json, options), fmt: 'danuni.json' }
+        } else if (json.danmuku && json.danmuku.every((d) => d.text)) {
+          return {
+            pool: this.fromArtplayer(
+              json,
+              json.danuni?.data ?? '',
+              undefined,
+              options,
+            ),
+            fmt: 'artplayer.json',
+          }
+        } else if (
+          json.count &&
+          json.comments &&
+          json.comments.every((d) => d.m)
+        ) {
+          return {
+            pool: this.fromDDPlay(json, json.danuni?.data ?? '', options),
+            fmt: 'ddplay.json',
+          }
+        } else if (
+          json.code &&
+          json.code == 0 &&
+          json.data &&
+          json.data.every((d) => Array.isArray(d))
+        ) {
+          return {
+            pool: this.fromDplayer(
+              json,
+              json.danuni?.data ?? '',
+              undefined,
+              options,
+            ),
+            fmt: 'dplayer.json',
+          }
+        }
+      } catch {}
+    }
+    const parseStr = (
+      file: string,
+    ): { pool: UniPool; fmt: DM_format } | undefined => {
+      try {
+        if (isJSON(file)) {
+          const json = JSON.parse(file)
+          return parseJSON(json)
+        }
+      } catch {}
+      try {
+        const xmlParser = new XMLParser({ ignoreAttributes: false })
+        const xml = xmlParser.parse(file)
+        if (xml?.i?.d)
+          return { pool: this.fromBiliXML(file, options), fmt: 'bili.xml' }
+      } catch {}
+      try {
+        return { pool: this.fromASS(file, options), fmt: 'common.ass' }
+      } catch {}
+    }
+    if (isObject(file)) {
+      if (file instanceof ArrayBuffer || file instanceof Uint8Array) {
+        try {
+          const fileStr = new TextDecoder().decode(file)
+          const prStr = parseStr(fileStr)
+          if (!prStr) throw new Error(`${err}(定位: bin->string)`)
+        } catch {}
+        try {
+          return { pool: this.fromPb(file), fmt: 'danuni.pb.bin' }
+        } catch {}
+        try {
+          return { pool: this.fromBiliGrpc(file), fmt: 'bili.pb.bin' }
+        } catch {}
+        try {
+          return {
+            pool: this.fromBiliCommandGrpc(file),
+            fmt: 'bili.cmd.pb.bin',
+          }
+        } catch {}
+      } else {
+        const prJSON = parseJSON(file as any)
+        if (!prJSON) throw new Error(`${err}(定位: json)`)
+        return prJSON
+      }
+    } else if (isString(file)) {
+      const prStr = parseStr(file)
+      if (!prStr) throw new Error(`${err}(定位: string)`)
+      return prStr
+    }
+    throw new Error(err)
   }
   convert2(format: DM_format, continue_on_error = false) {
     switch (format) {
