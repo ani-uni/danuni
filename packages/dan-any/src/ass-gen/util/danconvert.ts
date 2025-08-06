@@ -1,3 +1,4 @@
+import type { Options as UniPoolOptions } from '../..'
 import type { Danmaku, RGB } from '../types'
 
 import { UniPool } from '../..'
@@ -31,6 +32,12 @@ export function UniPool2DanmakuLists(UP: UniPool): Danmaku[] {
     } satisfies Danmaku
   })
 }
-export function DanmakuList2UniPool(d: Danmaku[]): UniPool {
-  return new UniPool(d.map((d) => UniDM.create(d.extra)))
+export function DanmakuList2UniPool(
+  d: Danmaku[],
+  options?: UniPoolOptions,
+): UniPool {
+  return new UniPool(
+    d.map((d) => UniDM.create(d.extra)),
+    options,
+  )
 }

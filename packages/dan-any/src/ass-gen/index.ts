@@ -1,4 +1,5 @@
 // import parse from './parse/bilibili'
+import type { Options as UniPoolOptions } from '..'
 import type { RawConfig } from './ass/raw'
 import type { CanvasCtx, SubtitleStyle } from './types'
 
@@ -59,8 +60,11 @@ export function generateASS(
   return content
 }
 
-export function parseAssRawField(ass: string): UniPool {
+export function parseAssRawField(
+  ass: string,
+  options?: UniPoolOptions,
+): UniPool {
   const raw = deRaw(ass)
   if (!raw) return UniPool.create()
-  else return DanmakuList2UniPool(raw.list)
+  else return DanmakuList2UniPool(raw.list, options)
 }

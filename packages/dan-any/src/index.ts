@@ -86,11 +86,10 @@ export interface DM_JSON_DDPlay {
 
 export type DM_format =
   | 'danuni.json'
-  | 'danuni.bin'
-  | 'danuni.pb.zst'
+  | 'danuni.pb.bin'
   | 'bili.xml'
-  | 'bili.bin'
-  | 'bili.cmd.bin'
+  | 'bili.pb.bin'
+  | 'bili.cmd.pb.bin'
   | 'dplayer.json'
   | 'artplayer.json'
   | 'ddplay.json'
@@ -106,7 +105,7 @@ type shareItems = Partial<
 type UniPoolPipe = (that: UniPool) => Promise<UniPool>
 type UniPoolPipeSync = (that: UniPool) => UniPool
 
-interface Options {
+export interface Options {
   dedupe?: boolean
   dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
@@ -400,7 +399,7 @@ export class UniPool {
     switch (format) {
       case 'danuni.json':
         return this.dans
-      case 'danuni.bin':
+      case 'danuni.pb.bin':
         return this.toPb()
       case 'bili.xml':
         return this.toBiliXML()
@@ -435,6 +434,8 @@ export class UniPool {
             ctime: timestampDate(d.ctime || timestampNow()),
             pool: d.pool as number,
             attr: d.attr as UniDMTools.DMAttr[],
+            extra: undefined,
+            extraStr: d.extra,
           },
           options,
         ),
@@ -588,9 +589,6 @@ export class UniPool {
   ) {
     return new UniPool(
       json.data.map((d) => {
-        // let TYPE = 0
-        // if (d[1] === 1) TYPE = 5
-        // else if (d[1] === 2) TYPE = 4
         return UniDM.fromDplayer(
           {
             content: d[4],
@@ -611,7 +609,10 @@ export class UniPool {
   toDplayer(): DM_JSON_Dplayer & { danuni?: DanUniConvertTip } {
     return {
       code: 0,
-      danuni: DanUniConvertTipTemplate,
+      danuni: {
+        ...DanUniConvertTipTemplate,
+        data: this.dans[0].SOID.split('@')[0],
+      },
       data: this.dans.map((dan) => {
         const d = dan.toDplayer()
         return [d.progress, d.mode, d.color, d.midHash, d.content]
@@ -626,9 +627,6 @@ export class UniPool {
   ) {
     return new UniPool(
       json.danmuku.map((d) => {
-        // let TYPE = 0
-        // if (d.mode === 1) TYPE = 5
-        // else if (d.mode === 2) TYPE = 4
         return UniDM.fromArtplayer(
           {
             content: d.text,
@@ -648,7 +646,10 @@ export class UniPool {
   }
   toArtplayer(): DM_JSON_Artplayer & { danuni?: DanUniConvertTip } {
     return {
-      danuni: DanUniConvertTipTemplate,
+      danuni: {
+        ...DanUniConvertTipTemplate,
+        data: this.dans[0].SOID.split('@')[0],
+      },
       danmuku: this.dans.map((dan) => {
         const d = dan.toArtplayer()
         return {
@@ -689,8 +690,12 @@ export class UniPool {
     )
   }
   toDDplay(): DM_JSON_DDPlay & { danuni?: DanUniConvertTip } {
+    const episodeId = this.dans[0].SOID.split('@')[0].replaceAll(
+      `def_${platform.PlatformDanmakuOnlySource.DanDanPlay}+`,
+      '',
+    )
     return {
-      danuni: DanUniConvertTipTemplate,
+      danuni: { ...DanUniConvertTipTemplate, data: episodeId },
       count: this.dans.length,
       comments: this.dans.map((dan) => {
         const d = dan.toDDplay()
@@ -702,8 +707,8 @@ export class UniPool {
       }),
     }
   }
-  static fromASS(ass: string) {
-    return parseAssRawField(ass)
+  static fromASS(ass: string, options?: Options) {
+    return parseAssRawField(ass, options)
   }
   /**
    * 转换为ASS字幕格式的弹幕，需播放器支持多行ASS渲染
