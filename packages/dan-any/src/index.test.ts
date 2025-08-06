@@ -1,6 +1,6 @@
 //基于以下注释，根据vitest生成测试用例
 import { createCanvas } from 'canvas'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { UniPool } from './index'
 
@@ -35,6 +35,9 @@ describe('转化自', () => {
     console.info(pool)
     console.info(pool.toBiliXML())
     console.info(pool.toBiliXML({ avoidSenderIDWithAt: true }))
+    const imp = UniPool.import(xml)
+    expect(imp.fmt).toBe('bili.xml')
+    expect(imp.pool).toEqual(pool)
   })
   it('artplayer(json)', () => {
     const json = {
@@ -52,6 +55,9 @@ describe('转化自', () => {
       pool = UniPool.fromArtplayer(json, 'playerid-test', 'acfun')
     console.info(json)
     console.info(pool)
+    const imp = UniPool.import(json)
+    expect(imp.fmt).toBe('artplayer.json')
+    // expect(imp.pool).toEqual(pool)
   })
   it('ass[双向]', () => {
     const canvas = createCanvas(50, 50)
@@ -59,16 +65,25 @@ describe('转化自', () => {
     const ass = pool.toASS(canvas.getContext('2d'))
     console.info(ass)
     console.info(UniPool.fromASS(ass))
+    const imp = UniPool.import(ass)
+    expect(imp.fmt).toBe('common.ass')
+    expect(imp.pool).toEqual(pool)
   })
   it('pb[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
     const pb = pool.toPb()
     console.info(UniPool.fromPb(pb))
+    const imp = UniPool.import(pb)
+    expect(imp.fmt).toBe('danuni.pb.bin')
+    expect(imp.pool).toEqual(pool)
   })
   it('DDplay[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
     const ddplay = pool.toDDplay()
     console.info(UniPool.fromDDPlay(ddplay, '1'))
+    const imp = UniPool.import(ddplay)
+    expect(imp.fmt).toBe('ddplay.json')
+    // expect(imp.pool).toEqual(pool)
   })
 })
 
