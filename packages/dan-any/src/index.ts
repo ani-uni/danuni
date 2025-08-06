@@ -429,8 +429,7 @@ export class UniPool {
             fmt: 'ddplay.json',
           }
         } else if (
-          json.code &&
-          json.code == 0 &&
+          json?.code == 0 &&
           json.data &&
           json.data.every((d) => Array.isArray(d))
         ) {
@@ -465,13 +464,9 @@ export class UniPool {
         return { pool: this.fromASS(file, options), fmt: 'common.ass' }
       } catch {}
     }
+    let errmesg
     if (isObject(file)) {
       if (file instanceof ArrayBuffer || file instanceof Uint8Array) {
-        try {
-          const fileStr = new TextDecoder().decode(file)
-          const prStr = parseStr(fileStr)
-          if (!prStr) throw new Error(`${err}(定位: bin->string)`)
-        } catch {}
         try {
           return { pool: this.fromPb(file), fmt: 'danuni.pb.bin' }
         } catch {}
@@ -484,6 +479,12 @@ export class UniPool {
             fmt: 'bili.cmd.pb.bin',
           }
         } catch {}
+        try {
+          const fileStr = new TextDecoder().decode(file)
+          const prStr = parseStr(fileStr)
+          if (!prStr) errmesg = `${err}(定位: bin->string)`
+          else return prStr
+        } catch {}
       } else {
         const prJSON = parseJSON(file as any)
         if (!prJSON) throw new Error(`${err}(定位: json)`)
@@ -494,7 +495,7 @@ export class UniPool {
       if (!prStr) throw new Error(`${err}(定位: string)`)
       return prStr
     }
-    throw new Error(err)
+    throw new Error(errmesg ?? err)
   }
   convert2(format: DM_format, continue_on_error = false) {
     switch (format) {
