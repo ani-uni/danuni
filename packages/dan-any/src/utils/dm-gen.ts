@@ -471,6 +471,7 @@ export class UniDM {
       this.options.dmid = createDMID
 
     this.content = String(this.content)
+    this.ctime = UniDM.transCtime(this.ctime)
 
     if (!this.SOID) this.SOID = def.SOID
     if (!this.progress) this.progress = def.progress
