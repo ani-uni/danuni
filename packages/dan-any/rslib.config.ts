@@ -14,6 +14,15 @@ export default defineConfig({
       dts: true,
     },
     {
+      format: 'esm',
+      output: {
+        filename: { js: 'index.min.js' },
+        target: 'web',
+      },
+      dts: true,
+      plugins: [pluginNodePolyfill()],
+    },
+    {
       format: 'umd',
       output: {
         filename: { js: 'index.umd.min.js' },

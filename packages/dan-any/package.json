@@ -1,7 +1,8 @@
 {
   "name": "@dan-uni/dan-any",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
+  "type": "module",
   "keywords": [
     "bangumi",
     "danmaku"
@@ -19,7 +20,7 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/src/index.d.ts",
-  "browser": "dist/index.umd.min.js",
+  "browser": "dist/index.min.js",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -36,7 +37,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "fast-xml-parser": "^5.2.5",
-    "fs-extra": "^11.3.0",
+    "fs-extra": "^11.3.1",
     "hh-mm-ss": "^1.2.0",
     "json-bigint": "^1.0.0",
     "jssha": "^3.3.1",
