@@ -28,7 +28,7 @@
 
 插件的使用方法参见对应路径下README.md  
 
-- [dan-any-plugin-detalu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detalu): 基于pakku.js的弹幕过滤器
+- [dan-any-plugin-detaolu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detaolu): 基于pakku.js的弹幕过滤器
 
 ## 特殊字段提示
 
