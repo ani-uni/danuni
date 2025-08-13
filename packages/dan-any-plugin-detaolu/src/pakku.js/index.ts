@@ -332,6 +332,7 @@ async function merge(
   const ret: DanmuClusterOutput = {
     clusters: [],
     stats: new Stats(),
+    deleted_chunk: [],
   }
 
   function apply_single_cluster(idx: int, obj: DanmuObject, desc: string) {
@@ -444,6 +445,12 @@ async function merge(
               s.deleted_blacklist++
               s.deleted_blacklist_each[matched] =
                 (s.deleted_blacklist_each[matched] || 0) + 1
+              ret.deleted_chunk.push({
+                ...obj,
+                pakku: {
+                  deleted_reason: `命中黑名单：${matched}`,
+                },
+              })
             }
             return null
           }
