@@ -9,8 +9,8 @@ import type { Context, Danmaku, SubtitleStyle } from '../types'
 
 type compressType = 'brotli' | 'gzip'
 type baseType = 'base64' | 'base18384'
-const compressTypes = ['brotli', 'gzip'],
-  baseTypes = ['base64', 'base18384']
+const compressTypes = ['brotli', 'gzip']
+const baseTypes = ['base64', 'base18384']
 
 export interface RawConfig {
   compressType: compressType
@@ -32,8 +32,8 @@ export function raw(
   compressType: compressType = 'brotli',
   baseType: baseType = 'base18384',
 ) {
-  const raw = { list, config, context },
-    rawText = JSON.stringify(raw)
+  const raw = { list, config, context }
+  const rawText = JSON.stringify(raw)
   let compress: Buffer
   if (compressType === 'brotli') compress = brotliCompressSync(rawText)
   else compress = gzipSync(rawText)
@@ -47,25 +47,25 @@ export function deRaw(ass: string):
       context: Context
     }
   | undefined {
-  const arr = ass.split('\n'),
-    lineCompressType = arr.find((line) => line.startsWith(';RawCompressType:')),
-    lineBaseType = arr.find((line) => line.startsWith(';RawBaseType:')),
-    lineRaw = arr.find((line) => line.startsWith(';Raw:'))
+  const arr = ass.split('\n')
+  const lineCompressType = arr.find((line) =>
+    line.startsWith(';RawCompressType:'),
+  )
+  const lineBaseType = arr.find((line) => line.startsWith(';RawBaseType:'))
+  const lineRaw = arr.find((line) => line.startsWith(';Raw:'))
   if (!lineCompressType || !lineBaseType || !lineRaw) return undefined
   else {
-    let compressType = lineCompressType
-        .replace(';RawCompressType: ', '')
-        .trim(),
-      baseType = lineBaseType.replace(';RawBaseType: ', '').trim()
+    let compressType = lineCompressType.replace(';RawCompressType: ', '').trim()
+    let baseType = lineBaseType.replace(';RawBaseType: ', '').trim()
     if (!compressTypes.includes(compressType)) compressType = 'gzip'
     if (!baseTypes.includes(baseType)) baseType = 'base64'
-    const text = lineRaw.replace(';Raw: ', '').trim(),
-      buffer =
-        baseType === 'base64'
-          ? Buffer.from(text, 'base64')
-          : Buffer.from(
-              base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
-            )
+    const text = lineRaw.replace(';Raw: ', '').trim()
+    const buffer =
+      baseType === 'base64'
+        ? Buffer.from(text, 'base64')
+        : Buffer.from(
+            base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
+          )
     let decompress: Buffer
     if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
     else decompress = gunzipSync(buffer)

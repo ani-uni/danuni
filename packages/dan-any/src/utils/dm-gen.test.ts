@@ -83,9 +83,9 @@ describe('其它', () => {
     expect(pool.dans[0].content).toBe('喜欢')
     expect(pool.dans[1].content).toBe('不喜欢')
     // 正式测试
-    const a = pool.dans[0].isSameAs(pool.dans[1]),
-      b = pool.dans[1].isSameAs(pool.dans[2]),
-      c = pool.dans[1].isSameAs(pool.dans[3])
+    const a = pool.dans[0].isSameAs(pool.dans[1])
+    const b = pool.dans[1].isSameAs(pool.dans[2])
+    const c = pool.dans[1].isSameAs(pool.dans[3])
     console.info(a, b, c)
     expect(a).toBe(false)
     expect(b).toBe(true)

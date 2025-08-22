@@ -87,8 +87,8 @@ export enum DMAttr {
 }
 const DMAttrUtils = {
   fromBin(bin: number = 0, format?: PlatformDanmakuSource) {
-    const array = toBits(bin),
-      attr: DMAttr[] = []
+    const array = toBits(bin)
+    const attr: DMAttr[] = []
     if (format === 'bili') {
       if (array[0]) attr.push(DMAttr.Protect)
       if (array[1]) attr.push(DMAttr.FromLive)
@@ -567,28 +567,28 @@ export class UniDM {
       (this.extra.danuni?.merge || dan.extra.danuni?.merge)
     )
       return false
-    const isSame = (k: keyof UniDMObj) => this[k] === dan[k],
-      checks = (
-        [
-          'SOID',
-          'content',
-          'mode',
-          'pool',
-          'platform',
-        ] satisfies (keyof UniDMObj)[]
-      ).every((k) => isSame(k))
+    const isSame = (k: keyof UniDMObj) => this[k] === dan[k]
+    const checks = (
+      [
+        'SOID',
+        'content',
+        'mode',
+        'pool',
+        'platform',
+      ] satisfies (keyof UniDMObj)[]
+    ).every((k) => isSame(k))
     // 忽略使用了extra字段却不在mode里标记的弹幕
     return checks
   }
   @Expose()
   minify() {
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'SOID'>
-    const def: UObj = UniDM.create(),
-      dan: UObj = UniDM.create(this)
+    const def: UObj = UniDM.create()
+    const dan: UObj = UniDM.create(this)
     // const prototypes = Object.getOwnPropertyNames(this)
     for (const key in dan) {
-      const k = key as keyof UObj,
-        v = dan[k]
+      const k = key as keyof UObj
+      const v = dan[k]
       // if (key in prototypes) continue
       if (key === 'SOID') continue
       else if (!v) delete dan[k]
@@ -746,16 +746,15 @@ export class UniDM {
     }
     if (args.oid && !cid) cid = args.oid
     const SOID =
-        recSOID ||
-        `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
-      senderID = isEmail(args.midHash, { require_tld: false })
-        ? args.midHash
-        : ID.fromBili({ midHash: args.midHash })
+      recSOID || `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`
+    const senderID = isEmail(args.midHash, { require_tld: false })
+      ? args.midHash
+      : ID.fromBili({ midHash: args.midHash })
     let mode = Modes.Normal
-    const pool = args.pool, //暂时不做处理，兼容bili的pool格式
-      extra: TExtra = {
-        bili: { mode: args.mode, pool: args.pool, dmid: args.id },
-      }
+    const pool = args.pool //暂时不做处理，兼容bili的pool格式
+    const extra: TExtra = {
+      bili: { mode: args.mode, pool: args.pool, dmid: args.id },
+    }
     //重复 transMode ，但此处有关于extra的额外处理
     switch (args.mode) {
       case 4:
@@ -873,8 +872,8 @@ export class UniDM {
   }
   static fromBiliCommand(args: DMBiliCommand, cid?: bigint, options?: Options) {
     if (args.oid && !cid) cid = args.oid
-    const SOID = `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`,
-      senderID = ID.fromBili({ mid: args.mid })
+    const SOID = `def_${PlatformVideoSource.Bilibili}+${ID.fromBili({ cid })}`
+    const senderID = ID.fromBili({ mid: args.mid })
     return this.create(
       {
         ...args,
@@ -905,8 +904,8 @@ export class UniDM {
     domain: string,
     options?: Options,
   ) {
-    const SOID = ID.fromUnknown(playerID, domain),
-      senderID = ID.fromUnknown(args.midHash, domain)
+    const SOID = ID.fromUnknown(playerID, domain)
+    const senderID = ID.fromUnknown(args.midHash, domain)
     return this.create(
       {
         ...args,
@@ -941,8 +940,8 @@ export class UniDM {
     domain: string,
     options?: Options,
   ) {
-    const SOID = ID.fromUnknown(playerID, domain),
-      senderID = ID.fromUnknown('', domain)
+    const SOID = ID.fromUnknown(playerID, domain)
+    const senderID = ID.fromUnknown('', domain)
     let extra = args.border
       ? ({ artplayer: { border: args.border, style: {} } } as Extra)
       : undefined

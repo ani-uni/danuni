@@ -16,8 +16,8 @@ export default (
   context: Context = { filename: 'unknown', title: 'unknown' },
   rawConfig?: RawConfig,
 ) => {
-  const Elist = UniPool2DanmakuLists(list),
-    ErawList = UniPool2DanmakuLists(rawList)
+  const Elist = UniPool2DanmakuLists(list)
+  const ErawList = UniPool2DanmakuLists(rawList)
   const content = [info(config, context), style(config), event(Elist, config)]
 
   if (config.includeRaw) {
