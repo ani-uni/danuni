@@ -32,7 +32,7 @@
     "buf": "buf generate"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.6.3",
+    "@bufbuild/protobuf": "^2.7.0",
     "base16384": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -45,11 +45,11 @@
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.56.0",
-    "@bufbuild/protoc-gen-es": "^2.6.3",
+    "@bufbuild/protoc-gen-es": "^2.7.0",
     "@types/fs-extra": "^11.0.4",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/json-bigint": "^1.0.4",
-    "canvas": "^3.1.2",
-    "protobufjs": "^7.5.3"
+    "canvas": "^3.2.0",
+    "protobufjs": "^7.5.4"
   }
 }
