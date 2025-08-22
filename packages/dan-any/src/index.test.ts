@@ -90,7 +90,14 @@ describe('转化自', () => {
 describe('共通值', () => {
   const pool = UniPool.fromBiliXML(xml)
   it('获取shared', () => {
+    console.info(pool.getMost('SOID'))
     console.info(pool.shared)
+    expect(pool.getShared('SOID')).toBe(pool.shared.SOID)
+  })
+  it('获取most', () => {
+    console.info(pool.getMost('senderID'))
+    console.info(pool.most)
+    expect(pool.getMost('senderID').val).toBe(pool.most.senderID)
   })
   it('按pool分组', () => {
     console.info(pool.split('pool'))
