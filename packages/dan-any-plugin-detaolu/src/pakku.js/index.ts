@@ -359,8 +359,8 @@ async function merge(
       })
     } else {
       const text_cnts = new Map()
-      let most_texts: string[] = [],
-        most_cnt = 0
+      let most_texts: string[] = []
+      let most_cnt = 0
 
       for (const ir of irs) {
         const text = ir.str

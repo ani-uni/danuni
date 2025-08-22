@@ -22,8 +22,8 @@ async function detaolu(that: UniPool, config?: DeTaoLuConfig) {
     if (p.danuni_dans.length === 1) {
       return p.danuni_dans[0].danuni_dan
     } else {
-      const dans = p.danuni_dans,
-        pool = new UniPool(dans.map((d) => d.danuni_dan))
+      const dans = p.danuni_dans
+      const pool = new UniPool(dans.map((d) => d.danuni_dan))
       function isAllBottomMode(p: UniPool) {
         return p.dans.every((d) => d.mode === UniDMTools.Modes.Bottom)
       }
