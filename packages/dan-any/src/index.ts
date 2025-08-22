@@ -102,6 +102,24 @@ type shareItems = Partial<
     'SOID' | 'senderID' | 'platform' | 'SOID' | 'pool' | 'mode' | 'color'
   >
 >
+type statItems = Partial<
+  Pick<
+    UniDMTools.UniDMObj,
+    | 'SOID'
+    | 'mode'
+    | 'fontsize'
+    | 'color'
+    | 'senderID'
+    | 'content'
+    | 'weight'
+    | 'pool'
+    | 'platform'
+  >
+>
+interface Stat {
+  val: statItems[keyof statItems]
+  count: number
+}
 
 type UniPoolPipe = (that: UniPool) => Promise<UniPool>
 type UniPoolPipeSync = (that: UniPool) => UniPool
@@ -144,104 +162,38 @@ export class UniPool {
       color: isShared('color') ? this.dans[0].color : undefined,
     }
   }
-  get stat() {
-    const default_stat = {
-      SOID: [] as { val: string; count: number }[],
-      mode: [
-        { val: UniDMTools.Modes.Normal, count: 0 },
-        { val: UniDMTools.Modes.Bottom, count: 0 },
-        { val: UniDMTools.Modes.Top, count: 0 },
-        { val: UniDMTools.Modes.Reverse, count: 0 },
-        { val: UniDMTools.Modes.Ext, count: 0 },
-      ],
-      fontsize: [
-        // { val: 18, count: 0 },
-        // { val: 25, count: 0 },
-        // { val: 36, count: 0 },
-      ] as { val: number; count: number }[],
-      color: [] as { val: number; count: number }[],
-      senderID: [] as { val: string; count: number }[],
-      content: [] as { val: string; count: number }[],
-      weight: [] as { val: number; count: number }[],
-      pool: [
-        { val: UniDMTools.Pools.Def, count: 0 },
-        { val: UniDMTools.Pools.Sub, count: 0 },
-        { val: UniDMTools.Pools.Adv, count: 0 },
-        { val: UniDMTools.Pools.Ix, count: 0 },
-      ],
-      platform: [] as { val?: string; count: number }[],
+  getShared(key: keyof shareItems): shareItems[keyof shareItems] {
+    const isShared = (key: keyof UniDMTools.UniDMObj) => {
+      return this.dans.every((d) => d[key])
     }
-    type Stat = typeof default_stat
-    const stat = this.dans.reduce((s, d): Stat => {
-      const SOID = s.SOID.find((i) => i.val === d.SOID)
-      if (!SOID) {
-        s.SOID.push({ val: d.SOID, count: 1 })
+    return isShared(key) ? this.dans[0][key] : undefined
+  }
+  getStat(key: keyof statItems): Stat[] {
+    const default_stat: Stat[] = []
+    const stats = this.dans.reduce((stat, dan) => {
+      const valWithCount = stat.find((i) => i.val === dan[key])
+      if (!valWithCount) {
+        stat.push({ val: dan[key], count: 1 })
       } else {
-        SOID.count++
+        valWithCount.count++
       }
-      const mode = s.mode.find((i) => i.val === d.mode)
-      if (!mode) {
-        s.mode.push({ val: d.mode, count: 1 })
-      } else {
-        mode.count++
-      }
-      const fontsize = s.fontsize.find((i) => i.val === d.fontsize)
-      if (!fontsize) {
-        s.fontsize.push({ val: d.fontsize, count: 1 })
-      } else {
-        fontsize.count++
-      }
-      const color = s.color.find((i) => i.val === d.color)
-      if (!color) {
-        s.color.push({ val: d.color, count: 1 })
-      } else {
-        color.count++
-      }
-      const senderID = s.senderID.find((i) => i.val === d.senderID)
-      if (!senderID) {
-        s.senderID.push({ val: d.senderID, count: 1 })
-      } else {
-        senderID.count++
-      }
-      const content = s.content.find((i) => i.val === d.content)
-      if (!content) {
-        s.content.push({ val: d.content, count: 1 })
-      } else {
-        content.count++
-      }
-      const weight = s.weight.find((i) => i.val === d.weight)
-      if (!weight) {
-        s.weight.push({ val: d.weight, count: 1 })
-      } else {
-        weight.count++
-      }
-      const pool = s.pool.find((i) => i.val === d.pool)
-      if (!pool) {
-        s.pool.push({ val: d.pool, count: 1 })
-      } else {
-        pool.count++
-      }
-      const platform = s.platform.find((i) => i.val === d.platform)
-      if (!platform) {
-        s.platform.push({ val: d.platform, count: 1 })
-      } else {
-        platform.count++
-      }
-      return s
+      return stat
     }, default_stat)
-    return stat
+    return stats
+  }
+  getMost(key: keyof statItems) {
+    return this.getStat(key).sort((a, b) => b.count - a.count)[0]
   }
   get most() {
-    const s = this.stat
     return {
-      mode: s.mode.sort((a, b) => b.count - a.count)[0].val,
-      fontsize: s.fontsize.sort((a, b) => b.count - a.count)[0].val,
-      color: s.color.sort((a, b) => b.count - a.count)[0].val,
-      senderID: s.senderID.sort((a, b) => b.count - a.count)[0].val,
-      content: s.content.sort((a, b) => b.count - a.count)[0].val,
-      weight: s.weight.sort((a, b) => b.count - a.count)[0].val,
-      pool: s.pool.sort((a, b) => b.count - a.count)[0].val,
-      platform: s.platform.sort((a, b) => b.count - a.count)[0].val,
+      mode: this.getMost('mode').val as UniDMTools.Modes,
+      fontsize: this.getMost('fontsize').val as number,
+      color: this.getMost('color').val as number,
+      senderID: this.getMost('senderID').val as string,
+      content: this.getMost('content').val as string,
+      weight: this.getMost('weight').val as number,
+      pool: this.getMost('pool').val as UniDMTools.Pools,
+      platform: this.getMost('platform').val as string | undefined,
     }
   }
   static create(options?: Options) {
@@ -361,8 +313,8 @@ export class UniPool {
       const key = ['content', 'mode', 'platform', 'pool']
         .map((k) => danmaku[k as keyof UniDM])
         .join('|')
-      const extra = result[i].extra,
-        mergeData = mergeObj[key]
+      const extra = result[i].extra
+      const mergeData = mergeObj[key]
       result[i].extraStr = JSON.stringify({
         ...extra,
         danuni: {
@@ -574,16 +526,17 @@ export class UniPool {
     )
   }
   static fromBiliXML(xml: string, options?: Options) {
-    const parser = new XMLParser({ ignoreAttributes: false }),
-      oriData: DM_XML_Bili & { danuni?: DanUniConvertTip } = parser.parse(xml),
-      dans = oriData.i.d,
-      fromConverted = !!oriData.danuni,
-      cid = BigInt(oriData.i.chatid)
+    const parser = new XMLParser({ ignoreAttributes: false })
+    const oriData: DM_XML_Bili & { danuni?: DanUniConvertTip } =
+      parser.parse(xml)
+    const dans = oriData.i.d
+    const fromConverted = !!oriData.danuni
+    const cid = BigInt(oriData.i.chatid)
     return new UniPool(
       dans
         .map((d) => {
-          const p_str = d['@_p'],
-            p_arr = p_str.split(',')
+          const p_str = d['@_p']
+          const p_arr = p_str.split(',')
           return UniDM.fromBili(
             {
               content: d['#text'],
@@ -657,8 +610,8 @@ export class UniPool {
     })
   }
   static fromBiliGrpc(bin: Uint8Array | ArrayBuffer, options?: Options) {
-    const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin)),
-      json = data.elems
+    const data = fromBinary(DmSegMobileReplySchema, new Uint8Array(bin))
+    const json = data.elems
     return new UniPool(
       json.map((d) => {
         return UniDM.fromBili(
@@ -674,8 +627,8 @@ export class UniPool {
    * @param bin 符合`DmWebViewReplySchema`(bili视频meta)的protobuf二进制
    */
   static fromBiliCommandGrpc(bin: Uint8Array | ArrayBuffer, options?: Options) {
-    const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin)),
-      json = data.commandDms
+    const data = fromBinary(DmWebViewReplySchema, new Uint8Array(bin))
+    const json = data.commandDms
     return new UniPool(
       json.map((d) => {
         return UniDM.fromBiliCommand(d, d.oid, options)
