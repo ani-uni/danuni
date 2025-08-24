@@ -351,7 +351,12 @@ export class UniPool {
   static import(
     file: unknown,
     options?: Options,
+    /**
+     * 加载指定解析模块，为空则全选
+     */
+    mod?: ('json' | 'str' | 'bin')[],
   ): { pool: UniPool; fmt: DM_format } {
+    if (!mod) mod = ['json', 'str', 'bin']
     const err = '无法识别该文件，请手动指定格式！'
     const parseJSON = (
       json: DM_JSON_Artplayer &
@@ -400,49 +405,61 @@ export class UniPool {
     const parseStr = (
       file: string,
     ): { pool: UniPool; fmt: DM_format } | undefined => {
-      try {
-        if (isJSON(file)) {
-          const json = JSON.parse(file)
-          return parseJSON(json)
-        }
-      } catch {}
-      try {
-        const xmlParser = new XMLParser({ ignoreAttributes: false })
-        const xml = xmlParser.parse(file)
-        if (xml?.i?.d)
-          return { pool: this.fromBiliXML(file, options), fmt: 'bili.xml' }
-      } catch {}
-      try {
-        return { pool: this.fromASS(file, options), fmt: 'common.ass' }
-      } catch {}
+      // json-str
+      if (mod.includes('json'))
+        try {
+          if (isJSON(file)) {
+            const json = JSON.parse(file)
+            return parseJSON(json)
+          }
+        } catch {}
+      // pure-str (xml/ass)
+      if (mod.includes('str')) {
+        try {
+          const xmlParser = new XMLParser({ ignoreAttributes: false })
+          const xml = xmlParser.parse(file)
+          if (xml?.i?.d)
+            return { pool: this.fromBiliXML(file, options), fmt: 'bili.xml' }
+        } catch {}
+        try {
+          return { pool: this.fromASS(file, options), fmt: 'common.ass' }
+        } catch {}
+      }
     }
     let errmesg
     if (isObject(file)) {
       if (file instanceof ArrayBuffer || file instanceof Uint8Array) {
-        try {
-          return { pool: this.fromPb(file), fmt: 'danuni.pb.bin' }
-        } catch {}
-        try {
-          return { pool: this.fromBiliGrpc(file), fmt: 'bili.pb.bin' }
-        } catch {}
-        try {
-          return {
-            pool: this.fromBiliCommandGrpc(file),
-            fmt: 'bili.cmd.pb.bin',
-          }
-        } catch {}
+        // pure-bin (pb)
+        if (mod.includes('bin')) {
+          try {
+            return { pool: this.fromPb(file), fmt: 'danuni.pb.bin' }
+          } catch {}
+          try {
+            return { pool: this.fromBiliGrpc(file), fmt: 'bili.pb.bin' }
+          } catch {}
+          try {
+            return {
+              pool: this.fromBiliCommandGrpc(file),
+              fmt: 'bili.cmd.pb.bin',
+            }
+          } catch {}
+        }
+        // str-bin (pure-str + json-str)
+
         try {
           const fileStr = new TextDecoder().decode(file)
           const prStr = parseStr(fileStr)
           if (!prStr) errmesg = `${err}(定位: bin->string)`
           else return prStr
         } catch {}
-      } else {
+      } else if (mod.includes('json')) {
+        // pure-json
         const prJSON = parseJSON(file as any)
         if (!prJSON) throw new Error(`${err}(定位: json)`)
         return prJSON
       }
     } else if (isString(file)) {
+      // pure-str + json-str
       const prStr = parseStr(file)
       if (!prStr) throw new Error(`${err}(定位: string)`)
       return prStr
