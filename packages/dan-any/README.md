@@ -44,6 +44,10 @@
 - [ ] 完善使用文档
 - [ ] 支持chpt弹幕转换为Artplayer章节(artplayer-plugin-chapter)
 
+## Awesome Projects
+
+- [HengXin666/BiLiBiLi_DanMu_Crawling](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling)
+
 ## License 许可证
 
 Released under the GNU LESSER GENERAL PUBLIC LICENSE (LGPL) 3.0.  
