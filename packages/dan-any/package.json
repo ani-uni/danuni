@@ -32,20 +32,20 @@
     "buf": "buf generate"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.7.0",
+    "@bufbuild/protobuf": "^2.9.0",
     "base16384": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "fast-xml-parser": "^5.2.5",
-    "fs-extra": "^11.3.1",
+    "fast-xml-parser": "^5.3.0",
+    "fs-extra": "^11.3.2",
     "hh-mm-ss": "^1.2.0",
     "json-bigint": "^1.0.0",
     "jssha": "^3.3.1",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
-    "@bufbuild/buf": "^1.56.0",
-    "@bufbuild/protoc-gen-es": "^2.7.0",
+    "@bufbuild/buf": "^1.57.2",
+    "@bufbuild/protoc-gen-es": "^2.9.0",
     "@types/fs-extra": "^11.0.4",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/json-bigint": "^1.0.4",
