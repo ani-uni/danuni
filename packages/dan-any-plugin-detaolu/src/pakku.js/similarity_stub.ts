@@ -75,20 +75,34 @@ export function detect_similarity(
   const idx_diff = ret & ((1 << 19) - 1)
 
   let reason_str
-  if (reason === CombinedReason.combined_identical) {
-    S.combined_identical++
-    reason_str = '=='
-  } else if (reason === CombinedReason.combined_edit_distance) {
-    S.combined_edit_distance++
-    reason_str = `≤${dist}`
-  } else if (reason === CombinedReason.combined_cosine_distance) {
-    S.combined_cosine_distance++
-    reason_str = `${dist}%`
-  } else if (reason === CombinedReason.combined_pinyin_distance) {
-    S.combined_pinyin_distance++
-    reason_str = `P≤${dist}`
-  } else {
-    throw new Error(`similarity wasm returned unknown reason: ${ret}`)
+  switch (reason) {
+    case CombinedReason.combined_identical: {
+      S.combined_identical++
+      reason_str = '=='
+
+      break
+    }
+    case CombinedReason.combined_edit_distance: {
+      S.combined_edit_distance++
+      reason_str = `≤${dist}`
+
+      break
+    }
+    case CombinedReason.combined_cosine_distance: {
+      S.combined_cosine_distance++
+      reason_str = `${dist}%`
+
+      break
+    }
+    case CombinedReason.combined_pinyin_distance: {
+      S.combined_pinyin_distance++
+      reason_str = `P≤${dist}`
+
+      break
+    }
+    default: {
+      throw new Error(`similarity wasm returned unknown reason: ${ret}`)
+    }
   }
 
   return { reason: reason_str, idx_diff }

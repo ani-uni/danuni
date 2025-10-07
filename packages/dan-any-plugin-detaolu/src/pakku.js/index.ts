@@ -308,7 +308,7 @@ function trim_dispstr(text: string): string {
 function select_median_length(strs: string[]): string {
   if (strs.length === 1) return strs[0]
 
-  const sorted = strs.sort((a, b) => a.length - b.length)
+  const sorted = strs.toSorted((a, b) => a.length - b.length)
   const mid = Math.floor(sorted.length / 2)
   return sorted[mid]
 }
@@ -316,7 +316,7 @@ function select_median_length(strs: string[]): string {
 async function load_wasm(wasm_mod?: ArrayBuffer) {
   await sim_init(
     wasm_mod ??
-      (await fs.readFile(new URL('./similarity-gen.wasm', import.meta.url))),
+      (await fs.readFile(new URL('similarity-gen.wasm', import.meta.url))),
   )
 }
 
@@ -504,13 +504,13 @@ async function merge(
       nearby_danmus.index_l,
       ret.stats,
     )
-    if (sim !== null) {
+    if (sim === null) {
+      nearby_danmus.push([dm])
+    } else {
       const candidate =
         nearby_danmus.storage[nearby_danmus.index_r - sim.idx_diff]
       dm.sim_reason = sim.reason
       candidate.push(dm)
-    } else {
-      nearby_danmus.push([dm])
     }
   }
 
