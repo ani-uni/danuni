@@ -1,6 +1,6 @@
 /**
  * @author: xmcp(代码主要逻辑来源)
- * @see: https://github.com/xmcp/pakku.js
+ * @see: https://github.com/xmcp/pakku.js/blob/master/pakkujs/core/combine_worker.ts
  * @license: GPL-3.0
  * 本文件内代码来源见上，经部分修改，并整合config注释
  */
@@ -90,7 +90,7 @@ export type Config = Partial<typeof DEFAULT_CONFIG>
 interface DanmuIr {
   obj: DanmuObject
   str: string // for similarity algorithm
-  idx: int
+  ptr_idx: int
   sim_reason: string
 }
 
@@ -320,6 +320,10 @@ async function load_wasm(wasm_mod?: ArrayBuffer) {
   )
 }
 
+function make_ptr_idx(idx: int, is_next_chunk: boolean): int {
+  return is_next_chunk ? -1 - idx : idx
+}
+
 async function merge(
   chunk: DanmuChunk<DanmuObject>,
   // next_chunk: DanmuChunk<DanmuObject>,
@@ -349,7 +353,7 @@ async function merge(
   function apply_cluster(irs: DanmuIr[]) {
     if (irs.length === 1) {
       ret.clusters.push({
-        peers_ptr: irs.map((ir) => [ir.idx, ir.sim_reason]),
+        peers_ptr: irs.map((ir) => [ir.ptr_idx, ir.sim_reason]),
         desc: [],
         chosen_str: irs[0].obj.content, // do not use detaolued str for single danmu
         // danuni
@@ -378,7 +382,7 @@ async function merge(
       const most_text = select_median_length(most_texts)
 
       ret.clusters.push({
-        peers_ptr: irs.map((ir) => [ir.idx, ir.sim_reason]),
+        peers_ptr: irs.map((ir) => [ir.ptr_idx, ir.sim_reason]),
         desc: most_cnt > 1 ? [`采用了出现 ${most_cnt} 次的文本`] : [],
         chosen_str: most_text,
         // danuni
@@ -389,7 +393,11 @@ async function merge(
     }
   }
 
-  function obj_to_ir(objs: DanmuObject[], s: Stats | null): DanmuIr[] {
+  function obj_to_ir(
+    objs: DanmuObject[],
+    s: Stats | null,
+    is_next_chunk: boolean,
+  ): DanmuIr[] {
     return objs
       .map((obj, idx) => {
         if (!config.PROC_POOL1 && obj.pool === 1) {
@@ -472,15 +480,15 @@ async function merge(
         return {
           obj,
           str: detaolued,
-          idx,
+          ptr_idx: make_ptr_idx(idx, is_next_chunk),
           sim_reason: 'ORIG',
         }
       })
       .filter((obj) => obj !== null) as DanmuIr[]
   }
 
-  const danmus = obj_to_ir(chunk.objs, ret.stats)
-  // const next_chunk_danmus = obj_to_ir(next_chunk.objs, null)
+  const danmus = obj_to_ir(chunk.objs, ret.stats, false)
+  // const next_chunk_danmus = obj_to_ir(next_chunk.objs, null, true)
 
   const nearby_danmus: Queue<DanmuIr[]> = new Queue()
 
