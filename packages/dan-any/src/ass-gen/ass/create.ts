@@ -3,17 +3,18 @@ import type { Context, SubtitleStyle } from '../types'
 import type { RawConfig } from './raw'
 
 import { UniPool2DanmakuLists } from '../util'
-import event from './event'
-import info from './info'
+import { event } from './event'
+import { info } from './info'
 import { raw } from './raw'
-import style from './style'
+import { style } from './style'
 
-// eslint-disable-next-line import/no-default-export
-export default (
+const default_context = { filename: 'unknown', title: 'unknown' }
+
+export const ass = (
   list: UniPool,
   rawList: UniPool,
   config: SubtitleStyle,
-  context: Context = { filename: 'unknown', title: 'unknown' },
+  context: Context = default_context,
   rawConfig?: RawConfig,
 ) => {
   const Elist = UniPool2DanmakuLists(list)

@@ -11,7 +11,7 @@ import { assign, formatColor, hexColorToRGB } from './util'
 // const convertBlockRule = (rule: string) =>
 //     builtinRules[rule] ? rule : new RegExp(rule)
 
-export default (overrides = {}): SubtitleStyle => {
+export const getConfig = (overrides = {}): SubtitleStyle => {
   const defaults = {
     fontSize: [25, 25, 36],
     fontName: 'SimHei',

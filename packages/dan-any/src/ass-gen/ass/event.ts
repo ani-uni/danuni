@@ -1,7 +1,7 @@
 import type { Danmaku, SubtitleStyle } from '../types'
 
 import { DanmakuType } from '../types'
-import dialogue from './dialogue'
+import { dialogue } from './dialogue'
 
 const calculateDanmakuPosition = (danmaku: Danmaku, config: SubtitleStyle) => {
   const { playResX, playResY, scrollTime, fixTime } = config
@@ -43,8 +43,7 @@ const calculateDanmakuPosition = (danmaku: Danmaku, config: SubtitleStyle) => {
   }
 }
 
-// eslint-disable-next-line import/no-default-export
-export default (list: Danmaku[], config: SubtitleStyle) => {
+export const event = (list: Danmaku[], config: SubtitleStyle) => {
   const content = [
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',

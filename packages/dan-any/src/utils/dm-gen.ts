@@ -585,35 +585,36 @@ export class UniDM {
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'SOID'>
     const def: UObj = UniDM.create()
     const dan: UObj = UniDM.create(this)
-    // const prototypes = Object.getOwnPropertyNames(this)
-    for (const key in dan) {
-      const k = key as keyof UObj
-      const v = dan[k]
-      // if (key in prototypes) continue
-      if (key === 'SOID') continue
-      else if (!v) delete dan[k]
-      else if (v === def[k]) delete dan[k]
-      else {
-        if (k === 'attr' && Array.isArray(v) && v.length === 0) delete dan[k]
-        if (k === 'extraStr' && v === '{}') delete dan[k]
+    const shouldKeep = (key: keyof UObj, value: UObj[keyof UObj]) => {
+      if (key === 'SOID') return true
+      if (value === undefined || value === null) return false
+      if (value === def[key]) return false
+      if (key === 'attr' && Array.isArray(value) && value.length === 0)
+        return false
+      if (key === 'extraStr' && value === '{}') return false
+      return true
+    }
+    const result: UObj = { SOID: dan.SOID }
+    for (const key of Object.keys(dan) as (keyof UObj)[]) {
+      const value = dan[key]
+      if (shouldKeep(key, value)) {
+        if (key === 'SOID') continue
+        Reflect.set(result, key, value)
       }
     }
-    return JSON.parse(JSON.stringify(dan)) as UObj
+    return result
   }
   @Expose()
-  downgradeAdvcancedDan(
-    {
-      include,
-      exclude,
-      cleanExtra = false,
-    }: {
-      include?: (keyof Extra)[]
-      exclude?: (keyof Extra)[]
-      cleanExtra?: boolean
-    } = { include: [], exclude: [] },
-  ) {
-    if (!this.extra) return this
-    else {
+  downgradeAdvcancedDan({
+    include,
+    exclude,
+    cleanExtra = false,
+  }: {
+    include?: (keyof Extra)[]
+    exclude?: (keyof Extra)[]
+    cleanExtra?: boolean
+  } = {}) {
+    if (this.extra) {
       if (!include) include = []
       if (!exclude) exclude = []
       const check = (k: keyof Extra) =>
@@ -649,7 +650,7 @@ export class UniDM {
       clone.attr.push(DMAttr.Compatible)
       if (cleanExtra) clone.extraStr = undefined
       return clone
-    }
+    } else return this
   }
   /**
    * 将各种类型的时间进行格式化
@@ -794,7 +795,7 @@ export class UniDM {
         senderID: senderID.toString(),
         // content: args.content,
         ctime: this.transCtime(args.ctime, 's'),
-        weight: args.weight ? args.weight : pool === Pools.Ix ? 1 : 0,
+        weight: args.weight || (pool === Pools.Ix ? 1 : 0),
         pool,
         attr: DMAttrUtils.fromBin(args.attr, PlatformVideoSource.Bilibili),
         platform: PlatformVideoSource.Bilibili,

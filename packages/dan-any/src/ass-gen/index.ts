@@ -4,9 +4,9 @@ import type { RawConfig } from './ass/raw'
 import type { CanvasCtx, SubtitleStyle } from './types'
 
 import { UniPool } from '..'
-import ass from './ass/create'
+import { ass } from './ass/create'
 import { deRaw } from './ass/raw'
-import getConfig from './config'
+import { getConfig } from './config'
 import { DanmakuList2UniPool, layoutDanmaku } from './util'
 
 export { CanvasCtx }
@@ -65,6 +65,9 @@ export function parseAssRawField(
   options?: UniPoolOptions,
 ): UniPool {
   const raw = deRaw(ass)
-  if (!raw) return UniPool.create()
-  else return DanmakuList2UniPool(raw.list, options)
+  if (raw) {
+    return DanmakuList2UniPool(raw.list, options)
+  } else {
+    return UniPool.create()
+  }
 }

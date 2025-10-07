@@ -40,8 +40,7 @@ const fixCommand = ({ top, left }: { top: number; left: number }) =>
 const colorCommand = (color: RGB) => `\\c${formatColor(color)}`
 const borderColorCommand = (color: RGB) => `\\3c${formatColor(color)}`
 
-// eslint-disable-next-line import/no-default-export
-export default (
+export const dialogue = (
   danmaku: {
     type: (typeof DanmakuType)[keyof typeof DanmakuType]
     color: RGB

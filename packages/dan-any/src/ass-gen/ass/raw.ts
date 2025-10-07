@@ -9,8 +9,8 @@ import type { Context, Danmaku, SubtitleStyle } from '../types'
 
 type compressType = 'brotli' | 'gzip'
 type baseType = 'base64' | 'base18384'
-const compressTypes = ['brotli', 'gzip']
-const baseTypes = ['base64', 'base18384']
+const compressTypes = new Set(['brotli', 'gzip'])
+const baseTypes = new Set(['base64', 'base18384'])
 
 export interface RawConfig {
   compressType: compressType
@@ -20,7 +20,7 @@ export interface RawConfig {
 function fromUint16Array(array: Uint16Array): string {
   let result = ''
   for (const element of array) {
-    result += String.fromCharCode(element)
+    result += String.fromCodePoint(element)
   }
   return result
 }
@@ -57,20 +57,20 @@ export function deRaw(ass: string):
   else {
     let compressType = lineCompressType.replace(';RawCompressType: ', '').trim()
     let baseType = lineBaseType.replace(';RawBaseType: ', '').trim()
-    if (!compressTypes.includes(compressType)) compressType = 'gzip'
-    if (!baseTypes.includes(baseType)) baseType = 'base64'
+    if (!compressTypes.has(compressType)) compressType = 'gzip'
+    if (!baseTypes.has(baseType)) baseType = 'base64'
     const text = lineRaw.replace(';Raw: ', '').trim()
     const buffer =
       baseType === 'base64'
         ? Buffer.from(text, 'base64')
         : Buffer.from(
-            base16384.decode(Buffer.from(text, 'utf-8').toString('utf-8')),
+            base16384.decode(Buffer.from(text, 'utf8').toString('utf8')),
           )
     let decompress: Buffer
     if (compressType === 'brotli') decompress = brotliDecompressSync(buffer)
     else decompress = gunzipSync(buffer)
     try {
-      return JSON.parse(decompress.toString('utf-8'))
+      return JSON.parse(decompress.toString('utf8'))
     } catch {
       return undefined
     }

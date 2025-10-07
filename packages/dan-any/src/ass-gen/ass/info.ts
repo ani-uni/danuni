@@ -9,8 +9,7 @@ type Resolution = {
   playResY: number
 }
 
-// eslint-disable-next-line import/no-default-export
-export default (
+export const info = (
   { playResX, playResY }: Resolution,
   { filename, title }: ExtraInfo,
 ) => {

@@ -2,8 +2,7 @@ import type { SubtitleStyle } from '../types'
 
 import { formatColor, getDecoratingColor, hexColorToRGB } from '../util'
 
-// eslint-disable-next-line import/no-default-export
-export default ({
+export const style = ({
   fontName,
   fontSize,
   color: configColor,

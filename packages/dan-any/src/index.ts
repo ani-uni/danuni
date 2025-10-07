@@ -172,17 +172,17 @@ export class UniPool {
     const default_stat: Stat[] = []
     const stats = this.dans.reduce((stat, dan) => {
       const valWithCount = stat.find((i) => i.val === dan[key])
-      if (!valWithCount) {
-        stat.push({ val: dan[key], count: 1 })
-      } else {
+      if (valWithCount) {
         valWithCount.count++
+      } else {
+        stat.push({ val: dan[key], count: 1 })
       }
       return stat
     }, default_stat)
     return stats
   }
   getMost(key: keyof statItems) {
-    return this.getStat(key).sort((a, b) => b.count - a.count)[0]
+    return this.getStat(key).toSorted((a, b) => b.count - a.count)[0]
   }
   get most() {
     return {
@@ -449,8 +449,11 @@ export class UniPool {
         try {
           const fileStr = new TextDecoder().decode(file)
           const prStr = parseStr(fileStr)
-          if (!prStr) errmesg = `${err}(定位: bin->string)`
-          else return prStr
+          if (prStr) {
+            return prStr
+          } else {
+            errmesg = `${err}(定位: bin->string)`
+          }
         } catch {}
       } else if (mod.includes('json')) {
         // pure-json
@@ -611,6 +614,7 @@ export class UniPool {
     return builder.build({
       '?xml': {
         '@_version': '1.0',
+        // eslint-disable-next-line unicorn/text-encoding-identifier-case
         '@_encoding': 'UTF-8',
       },
       danuni: { ...DanUniConvertTipTemplate, data: this.shared.SOID },
@@ -785,12 +789,15 @@ export class UniPool {
   /**
    * 转换为ASS字幕格式的弹幕，需播放器支持多行ASS渲染
    */
-  toASS(
-    canvasCtx: CanvasCtx,
-    options: AssGenOptions = { substyle: {} },
-  ): string {
+  toASS(canvasCtx: CanvasCtx, options?: AssGenOptions): string {
+    const defaultOptions: AssGenOptions = { substyle: {} }
+    const finalOptions = options ?? defaultOptions
     const fn = this.shared.SOID
-    return generateASS(this, { filename: fn, title: fn, ...options }, canvasCtx)
+    return generateASS(
+      this,
+      { filename: fn, title: fn, ...finalOptions },
+      canvasCtx,
+    )
   }
 }
 

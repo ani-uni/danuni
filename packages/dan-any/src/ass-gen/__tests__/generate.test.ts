@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 it('generate ass from xml', () => {
   const filename = '898651903.xml'
   const xmlPath = path.join(__dirname, filename)
-  const xmlText = fs.readFileSync(xmlPath, 'utf-8')
+  const xmlText = fs.readFileSync(xmlPath, 'utf8')
   const canvas = createCanvas(50, 50)
   const assText = generateASS(
     UniPool.fromBiliXML(xmlText),
@@ -22,5 +22,5 @@ it('generate ass from xml', () => {
     },
     canvas.getContext('2d') as unknown as CanvasRenderingContext2D,
   )
-  fs.writeFileSync(path.join(__dirname, `${filename}.ass`), assText, 'utf-8')
+  fs.writeFileSync(path.join(__dirname, `${filename}.ass`), assText, 'utf8')
 })

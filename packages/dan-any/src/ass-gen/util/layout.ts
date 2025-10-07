@@ -233,7 +233,7 @@ export const layoutDanmaku = (
   config: SubtitleStyle,
   canvasCtx: CanvasCtx,
 ): UniPool => {
-  const list = [...UniPool2DanmakuLists(inputList)].sort(
+  const list = [...UniPool2DanmakuLists(inputList)].toSorted(
     (x, y) => x.time - y.time,
   )
   const layout = initializeLayout(config, canvasCtx)
