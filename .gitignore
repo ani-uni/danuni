@@ -58,5 +58,7 @@ gen
 
 .rslib
 test
+*.local.test.*
+*.ass
 
 tsconfig.tsbuildinfo

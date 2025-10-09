@@ -160,6 +160,7 @@ interface DMBili {
   mode: number // xml 1
   fontsize: number // xml 2
   color: number // xml 3
+  mid?: number // 仅创作中心源
   midHash: string // xml 6
   /**
    * 特殊类型解析：
@@ -239,6 +240,8 @@ interface ExtraBili {
   mode?: number //原弹幕类型
   pool?: number //原弹幕池
   dmid?: bigint //原弹幕ID
+  attr?: number //原弹幕属性
+  mid?: number //发送者mid(仅创作中心源)
   adv?: string
   code?: string
   bas?: string
@@ -754,7 +757,13 @@ export class UniDM {
     let mode = Modes.Normal
     const pool = args.pool //暂时不做处理，兼容bili的pool格式
     const extra: TExtra = {
-      bili: { mode: args.mode, pool: args.pool, dmid: args.id },
+      bili: {
+        mode: args.mode,
+        pool: args.pool,
+        dmid: args.id,
+        attr: args.attr,
+        mid: args.mid,
+      },
     }
     //重复 transMode ，但此处有关于extra的额外处理
     switch (args.mode) {

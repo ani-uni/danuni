@@ -1,4 +1,3 @@
-//基于以下注释，根据vitest生成测试用例
 import { createCanvas } from 'canvas'
 import { describe, expect, it } from 'vitest'
 
