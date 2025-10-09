@@ -613,10 +613,10 @@ export class UniPool {
   }
   static fromBiliXML(xml: string, options?: Options) {
     const parser = new XMLParser({ ignoreAttributes: false })
-    const oriData: DM_XML_Bili & { danuni?: DanUniConvertTip } =
+    const oriData: DM_XML_Bili & { i: { danuni?: DanUniConvertTip } } =
       parser.parse(xml)
     const dans = oriData.i.d
-    const fromConverted = !!oriData.danuni
+    const fromConverted = !!oriData.i.danuni
     const cid = BigInt(oriData.i.chatid)
     return new UniPool(
       dans
@@ -638,7 +638,7 @@ export class UniPool {
             },
             cid,
             options,
-            fromConverted ? oriData.danuni?.data : undefined,
+            fromConverted ? oriData.i.danuni?.data : undefined,
           )
         })
         .filter((d) => d !== null),
@@ -683,7 +683,6 @@ export class UniPool {
         // eslint-disable-next-line unicorn/text-encoding-identifier-case
         '@_encoding': 'UTF-8',
       },
-      danuni: { ...DanUniConvertTipTemplate, data: this.shared.SOID },
       i: {
         chatserver: 'chat.bilibili.com',
         chatid: genCID(this.dans[0].SOID),
@@ -692,6 +691,7 @@ export class UniPool {
         state: 0,
         real_name: 0,
         source: 'k-v',
+        danuni: { ...DanUniConvertTipTemplate, data: this.shared.SOID },
         d: this.dans.map((dan) => dan.toBiliXML(options)),
       },
     })
