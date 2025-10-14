@@ -739,6 +739,21 @@ export class UniDM {
     }
     return mode
   }
+  static parseBiliSingle(p: string, c: string) {
+    const p_arr = p.split(',')
+    return {
+      content: c,
+      progress: Number.parseFloat(p_arr[0]),
+      mode: Number.parseInt(p_arr[1]),
+      fontsize: Number.parseInt(p_arr[2]),
+      color: Number.parseInt(p_arr[3]),
+      ctime: BigInt(p_arr[4]),
+      pool: Number.parseInt(p_arr[5]),
+      midHash: p_arr[6],
+      id: BigInt(p_arr[7]),
+      weight: Number.parseInt(p_arr[8]),
+    }
+  }
   static fromBili(
     args: DMBili,
     cid?: bigint,

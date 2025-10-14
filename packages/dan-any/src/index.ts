@@ -621,21 +621,8 @@ export class UniPool {
     return new UniPool(
       dans
         .map((d) => {
-          const p_str = d['@_p']
-          const p_arr = p_str.split(',')
           return UniDM.fromBili(
-            {
-              content: d['#text'],
-              progress: Number.parseFloat(p_arr[0]),
-              mode: Number.parseInt(p_arr[1]),
-              fontsize: Number.parseInt(p_arr[2]),
-              color: Number.parseInt(p_arr[3]),
-              ctime: BigInt(p_arr[4]),
-              pool: Number.parseInt(p_arr[5]),
-              midHash: p_arr[6],
-              id: BigInt(p_arr[7]),
-              weight: Number.parseInt(p_arr[8]),
-            },
+            UniDM.parseBiliSingle(d['@_p'], d['#text']),
             cid,
             options,
             fromConverted ? oriData.i.danuni?.data : undefined,
