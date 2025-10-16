@@ -447,6 +447,7 @@ export class UniPool {
         } else if (
           json.count &&
           json.comments &&
+          Array.isArray(json.comments) &&
           json.comments.every((d) => d.m)
         ) {
           return {
