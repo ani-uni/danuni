@@ -193,6 +193,10 @@ type UniPoolPipeSync = (that: UniPool) => UniPool
 
 export interface Options {
   dedupe?: boolean
+  /**
+   * @description
+   * 当为`false`时，关闭DMID生成; 当为正整数时，表示生成DMID的截取位数; 或可传入一个DMID生成器实例
+   */
   dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
 
