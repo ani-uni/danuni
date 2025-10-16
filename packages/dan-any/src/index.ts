@@ -157,6 +157,7 @@ export type DM_format =
   | 'bili.xml'
   | 'bili.pb.bin'
   | 'bili.cmd.pb.bin'
+  | 'bili.up.json'
   | 'dplayer.json'
   | 'artplayer.json'
   | 'ddplay.json'
@@ -427,7 +428,8 @@ export class UniPool {
     const parseJSON = (
       json: DM_JSON_Artplayer &
         DM_JSON_DDPlay &
-        DM_JSON_Dplayer & { danuni?: DanUniConvertTip },
+        DM_JSON_Dplayer &
+        DM_JSON_BiliUp & { danuni?: DanUniConvertTip },
     ): { pool: UniPool; fmt: DM_format } | undefined => {
       try {
         if (Array.isArray(json) && json.every((d) => d.SOID)) {
@@ -452,8 +454,9 @@ export class UniPool {
             fmt: 'ddplay.json',
           }
         } else if (
-          json?.code == 0 &&
+          json.code == 0 &&
           json.data &&
+          Array.isArray(json.data) &&
           json.data.every((d) => Array.isArray(d))
         ) {
           return {
@@ -464,6 +467,19 @@ export class UniPool {
               options,
             ),
             fmt: 'dplayer.json',
+          }
+        } else if (
+          json.code == 0 &&
+          json.message == '0' &&
+          json.data &&
+          json.data.page &&
+          json.data.result &&
+          Array.isArray(json.data.result) &&
+          json.data.result.every((d) => d.id && d.oid)
+        ) {
+          return {
+            pool: this.fromBiliUp(json, options),
+            fmt: 'bili.up.json',
           }
         }
       } catch {}
