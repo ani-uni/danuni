@@ -41,7 +41,7 @@ message Danmaku {
   int32 weight = 10;
   Pool pool = 11;
   repeated string attr = 12;
-  string platform = 13;
+  optional string platform = 13;
   optional string extra = 14;
 }
 
