@@ -183,10 +183,7 @@ type statItems = Partial<
     | 'platform'
   >
 >
-interface Stat {
-  val: statItems[keyof statItems]
-  count: number
-}
+type Stats<T extends keyof statItems> = Map<statItems[T], number>
 
 type UniPoolPipe = (that: UniPool) => Promise<UniPool>
 type UniPoolPipeSync = (that: UniPool) => UniPool
@@ -220,51 +217,109 @@ export class UniPool {
   pipeSync(fn: UniPoolPipeSync): UniPool {
     return fn(this)
   }
+  /**
+   * @deprecated 使用 `getShared` 代替
+   */
   get shared(): shareItems {
-    const isShared = (key: keyof UniDMTools.UniDMObj) => {
-      return this.dans.every((d) => d[key])
-    }
-    return {
-      SOID: isShared('SOID') ? this.dans[0].SOID : undefined,
-      senderID: isShared('senderID') ? this.dans[0].senderID : undefined,
-      platform: isShared('platform') ? this.dans[0].platform : undefined,
-      pool: isShared('pool') ? this.dans[0].pool : undefined,
-      mode: isShared('mode') ? this.dans[0].mode : undefined,
-      color: isShared('color') ? this.dans[0].color : undefined,
-    }
-  }
-  getShared(key: keyof shareItems): shareItems[keyof shareItems] {
-    const isShared = (key: keyof UniDMTools.UniDMObj) => {
-      return this.dans.every((d) => d[key])
-    }
-    return isShared(key) ? this.dans[0][key] : undefined
-  }
-  getStat(key: keyof statItems): Stat[] {
-    const default_stat: Stat[] = []
-    const stats = this.dans.reduce((stat, dan) => {
-      const valWithCount = stat.find((i) => i.val === dan[key])
-      if (valWithCount) {
-        valWithCount.count++
-      } else {
-        stat.push({ val: dan[key], count: 1 })
+    if (this.dans.length === 0) return {}
+    const keys: (keyof shareItems)[] = [
+      'SOID',
+      'senderID',
+      'platform',
+      'pool',
+      'mode',
+      'color',
+    ]
+    const result: shareItems = {} as shareItems
+    for (const key of keys) {
+      const sharedVal = this.getShared(key)
+      if (sharedVal !== undefined) {
+        result[key] = sharedVal as any
       }
-      return stat
-    }, default_stat)
-    return stats
+    }
+    return result
   }
-  getMost(key: keyof statItems) {
-    return this.getStat(key).toSorted((a, b) => b.count - a.count)[0]
+  getShared<K extends keyof shareItems>(key: K): shareItems[K] {
+    if (this.dans.length === 0) return undefined
+    const firstVal = this.dans[0][key]
+    for (let i = 1; i < this.dans.length; i++) {
+      if (this.dans[i][key] !== firstVal) {
+        return undefined
+      }
+    }
+    return firstVal
   }
+  getStat<K extends keyof statItems>(key: K): Stats<K> {
+    const statMap = new Map<statItems[K], number>()
+    for (const dan of this.dans) {
+      const val = dan[key]
+      statMap.set(val, (statMap.get(val) || 0) + 1)
+    }
+    return statMap
+  }
+  getMost<K extends keyof statItems>(key: K) {
+    const stats = this.getStat(key)
+    if (stats.size === 0) return { val: undefined, count: 0 }
+    let mostVal: statItems[K] | undefined
+    let maxCount = 0
+    for (const [val, count] of stats.entries()) {
+      if (count > maxCount) {
+        maxCount = count
+        mostVal = val
+      }
+    }
+    return { val: mostVal, count: maxCount }
+  }
+  /**
+   * @deprecated 使用 `getMost` 代替
+   */
   get most() {
+    const keys: (keyof statItems)[] = [
+      'mode',
+      'fontsize',
+      'color',
+      'senderID',
+      'content',
+      'weight',
+      'pool',
+      'platform',
+    ]
+    const statMaps = new Map<
+      keyof statItems,
+      Map<statItems[keyof statItems], number>
+    >()
+    for (const dan of this.dans) {
+      for (const key of keys) {
+        if (!statMaps.has(key)) {
+          statMaps.set(key, new Map())
+        }
+        const statMap = statMaps.get(key)!
+        const val = dan[key]
+        statMap.set(val, (statMap.get(val) || 0) + 1)
+      }
+    }
+    const result: Record<string, any> = {}
+    for (const key of keys) {
+      const statMap = statMaps.get(key)!
+      let mostVal: statItems[keyof statItems] | undefined
+      let maxCount = 0
+      for (const [val, count] of statMap.entries()) {
+        if (count > maxCount) {
+          maxCount = count
+          mostVal = val
+        }
+      }
+      result[key] = mostVal
+    }
     return {
-      mode: this.getMost('mode').val as UniDMTools.Modes,
-      fontsize: this.getMost('fontsize').val as number,
-      color: this.getMost('color').val as number,
-      senderID: this.getMost('senderID').val as string,
-      content: this.getMost('content').val as string,
-      weight: this.getMost('weight').val as number,
-      pool: this.getMost('pool').val as UniDMTools.Pools,
-      platform: this.getMost('platform').val as string | undefined,
+      mode: result.mode as UniDMTools.Modes,
+      fontsize: result.fontsize as number,
+      color: result.color as number,
+      senderID: result.senderID as string,
+      content: result.content as string,
+      weight: result.weight as number,
+      pool: result.pool as UniDMTools.Pools,
+      platform: result.platform as string | undefined,
     }
   }
   static create(options?: Options) {
@@ -290,7 +345,7 @@ export class UniPool {
    * 按共通属性拆分弹幕库
    */
   split(key: keyof shareItems) {
-    if (this.shared[key]) return [this]
+    if (this.getShared(key)) return [this]
     const set = new Set(this.dans.map((d) => d[key]))
     return [...set].map((v) => {
       return new UniPool(
@@ -304,6 +359,7 @@ export class UniPool {
    * 基于DMID的基本去重功能，用于解决该class下dans为array而非Set的问题
    */
   private dedupe() {
+    // 这里基本上没有性能瓶颈(大文件测试与AI优化下无明显区别)
     if (this.options.dmid !== false) {
       const map = new Map()
       this.dans.forEach((d) => map.set(d.DMID || d.toDMID(), d))
@@ -316,104 +372,77 @@ export class UniPool {
    * @param lifetime 查重时间区段，单位秒 (默认为 0，表示不查重)
    */
   merge(lifetime = 0) {
-    if (!this.shared.SOID) {
+    if (!this.getShared('SOID')) {
       console.error(
         "本功能仅支持同弹幕库内使用，可先 .split('SOID') 在分别使用",
       )
       return this
     }
     if (lifetime <= 0) return this
-    const mergeContext = this.dans.reduce<
-      [
-        UniDM[],
-        Record<string, UniDM>,
-        Record<string, UniDMTools.ExtraDanUniMerge>,
-      ]
-    >(
-      ([result, cache, mergeObj], danmaku) => {
-        const key = ['content', 'mode', 'pool', 'platform']
-          .map((k) => danmaku[k as keyof UniDM])
-          .join('|')
-        const cached = cache[key]
-        const lastAppearTime = cached?.progress || 0
-        if (
-          cached &&
-          danmaku.progress - lastAppearTime <= lifetime &&
-          danmaku.isSameAs(cached, { skipDanuniMerge: true })
-        ) {
-          const senders = mergeObj[key].senders
-          senders.push(danmaku.senderID)
-          const extra = danmaku.extra
-          extra.danuni = extra.danuni || {}
-          extra.danuni.merge = {
-            count: senders.length,
-            duration: Number.parseFloat(
-              (danmaku.progress - cached.progress).toFixed(3),
-            ),
-            senders,
-            taolu_count: senders.length,
-            taolu_senders: senders,
-          }
-          danmaku.extraStr = JSON.stringify(extra)
-          cache[key] = danmaku
-          mergeObj[key] = extra.danuni.merge
-          return [result, cache, mergeObj]
-        } else {
-          mergeObj[key] = {
-            count: 1,
-            duration: 0,
-            senders: [danmaku.senderID],
-            taolu_count: 1,
-            taolu_senders: [danmaku.senderID],
-          }
-          cache[key] = danmaku
-          // 初始化merge信息，包含第一个sender
-          const extra = danmaku.extra
-          extra.danuni = extra.danuni || {}
-          extra.danuni.merge = mergeObj[key]
-          danmaku.extraStr = JSON.stringify(extra)
-          result.push(danmaku)
-          return [result, cache, mergeObj]
+    const result: UniDM[] = []
+    const cache: Record<string, UniDM> = {}
+    const mergeObj: Record<string, UniDMTools.ExtraDanUniMerge> = {}
+    // 第一遍：合并弹幕
+    for (const danmaku of this.dans) {
+      const key = `${danmaku.content}|${danmaku.mode}|${danmaku.pool}|${danmaku.platform}`
+      const cached = cache[key]
+
+      if (
+        cached &&
+        danmaku.progress - cached.progress <= lifetime &&
+        danmaku.isSameAs(cached, { skipDanuniMerge: true })
+      ) {
+        // 更新已存在的弹幕
+        mergeObj[key].senders.push(danmaku.senderID)
+        mergeObj[key].count = mergeObj[key].senders.length
+        mergeObj[key].taolu_count = mergeObj[key].count
+        mergeObj[key].taolu_senders = mergeObj[key].senders
+        mergeObj[key].duration = Number.parseFloat(
+          (danmaku.progress - cached.progress).toFixed(3),
+        )
+        cache[key] = danmaku
+      } else {
+        // 新弹幕
+        mergeObj[key] = {
+          count: 1,
+          duration: 0,
+          senders: [danmaku.senderID],
+          taolu_count: 1,
+          taolu_senders: [danmaku.senderID],
         }
-      },
-      [[], {}, {}],
-    )
-    // 处理结果，删除senders<=1的merge字段
-    const [result, _cache, mergeObj] = mergeContext
-    result.forEach((danmaku, i) => {
-      const key = ['content', 'mode', 'platform', 'pool']
-        .map((k) => danmaku[k as keyof UniDM])
-        .join('|')
-      const extra = result[i].extra
-      const mergeData = mergeObj[key]
-      result[i].extraStr = JSON.stringify({
-        ...extra,
-        danuni: {
-          ...extra.danuni,
-          merge: mergeData,
-        },
-      } satisfies UniDMTools.Extra)
-      if (mergeData?.count) {
-        if (mergeData.count <= 1) {
-          const updatedExtra = { ...extra }
-          if (updatedExtra.danuni) {
-            delete updatedExtra.danuni.merge
-            if (Object.keys(updatedExtra.danuni).length === 0) {
-              delete updatedExtra.danuni
-            }
-          }
-          result[i].extraStr =
-            Object.keys(updatedExtra).length > 0
-              ? JSON.stringify(updatedExtra)
-              : undefined
-        } else {
-          result[i].senderID = 'merge[bot]@dan-any'
-          result[i].attr
-            ? result[i].attr.push(UniDMTools.DMAttr.Protect)
-            : (result[i].attr = [UniDMTools.DMAttr.Protect])
-        }
+        cache[key] = danmaku
+        result.push(danmaku)
       }
-    })
+    }
+    // 第二遍：更新 extraStr
+    for (const danmaku of result) {
+      const key = `${danmaku.content}|${danmaku.mode}|${danmaku.pool}|${danmaku.platform}`
+      const mergeData = mergeObj[key]
+      const extra = danmaku.extra
+      if (mergeData.count > 1) {
+        // 多个发送者：设置为机器人并添加保护标记
+        danmaku.senderID = 'merge[bot]@dan-any'
+        if (!danmaku.attr) {
+          danmaku.attr = [UniDMTools.DMAttr.Protect]
+        } else if (!danmaku.attr.includes(UniDMTools.DMAttr.Protect)) {
+          danmaku.attr.push(UniDMTools.DMAttr.Protect)
+        }
+
+        extra.danuni = extra.danuni || {}
+        extra.danuni.merge = mergeData
+        danmaku.extraStr = JSON.stringify(extra)
+      } else {
+        // 单个发送者：清理 merge 字段
+        if (extra.danuni?.merge) {
+          delete extra.danuni.merge
+          if (Object.keys(extra.danuni).length === 0) {
+            delete extra.danuni
+          }
+        }
+        danmaku.extraStr =
+          Object.keys(extra).length > 0 ? JSON.stringify(extra) : undefined
+      }
+    }
     return new UniPool(result, this.options, this.info)
   }
   minify() {
@@ -699,7 +728,7 @@ export class UniPool {
         state: 0,
         real_name: 0,
         source: 'k-v',
-        danuni: { ...DanUniConvertTipTemplate, data: this.shared.SOID },
+        danuni: { ...DanUniConvertTipTemplate, data: this.getShared('SOID') },
         d: this.dans.map((dan) => dan.toBiliXML(options)),
       },
     })
@@ -901,7 +930,7 @@ export class UniPool {
   toASS(canvasCtx: CanvasCtx, options?: AssGenOptions): string {
     const defaultOptions: AssGenOptions = { substyle: {} }
     const finalOptions = options ?? defaultOptions
-    const fn = this.shared.SOID
+    const fn = this.getShared('SOID')
     return generateASS(
       this,
       { filename: fn, title: fn, ...finalOptions },

@@ -562,6 +562,8 @@ export class UniDM {
   }
   @Expose()
   isSameAs(dan: UniDM, options?: { skipDanuniMerge?: boolean }): boolean {
+    // 引用相同直接返回
+    if (this === dan) return true
     // 不支持比较高级弹幕
     if (this.mode === Modes.Ext || dan.mode === Modes.Ext) return false
     // 合并过视为不同，防止存在合并完成弹幕后再次合并造成计数错误
@@ -586,25 +588,20 @@ export class UniDM {
   @Expose()
   minify() {
     type UObj = Partial<UniDMObj> & Pick<UniDMObj, 'SOID'>
-    const def: UObj = UniDM.create()
-    const dan: UObj = UniDM.create(this)
-    const shouldKeep = (key: keyof UObj, value: UObj[keyof UObj]) => {
-      if (key === 'SOID') return true
-      if (value === undefined || value === null) return false
-      if (value === def[key]) return false
-      if (key === 'attr' && Array.isArray(value) && value.length === 0)
-        return false
-      if (key === 'extraStr' && value === '{}') return false
-      return true
-    }
-    const result: UObj = { SOID: dan.SOID }
-    for (const key of Object.keys(dan) as (keyof UObj)[]) {
-      const value = dan[key]
-      if (shouldKeep(key, value)) {
-        if (key === 'SOID') continue
-        Reflect.set(result, key, value)
-      }
-    }
+    const def = new UniDM()
+    const result: UObj = { SOID: this.SOID }
+    if (this.progress !== def.progress) result.progress = this.progress
+    if (this.mode !== def.mode) result.mode = this.mode
+    if (this.fontsize !== def.fontsize) result.fontsize = this.fontsize
+    if (this.color !== def.color) result.color = this.color
+    if (this.senderID !== def.senderID) result.senderID = this.senderID
+    if (this.content !== def.content) result.content = this.content
+    if (this.weight !== def.weight) result.weight = this.weight
+    if (this.pool !== def.pool) result.pool = this.pool
+    if (this.attr.length > 0) result.attr = this.attr
+    if (this.platform !== undefined) result.platform = this.platform
+    if (this.extraStr && this.extraStr !== '{}') result.extraStr = this.extraStr
+    if (this.DMID !== undefined) result.DMID = this.DMID
     return result
   }
   @Expose()
