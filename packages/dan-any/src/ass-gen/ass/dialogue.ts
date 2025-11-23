@@ -34,11 +34,11 @@ const scrollCommand = ({
   start: number
   end: number
   top: number
-}) => `\\move(${start},${top},${end},${top})`
+}) => String.raw`\move(${start},${top},${end},${top})`
 const fixCommand = ({ top, left }: { top: number; left: number }) =>
-  `\\an8\\pos(${left},${top})`
-const colorCommand = (color: RGB) => `\\c${formatColor(color)}`
-const borderColorCommand = (color: RGB) => `\\3c${formatColor(color)}`
+  String.raw`\an8\pos(${left},${top})`
+const colorCommand = (color: RGB) => String.raw`\c${formatColor(color)}`
+const borderColorCommand = (color: RGB) => String.raw`\3c${formatColor(color)}`
 
 export const dialogue = (
   danmaku: {
