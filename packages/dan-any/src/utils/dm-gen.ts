@@ -572,6 +572,31 @@ export class UniDM {
       (this.extra.danuni?.merge || dan.extra.danuni?.merge)
     )
       return false
+    // 如果是bili弹幕，则以dmid判断是否相同
+    if (this.extra.bili?.dmid && dan.extra.bili?.dmid) {
+      // 当来源不同(标准源/创作中心源)时，视为不同弹幕
+      if (
+        (this.extra.bili.dmid && !dan.extra.bili.dmid) ||
+        (!this.extra.bili.dmid && dan.extra.bili.dmid)
+      )
+        return false
+      if (this.extra.bili.dmid === dan.extra.bili.dmid) return true
+      else return false
+    }
+    // 如果是artplayer弹幕，需额外比较extra项目
+    if (
+      (this.extra.artplayer && !dan.extra.artplayer) ||
+      (!this.extra.artplayer && dan.extra.artplayer)
+    )
+      return false
+    else if (
+      this.extra.artplayer &&
+      dan.extra.artplayer &&
+      (this.extra.artplayer.border !== dan.extra.artplayer.border ||
+        JSON.stringify(this.extra.artplayer.style) !==
+          JSON.stringify(dan.extra.artplayer.style))
+    )
+      return false
     const isSame = (k: keyof UniDMObj) => this[k] === dan[k]
     const checks = (
       [
