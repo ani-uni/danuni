@@ -47,7 +47,7 @@ interface DanUniConvertTip {
 export interface DM_XML_Bili {
   i: {
     chatserver: string
-    chatid: number
+    chatid: bigint
     mission: number
     maxlimit: number
     state: number
@@ -78,15 +78,15 @@ export interface DM_JSON_BiliUp {
     }
     result: {
       /** 弹幕 ID，int64 */
-      id: number
+      id: bigint
       /** 弹幕 ID 字符串形式 */
       id_str: string
       /** 弹幕类型：1 表示视频弹幕（当前接口恒为 1） */
       type: number
-      aid: number
+      aid: bigint
       bvid: string
-      oid: number
-      mid: number
+      oid: bigint
+      mid: bigint
       /** 发送者 mid 的 CRC 哈希（正常接口里用的是这个，保护隐私） */
       mid_hash: string
       /** 弹幕池 */
@@ -145,7 +145,7 @@ export interface DM_JSON_Artplayer {
 export interface DM_JSON_DDPlay {
   count: number | string
   comments: {
-    cid: number
+    cid: bigint
     p: string
     m: string
   }[]

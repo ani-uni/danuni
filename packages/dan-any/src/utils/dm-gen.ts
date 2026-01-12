@@ -160,7 +160,7 @@ interface DMBili {
   mode: number // xml 1
   fontsize: number // xml 2
   color: number // xml 3
-  mid?: number // 仅创作中心源
+  mid?: bigint // 仅创作中心源
   midHash: string // xml 6
   /**
    * 特殊类型解析：
@@ -204,7 +204,7 @@ interface DMArtplayer {
   style?: object
 }
 interface DMDDplay {
-  cid: number
+  cid: bigint
   /**
    * content
    */
@@ -241,7 +241,7 @@ interface ExtraBili {
   pool?: number //原弹幕池
   dmid?: bigint //原弹幕ID
   attr?: number //原弹幕属性
-  mid?: number //发送者mid(仅创作中心源)
+  mid?: bigint //发送者mid(仅创作中心源)
   adv?: string
   code?: string
   bas?: string
@@ -1067,8 +1067,8 @@ export class UniDM {
       uid: this.senderID,
       m: this.content,
       cid: this.DMID
-        ? Number.parseInt(Buffer.from(this.DMID).toString('hex'), 16)
-        : 0,
+        ? BigInt(`0x${Buffer.from(this.DMID).toString('hex')}`)
+        : 0n,
     }
   }
 }
