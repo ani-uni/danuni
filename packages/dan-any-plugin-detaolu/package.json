@@ -2,20 +2,20 @@
   "name": "@dan-uni/dan-any-plugin-detaolu",
   "version": "1.0.1",
   "description": "A filter, dedupe and anti-spam plugin of dan-any, a danmaku transformer lib, based on pakku.js.",
-  "keywords": [
-    "bangumi",
-    "danmaku"
-  ],
+  "author": "rinne",
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detaolu#readme",
-  "bugs": {
-    "url": "https://github.com/ani-uni/danuni/issues"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ani-uni/danuni.git"
   },
-  "author": "rinne",
+  "bugs": {
+    "url": "https://github.com/ani-uni/danuni/issues"
+  },
+  "keywords": [
+    "bangumi",
+    "danmaku"
+  ],
   "main": "dist/index.js",
   "module": "src/index.ts",
   "types": "dist/index.d.ts",

@@ -69,6 +69,8 @@ export default sxzz(
         'unicorn/no-array-push-push': 0,
         '@typescript-eslint/no-require-imports': 0,
         'perfectionist/sort-imports': 0,
+
+        'import/no-duplicates': 'off',
       },
     },
     {

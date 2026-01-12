@@ -5,6 +5,6 @@ export {
   hexColorToRGB,
   isWhite,
 } from './color'
-export { layoutDanmaku } from './layout'
-export { arrayOfLength, assign, uniqueArray } from './lang'
 export { DanmakuList2UniPool, UniPool2DanmakuLists } from './danconvert'
+export { arrayOfLength, assign, uniqueArray } from './lang'
+export { layoutDanmaku } from './layout'

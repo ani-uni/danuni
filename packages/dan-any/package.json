@@ -1,22 +1,22 @@
 {
   "name": "@dan-uni/dan-any",
+  "type": "module",
   "version": "1.0.0",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
-  "type": "module",
-  "keywords": [
-    "bangumi",
-    "danmaku"
-  ],
+  "author": "rinne",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://github.com/ani-uni/danuni/tree/master/packages/dan-any#readme",
-  "bugs": {
-    "url": "https://github.com/ani-uni/danuni/issues"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ani-uni/danuni.git"
   },
-  "author": "rinne",
+  "bugs": {
+    "url": "https://github.com/ani-uni/danuni/issues"
+  },
+  "keywords": [
+    "bangumi",
+    "danmaku"
+  ],
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/src/index.d.ts",
