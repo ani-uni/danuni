@@ -1,6 +1,9 @@
 /**
  * @author: xmcp(代码主要逻辑来源)
  * @see: https://github.com/xmcp/pakku.js/blob/master/pakkujs/core/combine_worker.ts
+ * @see: https://github.com/xmcp/pakku.js/blob/master/pakkujs/background/config.ts
+ * @see: https://github.com/xmcp/pakku.js/blob/master/pakkujs/page/options.html
+ * @see: https://github.com/xmcp/pakku.js/blob/master/pakkujs/page/options.ts
  * @license: GPL-3.0
  * 本文件内代码来源见上，经部分修改，并整合config注释
  */
@@ -19,28 +22,28 @@ import { Queue, Stats } from './types'
 export const DEFAULT_CONFIG = {
   // 弹幕合并
   /**
-   * 时间阈值(合并n秒内的弹幕)：
+   * 时间阈值：合并时间差在n秒之内的重复弹幕
    * 超长（大概 60 秒以上？）的阈值可能会导致程序运行缓慢
    */
   THRESHOLD: 30,
   /**
    * 编辑距离合并阈值：
-   * 根据编辑距离判断不完全一致但内容相近（例如有错别字）的弹幕,
-   * 能有效击杀 "<code>你指尖跃动的电光</code>" 和 "<code>你<b>之间</b>跃动的电光</code>" 等
-   * @example 禁用(0),轻微(≤3),中等(≤5),强力(≤8)
+   * 根据编辑距离判断不完全一致但内容相近（例如有错别字）的弹幕
+   * 能有效击杀 "你指尖跃动的电光" 和 "你之间跃动的电光" 等
+   * @example 禁用(0), 轻微(≤3), 中等(≤5), 强力(≤8)
    */
   MAX_DIST: 5,
   /**
    * 词频向量合并阈值：
-   * 根据 2-Gram 频率向量的夹角判断不完全一致但内容类似的弹幕,
-   * 能有效击杀 "<code>yeah!~</code>" 和 "<code>yeah!~yeah!~yeah!~yeah!~</code>" 等
-   * @example 禁用(1000),轻微(60%),中等(45%),强力(30%)
+   * 根据 2-Gram 频率向量的夹角判断不完全一致但内容类似的弹幕
+   * 能有效击杀 "yeah!~" 和 "yeah!~yeah!~yeah!~yeah!~" 等
+   * @example 禁用(1000), 轻微(60%), 中等(45%), 强力(30%)
    */
   MAX_COSINE: 45,
   /**
    * 识别谐音弹幕：
-   * 将常用汉字转换为拼音再进行比较,
-   * 能有效击杀 "<code>布拉迪巴特福来</code>" 和 "<code>布拉迪·八德福莱</code>" 等
+   * 将常用汉字转换为拼音再进行比较
+   * 能有效击杀 "布拉迪巴特福来" 和 "布拉迪·八德福莱" 等
    */
   TRIM_PINYIN: true,
   // 比较文本时：
@@ -49,15 +52,35 @@ export const DEFAULT_CONFIG = {
   TRIM_WIDTH: true, // 忽略全半角差异
 
   // 例外设置
+  /**
+   * 内容替换：符合这些规则的弹幕，判断是否合并前会先对内容进行替换
+   */
   FORCELIST: [
     ['^23{2,}$', '23333'],
     ['^6{3,}$', '66666'],
-  ], // 强制合并（符合这些规则的弹幕，在比较是否相同时会先进行替换）
-  WHITELIST: [] as [string, string][], // 强制忽略（符合这些规则的弹幕，即使内容相同也不会被合并）
-  BLACKLIST: [] as [string, string][], // 强制删除（符合这些规则的弹幕，会直接被删除）
-  CROSS_MODE: true, // 合并不同类型的弹幕(取消勾选后，底部弹幕不会跟滚动弹幕合并到一起)
+  ],
+  /**
+   * 内容替换规则命中时：继续尝试匹配后续规则
+   */
+  FORCELIST_CONTINUE_ON_MATCH: true,
+  /**
+   * 内容替换规则命中时：即使未触发合并也使用替换后的文本
+   */
+  FORCELIST_APPLY_SINGULAR: false,
+  /**
+   * 强制忽略：符合这些规则的弹幕不会被合并，优先级高于内容替换规则
+   */
+  WHITELIST: [] as [string, string][],
+  /**
+   * 强制删除：符合这些规则的弹幕会直接被删除（未实现）
+   */
+  BLACKLIST: [] as [string, string][],
+  /**
+   * 合并不同类型的弹幕（取消勾选后，底部弹幕不会跟滚动弹幕合并到一起）
+   */
+  CROSS_MODE: true,
   // 放过特定类型的弹幕：
-  PROC_TYPE7: true, // 高级弹幕
+  PROC_TYPE7: true, // 高级弹幕（特殊弹幕）
   PROC_TYPE4: true, // 底部弹幕
   PROC_POOL1: false, // 字幕弹幕(位于弹幕池1)
 
@@ -201,13 +224,14 @@ const WIDTH_TABLE = new Map(
 /**
  * 反套路
  */
-const detaolu = (inp: string, config: Config) => {
+const detaolu = (inp: string, config: Config): [boolean, string] => {
   const TRIM_ENDING = config.TRIM_ENDING
   const TRIM_SPACE = config.TRIM_SPACE
   const TRIM_WIDTH = config.TRIM_WIDTH
   const FORCELIST = (config?.FORCELIST ?? DEFAULT_CONFIG.FORCELIST).map(
-    ([pattern, repl]) => [new RegExp(pattern, 'gi'), repl] as [RegExp, string],
+    ([pattern, repl]) => [new RegExp(pattern, 'giu'), repl] as [RegExp, string],
   )
+  const FORCELIST_BREAK_ON_MATCH = !config.FORCELIST_CONTINUE_ON_MATCH
 
   let len = inp.length
   let text = ''
@@ -242,14 +266,16 @@ const detaolu = (inp: string, config: Config) => {
       )
   }
 
+  let taolu_matched = false
   for (const taolu of FORCELIST) {
     if (taolu[0].test(text)) {
       text = text.replace(taolu[0], taolu[1])
-      return [true, text]
+      taolu_matched = true
+      if (FORCELIST_BREAK_ON_MATCH) break
     }
   }
 
-  return [false, text]
+  return [taolu_matched, text]
 }
 
 /**
@@ -257,7 +283,7 @@ const detaolu = (inp: string, config: Config) => {
  */
 const whitelisted = (text: string, config: Config) => {
   const WHITELIST = (config?.WHITELIST ?? DEFAULT_CONFIG.WHITELIST).map(
-    (x) => new RegExp(x[0], 'i'),
+    (x) => new RegExp(x[0], 'iu'),
   )
   if (WHITELIST.length === 0) return false
   else return WHITELIST.some((re) => re.test(text))
@@ -355,7 +381,7 @@ async function merge(
       ret.clusters.push({
         peers_ptr: irs.map((ir) => [ir.ptr_idx, ir.sim_reason]),
         desc: [],
-        chosen_str: irs[0].obj.content, // do not use detaolued str for single danmu
+        chosen_str: irs[0].obj.content,
         // danuni
         danuni_count: irs.length,
         // danuni_senders: irs.map((ir) => ir.obj.danuni_sender),
@@ -473,8 +499,13 @@ async function merge(
 
         const [matched_taolu, detaolued] = detaolu(disp_str, config)
 
-        if (matched_taolu && s) {
-          s.num_taolu_matched++
+        if (matched_taolu) {
+          if (s) s.num_taolu_matched++
+          if (config.FORCELIST_APPLY_SINGULAR)
+            obj = {
+              ...obj,
+              content: detaolued,
+            }
         }
 
         return {
