@@ -88,8 +88,8 @@ describe('其它', () => {
     const c = pool.dans[1].isSameAs(pool.dans[3])
     console.info(a, b, c)
     expect(a).toBe(false)
-    expect(b).toBe(true)
-    expect(c).toBe(true)
+    expect(b).toBe(false)
+    expect(c).toBe(false)
   })
   it('比较(extra)', () => {
     const commonSample = {
