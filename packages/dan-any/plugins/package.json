@@ -1,0 +1,6 @@
+{
+  "main": "../dist/node/plugins/index,js",
+  "module": "../dist/node/plugins/index.js",
+  "types": "../dist/node/src/plugins/index.d.ts",
+  "browser": "../dist/browser/plugins/index.min.js"
+}

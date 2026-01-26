@@ -4,11 +4,18 @@ import { defineConfig } from '@rslib/core'
 import pkg from './package.json'
 
 export default defineConfig({
+  source: {
+    entry: {
+      index: './src/index.ts',
+      'plugins/index': './src/plugins/index.ts',
+    },
+  },
   lib: [
     {
       format: 'esm',
       output: {
         filename: { js: '[name].js' },
+        distPath: './dist/node',
         target: 'node',
       },
       dts: true,
@@ -17,6 +24,7 @@ export default defineConfig({
       format: 'esm',
       output: {
         filename: { js: '[name].min.js' },
+        distPath: './dist/browser',
         target: 'web',
       },
       dts: true,
@@ -26,6 +34,7 @@ export default defineConfig({
       format: 'umd',
       output: {
         filename: { js: '[name].umd.min.js' },
+        distPath: './dist/umd',
         target: 'web',
       },
       dts: true,

@@ -1,7 +1,7 @@
 {
   "name": "@dan-uni/dan-any",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "author": "rinne",
   "license": "LGPL-3.0-or-later",
@@ -17,10 +17,10 @@
     "bangumi",
     "danmaku"
   ],
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/src/index.d.ts",
-  "browser": "dist/index.min.js",
+  "main": "dist/node/index.js",
+  "module": "dist/node/index.js",
+  "types": "dist/node/src/index.d.ts",
+  "browser": "dist/browser/index.min.js",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
