@@ -1,7 +1,7 @@
 //基于以下注释，根据vitest生成测试用例
 import { describe, expect, it } from 'vitest'
 
-import bili_dedupe from '.'
+import { bili_dedupe, to_bili_deduped } from '.'
 import { UniPool } from '../..'
 
 const xml = `<i>
@@ -34,7 +34,10 @@ describe('其它', () => {
   it('B站dmid去重(仅限主站直接获取的弹幕)', () => {
     const ori = pool.dans.length
     expect(ori).toBe(15)
-    const n = pool.pipeSync(bili_dedupe)
+    const n = pool.pipeSync(to_bili_deduped)
     expect(n.dans.length).toBe(13)
+    expect(pool.dans.length).toBe(15)
+    pool.pipeSync(bili_dedupe)
+    expect(pool.dans.length).toBe(13)
   })
 })
