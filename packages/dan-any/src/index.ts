@@ -185,8 +185,8 @@ type statItems = Partial<
 >
 type Stats<T extends keyof statItems> = Map<statItems[T], number>
 
-type UniPoolPipe = (that: UniPool) => Promise<UniPool>
-type UniPoolPipeSync = (that: UniPool) => UniPool
+type UniPoolPipe = (that: UniPool) => Promise<any>
+type UniPoolPipeSync = (that: UniPool) => any
 
 export interface Options {
   dedupe?: boolean
@@ -211,10 +211,14 @@ export class UniPool {
     if (options.dedupe !== false) options.dedupe = true
     if (this.options.dedupe) this.dedupe()
   }
-  async pipe(fn: UniPoolPipe): Promise<UniPool> {
+  async pipe<T extends (...args: any) => any = UniPoolPipe>(
+    fn: T,
+  ): Promise<ReturnType<T>> {
     return fn(this)
   }
-  pipeSync(fn: UniPoolPipeSync): UniPool {
+  pipeSync<T extends (...args: any) => any = UniPoolPipeSync>(
+    fn: T,
+  ): ReturnType<T> {
     return fn(this)
   }
   /**
