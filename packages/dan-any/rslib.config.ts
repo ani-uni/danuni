@@ -9,6 +9,7 @@ export default defineConfig({
       index: './src/index.ts',
       'plugins/index': './src/plugins/index.ts',
       'plugins/bili-dedupe': './src/plugins/bili-dedupe/index.ts',
+      'plugins/stats': './src/plugins/stats/index.ts',
     },
   },
   lib: [
