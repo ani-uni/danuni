@@ -29,6 +29,7 @@
 插件的使用方法参见对应路径下README.md  
 
 - [dan-any-plugin-detaolu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detaolu): 基于pakku.js的弹幕过滤器
+- `src/plugins`下的插件 `bili`(B站弹幕相关) `stats`(统计相关)，内部附有使用文档
 
 ## 特殊字段提示
 
