@@ -8,7 +8,7 @@ export default defineConfig({
     entry: {
       index: './src/index.ts',
       'plugins/index': './src/plugins/index.ts',
-      'plugins/bili-dedupe': './src/plugins/bili-dedupe/index.ts',
+      'plugins/bili': './src/plugins/bili/index.ts',
       'plugins/stats': './src/plugins/stats/index.ts',
     },
   },

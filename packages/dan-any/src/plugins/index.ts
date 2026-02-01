@@ -1,2 +1,2 @@
-export * as bili_dedupe from './bili-dedupe'
+export * as bili from './bili'
 export * as stats from './stats'

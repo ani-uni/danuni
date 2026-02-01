@@ -1,7 +1,7 @@
 {
   "name": "@dan-uni/dan-any",
   "type": "module",
-  "version": "1.2.3",
+  "version": "1.2.5",
   "description": "A danmaku transformer lib, supporting danmaku from different platforms.",
   "author": "rinne",
   "license": "LGPL-3.0-or-later",
@@ -41,6 +41,7 @@
     "hh-mm-ss": "^1.2.0",
     "json-bigint": "^1.0.0",
     "jssha": "^3.3.1",
+    "luxon": "^3.7.2",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
@@ -49,6 +50,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/json-bigint": "^1.0.4",
+    "@types/luxon": "^3.7.1",
     "canvas": "^3.2.1",
     "protobufjs": "^8.0.0"
   }

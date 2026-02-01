@@ -31,7 +31,7 @@ const xml = `<i>
 describe('统计', () => {
   it('获取最新的一条弹幕', () => {
     const pool = UniPool.fromBiliXML(xml)
-    const latest = pool.pipeSync(getLatestDan)
+    const latest = pool.pipe(getLatestDan)
     expect(latest).not.toBeNull()
     expect(latest?.content).toBe('不喜欢')
     expect(latest?.ctime).toStrictEqual(new Date(1686948453 * 1000))
