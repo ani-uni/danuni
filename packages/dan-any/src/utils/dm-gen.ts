@@ -626,7 +626,7 @@ export class UniDM {
     if (this.attr.length > 0) result.attr = this.attr
     if (this.platform !== undefined) result.platform = this.platform
     if (this.extraStr && this.extraStr !== '{}') result.extraStr = this.extraStr
-    if (this.DMID !== undefined) result.DMID = this.DMID
+    if (this.DMID !== undefined && this.options.dmid) result.DMID = this.DMID
     return result
   }
   @Expose()
@@ -791,7 +791,7 @@ export class UniDM {
     const senderID = isEmail(args.midHash, { require_tld: false })
       ? args.midHash
       : ID.fromBili({ midHash: args.midHash })
-    let mode = Modes.Normal
+    let mode: Modes
     const pool = args.pool //暂时不做处理，兼容bili的pool格式
     const extra: TExtra = {
       bili: {
