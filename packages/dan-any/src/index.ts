@@ -151,17 +151,18 @@ export interface DM_JSON_DDPlay {
   }[]
 }
 
-export type DM_format =
-  | 'danuni.json'
-  | 'danuni.pb.bin'
-  | 'bili.xml'
-  | 'bili.pb.bin'
-  | 'bili.cmd.pb.bin'
-  | 'bili.up.json'
-  | 'dplayer.json'
-  | 'artplayer.json'
-  | 'ddplay.json'
-  | 'common.ass'
+export enum DM_format {
+  DanuniJson = 'danuni.json',
+  DanuniPbBin = 'danuni.pb.bin',
+  BiliXml = 'bili.xml',
+  BiliPbBin = 'bili.pb.bin',
+  BiliCmdPbBin = 'bili.cmd.pb.bin',
+  BiliUpJson = 'bili.up.json',
+  DplayerJson = 'dplayer.json',
+  ArtplayerJson = 'artplayer.json',
+  DdplayJson = 'ddplay.json',
+  CommonAss = 'common.ass',
+}
 
 type shareItems = Partial<
   Pick<
@@ -460,7 +461,7 @@ export class UniPool {
     ): { pool: UniPool; fmt: DM_format } | undefined => {
       try {
         if (Array.isArray(json) && json.every((d) => d.SOID)) {
-          return { pool: new UniPool(json, options), fmt: 'danuni.json' }
+          return { pool: new UniPool(json, options), fmt: DM_format.DanuniJson }
         } else if (json.danmuku && json.danmuku.every((d) => d.text)) {
           return {
             pool: this.fromArtplayer(
@@ -469,7 +470,7 @@ export class UniPool {
               undefined,
               options,
             ),
-            fmt: 'artplayer.json',
+            fmt: DM_format.ArtplayerJson,
           }
         } else if (
           json.count &&
@@ -479,7 +480,7 @@ export class UniPool {
         ) {
           return {
             pool: this.fromDDPlay(json, json.danuni?.data ?? '', options),
-            fmt: 'ddplay.json',
+            fmt: DM_format.DdplayJson,
           }
         } else if (
           json.code == 0 &&
@@ -494,7 +495,7 @@ export class UniPool {
               undefined,
               options,
             ),
-            fmt: 'dplayer.json',
+            fmt: DM_format.DplayerJson,
           }
         } else if (
           json.code == 0 &&
@@ -507,7 +508,7 @@ export class UniPool {
         ) {
           return {
             pool: this.fromBiliUp(json, options),
-            fmt: 'bili.up.json',
+            fmt: DM_format.BiliUpJson,
           }
         }
       } catch {}
@@ -529,10 +530,13 @@ export class UniPool {
           const xmlParser = new XMLParser({ ignoreAttributes: false })
           const xml = xmlParser.parse(file)
           if (xml?.i?.d)
-            return { pool: this.fromBiliXML(file, options), fmt: 'bili.xml' }
+            return {
+              pool: this.fromBiliXML(file, options),
+              fmt: DM_format.BiliXml,
+            }
         } catch {}
         try {
-          return { pool: this.fromASS(file, options), fmt: 'common.ass' }
+          return { pool: this.fromASS(file, options), fmt: DM_format.CommonAss }
         } catch {}
       }
     }
@@ -542,15 +546,15 @@ export class UniPool {
         // pure-bin (pb)
         if (mod.includes('bin')) {
           try {
-            return { pool: this.fromPb(file), fmt: 'danuni.pb.bin' }
+            return { pool: this.fromPb(file), fmt: DM_format.DanuniPbBin }
           } catch {}
           try {
-            return { pool: this.fromBiliGrpc(file), fmt: 'bili.pb.bin' }
+            return { pool: this.fromBiliGrpc(file), fmt: DM_format.BiliPbBin }
           } catch {}
           try {
             return {
               pool: this.fromBiliCommandGrpc(file),
-              fmt: 'bili.cmd.pb.bin',
+              fmt: DM_format.BiliCmdPbBin,
             }
           } catch {}
         }
