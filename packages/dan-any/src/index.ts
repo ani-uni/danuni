@@ -155,10 +155,10 @@ export interface DM_JSON_DDPlay {
 export enum DM_format {
   DanuniJson = 'danuni.json',
   DanuniMinJson = 'danuni.min.json',
-  DanuniPbBin = 'danuni.pb.bin',
+  DanuniPbBin = 'danuni.binpb',
   BiliXml = 'bili.xml',
-  BiliPbBin = 'bili.pb.bin',
-  BiliCmdPbBin = 'bili.cmd.pb.bin',
+  BiliPbBin = 'bili.binpb',
+  BiliCmdPbBin = 'bili.cmd.binpb',
   BiliUpJson = 'bili.up.json',
   DplayerJson = 'dplayer.json',
   ArtplayerJson = 'artplayer.json',
@@ -591,13 +591,13 @@ export class UniPool {
         return this.dans
       case 'danuni.min.json':
         return this.minify()
-      case 'danuni.pb.bin':
+      case 'danuni.binpb':
         return this.toPb()
       case 'bili.xml':
         return this.toBiliXML()
-      // case 'bili.bin':
+      // case 'bili.binpb':
       //   return this.toBiliBin()
-      // case 'bili.cmd.bin':
+      // case 'bili.cmd.binpb':
       //   return this.toBiliCmdBin()
       case 'dplayer.json':
         return this.toDplayer()

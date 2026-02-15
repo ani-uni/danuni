@@ -73,7 +73,7 @@ describe('转化自', () => {
     const pb = pool.toPb()
     console.info(UniPool.fromPb(pb))
     const imp = UniPool.import(pb)
-    expect(imp.fmt).toBe('danuni.pb.bin')
+    expect(imp.fmt).toBe('danuni.binpb')
     expect(imp.pool).toEqual(pool)
   })
   it('DDplay[双向]', () => {
