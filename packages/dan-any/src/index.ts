@@ -4,7 +4,8 @@ import { isJSON, isObject, isString } from 'class-validator'
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import JSONbig from 'json-bigint'
 import type { Options as AssGenOptions, CanvasCtx } from './ass-gen'
-import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bili/dm_pb'
+import type { CommandDm as DM_JSON_BiliCommandGrpc } from './proto/gen/bilibili/community/service/dm/v1/dm_pb'
+import type { Danmaku } from './proto/gen/danuni/danmaku/v1/danmaku_pb'
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import {
@@ -19,8 +20,8 @@ import {
   // DanmakuElem as DM_JSON_BiliGrpc,
   DmSegMobileReplySchema,
   DmWebViewReplySchema,
-} from './proto/gen/bili/dm_pb'
-import { DanmakuReplySchema } from './proto/gen/danuni_pb'
+} from './proto/gen/bilibili/community/service/dm/v1/dm_pb'
+import { ListDanResponseSchema } from './proto/gen/danuni/danmaku/v1/danmaku_pb'
 // import type * as UniIDType from './utils/id-gen'
 
 import { UniDM } from './utils/dm-gen'
@@ -611,14 +612,17 @@ export class UniPool {
     }
   }
   static fromPb(bin: Uint8Array | ArrayBuffer, options?: Options) {
-    const data = fromBinary(DanmakuReplySchema, new Uint8Array(bin))
+    const data = fromBinary(ListDanResponseSchema, new Uint8Array(bin))
     return new UniPool(
       data.danmakus.map((d) =>
         UniDM.create(
           {
             ...d,
+            SOID: d.soid,
+            DMID: d.dmid,
             progress: d.progress / 1000,
             mode: d.mode as number,
+            senderID: d.senderId,
             ctime: timestampDate(d.ctime || timestampNow()),
             pool: d.pool as number,
             attr: d.attr as UniDMTools.DMAttr[],
@@ -636,17 +640,17 @@ export class UniPool {
    */
   toPb() {
     return toBinary(
-      DanmakuReplySchema,
-      create(DanmakuReplySchema, {
+      ListDanResponseSchema,
+      create(ListDanResponseSchema, {
         danmakus: this.dans.map((d) => {
           return {
-            SOID: d.SOID,
-            DMID: d.DMID,
+            soid: d.SOID,
+            dmid: d.DMID ?? '',
             progress: Math.round(d.progress * 1000),
             mode: d.mode as number,
             fontsize: d.fontsize,
             color: d.color,
-            senderID: d.senderID,
+            senderId: d.senderID,
             content: d.content,
             ctime: timestampFromDate(d.ctime),
             weight: d.weight,
@@ -654,7 +658,7 @@ export class UniPool {
             attr: d.attr,
             platform: d.platform,
             extra: d.extraStr,
-          }
+          } satisfies Omit<Danmaku, '$typeName'>
         }),
       }),
     )

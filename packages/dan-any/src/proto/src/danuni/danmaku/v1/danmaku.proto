@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package danuni.danmaku.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service DanmakuService {
+  rpc ListDan(ListDanRequest) returns (ListDanResponse) {}
+}
+
+message ListDanRequest {
+  string id = 1;
+  optional int32 seg = 2;
+}
+
+// 此处作为数字应与danuni库相应类型一一对应
+enum Mode {
+  MODE_NORMAL_UNSPECIFIED = 0;
+  MODE_BOTTOM = 1;
+  MODE_TOP = 2;
+  MODE_REVERSE = 3;
+  MODE_EXT = 4;
+}
+
+// 此处作为数字应与danuni库相应类型一一对应
+enum Pool {
+  POOL_DEF_UNSPECIFIED = 0;
+  POOL_SUB = 1;
+  POOL_ADV = 2;
+  POOL_IX = 3;
+}
+
+message Danmaku {
+  string soid = 1 [json_name = "SOID"];
+  string dmid = 2 [json_name = "DMID"];
+  int32 progress = 3;
+  Mode mode = 4;
+  int32 fontsize = 5;
+  int32 color = 6;
+  string sender_id = 7 [json_name = "senderID"];
+  string content = 8;
+  google.protobuf.Timestamp ctime = 9;
+  int32 weight = 10;
+  Pool pool = 11;
+  repeated string attr = 12;
+  optional string platform = 13;
+  optional string extra = 14;
+}
+
+message ListDanResponse {
+  repeated Danmaku danmakus = 1;
+}
