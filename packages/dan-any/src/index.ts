@@ -154,6 +154,7 @@ export interface DM_JSON_DDPlay {
 
 export enum DM_format {
   DanuniJson = 'danuni.json',
+  DanuniMinJson = 'danuni.min.json',
   DanuniPbBin = 'danuni.pb.bin',
   BiliXml = 'bili.xml',
   BiliPbBin = 'bili.pb.bin',
@@ -588,6 +589,8 @@ export class UniPool {
     switch (format) {
       case 'danuni.json':
         return this.dans
+      case 'danuni.min.json':
+        return this.minify()
       case 'danuni.pb.bin':
         return this.toPb()
       case 'bili.xml':
