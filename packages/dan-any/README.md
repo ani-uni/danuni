@@ -44,6 +44,7 @@
 - [ ] 完善弹幕降级显示功能(使高级弹幕有损转换为普通弹幕)
 - [ ] 完善使用文档
 - [ ] 支持chpt弹幕转换为Artplayer章节(artplayer-plugin-chapter)
+- [ ] 使用zod重写类型系统
 
 ## Awesome Projects
 

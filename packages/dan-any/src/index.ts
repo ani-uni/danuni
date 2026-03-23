@@ -445,6 +445,7 @@ export class UniPool {
   minify() {
     return this.dans.map((d) => d.minify())
   }
+  // TODO 支持传入文件ext加速解析
   static import(
     file: unknown,
     options?: Options,
