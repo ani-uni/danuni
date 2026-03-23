@@ -203,7 +203,7 @@ interface DMArtplayer {
   border?: boolean
   style?: object
 }
-interface DMDDplay {
+interface DMDDPlay {
   cid: bigint
   /**
    * content
@@ -1029,8 +1029,8 @@ export class UniDM {
       style: this.extra.artplayer?.style,
     }
   }
-  static fromDDplay(
-    args: DMDDplay,
+  static fromDDPlay(
+    args: DMDDPlay,
     episodeId: string,
     domain = PlatformDanmakuOnlySource.DanDanPlay,
     options?: Options,
@@ -1056,7 +1056,7 @@ export class UniDM {
     )
   }
   @Expose()
-  toDDplay(): DMDDplay {
+  toDDPlay(): DMDDPlay {
     let mode = 1
     if (this.mode === Modes.Top) mode = 5
     else if (this.mode === Modes.Bottom) mode = 4

@@ -85,9 +85,9 @@ describe('转化自', () => {
     const imp2 = UniPool.import(pb, undefined, 'test-danuni.binpb')
     expect(imp2).toEqual(imp)
   })
-  it('DDplay[双向]', () => {
+  it('DDPlay[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
-    const ddplay = pool.toDDplay()
+    const ddplay = pool.toDDPlay()
     console.info(UniPool.fromDDPlay(ddplay, '1'))
     const imp = UniPool.import(ddplay)
     expect(imp.fmt).toBe('ddplay.json')

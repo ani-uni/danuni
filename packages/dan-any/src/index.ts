@@ -165,7 +165,7 @@ export enum DM_format {
   BiliUpJson = 'bili.up.json',
   DplayerJson = 'dplayer.json',
   ArtplayerJson = 'artplayer.json',
-  DdplayJson = 'ddplay.json',
+  DDPlayJson = 'ddplay.json',
   CommonAss = 'common.ass',
 }
 
@@ -207,7 +207,7 @@ type Convert2Format =
   | DM_format.BiliXml
   | DM_format.DplayerJson
   | DM_format.ArtplayerJson
-  | DM_format.DdplayJson
+  | DM_format.DDPlayJson
 type Convert2ResultMap = {
   [DM_format.DanuniJson]: UniDM[]
   [DM_format.DanuniMinJson]: DM_JSON_DanuniMin
@@ -215,7 +215,7 @@ type Convert2ResultMap = {
   [DM_format.BiliXml]: string
   [DM_format.DplayerJson]: DM_JSON_Dplayer & { danuni?: DanUniConvertTip }
   [DM_format.ArtplayerJson]: DM_JSON_Artplayer & { danuni?: DanUniConvertTip }
-  [DM_format.DdplayJson]: DM_JSON_DDPlay & { danuni?: DanUniConvertTip }
+  [DM_format.DDPlayJson]: DM_JSON_DDPlay & { danuni?: DanUniConvertTip }
 }
 
 export class UniPool {
@@ -535,13 +535,13 @@ export class UniPool {
         ),
         fmt: DM_format.ArtplayerJson,
       }),
-      [DM_format.DdplayJson]: (
+      [DM_format.DDPlayJson]: (
         json: DM_JSON_DDPlay & {
           danuni?: DanUniConvertTip
         },
       ) => ({
         pool: this.fromDDPlay(json, json.danuni?.data ?? '', options),
-        fmt: DM_format.DdplayJson,
+        fmt: DM_format.DDPlayJson,
       }),
       [DM_format.CommonAss]: (file: string) => ({
         pool: this.fromASS(file, options),
@@ -571,8 +571,8 @@ export class UniPool {
           return handlers[DM_format.DplayerJson](fileParser(file, 'json'))
         else if (fn.endsWith(DM_format.ArtplayerJson))
           return handlers[DM_format.ArtplayerJson](fileParser(file, 'json'))
-        else if (fn.endsWith(DM_format.DdplayJson))
-          return handlers[DM_format.DdplayJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.DDPlayJson))
+          return handlers[DM_format.DDPlayJson](fileParser(file, 'json'))
         else if (fn.endsWith(DM_format.CommonAss))
           return handlers[DM_format.CommonAss](fileParser(file, 'string'))
       } catch {}
@@ -603,7 +603,7 @@ export class UniPool {
           Array.isArray(json.comments) &&
           json.comments.every((d) => d.m)
         ) {
-          return handlers[DM_format.DdplayJson](json)
+          return handlers[DM_format.DDPlayJson](json)
         } else if (
           json.code == 0 &&
           json.data &&
@@ -757,16 +757,16 @@ export class UniPool {
             },
           )
         return this.toArtplayer()
-      case DM_format.DdplayJson:
+      case DM_format.DDPlayJson:
         if (file_wrapper)
           return new File(
-            [JSON.stringify(this.toDDplay())],
-            DM_format.DdplayJson,
+            [JSON.stringify(this.toDDPlay())],
+            DM_format.DDPlayJson,
             {
               type: 'application/json',
             },
           )
-        return this.toDDplay()
+        return this.toDDPlay()
       // case DM_format.CommonAss:
       //   return this.toASS()
       default: {
@@ -1055,7 +1055,7 @@ export class UniPool {
     return new UniPool(
       json.comments.map((d) => {
         const p_arr = d.p.split(',')
-        return UniDM.fromDDplay(
+        return UniDM.fromDDPlay(
           {
             cid: d.cid,
             color: Number.parseInt(p_arr[2]),
@@ -1073,7 +1073,7 @@ export class UniPool {
       { fromConverted: !!json.danuni },
     )
   }
-  toDDplay(): DM_JSON_DDPlay & { danuni?: DanUniConvertTip } {
+  toDDPlay(): DM_JSON_DDPlay & { danuni?: DanUniConvertTip } {
     const episodeId = this.dans[0].SOID.split('@')[0].replaceAll(
       `def_${platform.PlatformDanmakuOnlySource.DanDanPlay}+`,
       '',
@@ -1082,7 +1082,7 @@ export class UniPool {
       danuni: { ...DanUniConvertTipTemplate, data: episodeId },
       count: this.dans.length,
       comments: this.dans.map((dan) => {
-        const d = dan.toDDplay()
+        const d = dan.toDDPlay()
         return {
           cid: d.cid,
           p: `${d.progress},${d.mode},${d.color},${d.uid}`,
