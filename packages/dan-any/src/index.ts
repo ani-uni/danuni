@@ -200,6 +200,24 @@ export interface Options {
   dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
 
+type Convert2Format =
+  | DM_format.DanuniJson
+  | DM_format.DanuniMinJson
+  | DM_format.DanuniPbBin
+  | DM_format.BiliXml
+  | DM_format.DplayerJson
+  | DM_format.ArtplayerJson
+  | DM_format.DdplayJson
+type Convert2ResultMap = {
+  [DM_format.DanuniJson]: UniDM[]
+  [DM_format.DanuniMinJson]: DM_JSON_DanuniMin
+  [DM_format.DanuniPbBin]: Uint8Array
+  [DM_format.BiliXml]: string
+  [DM_format.DplayerJson]: DM_JSON_Dplayer & { danuni?: DanUniConvertTip }
+  [DM_format.ArtplayerJson]: DM_JSON_Artplayer & { danuni?: DanUniConvertTip }
+  [DM_format.DdplayJson]: DM_JSON_DDPlay & { danuni?: DanUniConvertTip }
+}
+
 export class UniPool {
   constructor(
     public dans: UniDM[],
@@ -669,27 +687,87 @@ export class UniPool {
     }
     throw new Error(errmesg ?? err)
   }
-  convert2(format: DM_format, continue_on_error = false) {
+  convert2<T extends Convert2Format>(
+    format: T,
+    file_wrapper: true,
+    continue_on_error?: boolean,
+  ): File
+  convert2<T extends Convert2Format>(
+    format: T,
+    file_wrapper?: false,
+    continue_on_error?: boolean,
+  ): Convert2ResultMap[T]
+  convert2(
+    format: DM_format,
+    file_wrapper = false,
+    continue_on_error = false,
+  ): File | Convert2ResultMap[Convert2Format] | string {
     switch (format) {
-      case 'danuni.json':
-        return this.dans
-      case 'danuni.min.json':
-        return this.minify()
-      case 'danuni.binpb':
-        return this.toPb()
-      case 'bili.xml':
-        return this.toBiliXML()
-      // case 'bili.binpb':
+      case DM_format.DanuniJson:
+        if (file_wrapper)
+          return new File([JSON.stringify(this.dans)], DM_format.DanuniJson, {
+            type: 'application/json',
+          })
+        else return this.dans
+      case DM_format.DanuniMinJson:
+        if (file_wrapper)
+          return new File(
+            [JSON.stringify(this.minify())],
+            DM_format.DanuniMinJson,
+            {
+              type: 'application/json',
+            },
+          )
+        else return this.minify()
+      case DM_format.DanuniPbBin:
+        if (file_wrapper)
+          return new File([this.toPb()], DM_format.DanuniPbBin, {
+            type: 'application/protobuf',
+          })
+        else return this.toPb()
+      case DM_format.BiliXml:
+        if (file_wrapper)
+          return new File([this.toBiliXML()], DM_format.BiliXml, {
+            type: 'application/xml',
+          })
+        else return this.toBiliXML()
+      // case DM_format.BiliPbBin:
       //   return this.toBiliBin()
-      // case 'bili.cmd.binpb':
+      // case DM_format.BiliCmdPbBin:
       //   return this.toBiliCmdBin()
-      case 'dplayer.json':
+      // case DM_format.BiliUpJson:
+      //   return this.toBiliUp()
+      case DM_format.DplayerJson:
+        if (file_wrapper)
+          return new File(
+            [JSON.stringify(this.toDplayer())],
+            DM_format.DplayerJson,
+            {
+              type: 'application/json',
+            },
+          )
         return this.toDplayer()
-      case 'artplayer.json':
+      case DM_format.ArtplayerJson:
+        if (file_wrapper)
+          return new File(
+            [JSON.stringify(this.toArtplayer())],
+            DM_format.ArtplayerJson,
+            {
+              type: 'application/json',
+            },
+          )
         return this.toArtplayer()
-      case 'ddplay.json':
+      case DM_format.DdplayJson:
+        if (file_wrapper)
+          return new File(
+            [JSON.stringify(this.toDDplay())],
+            DM_format.DdplayJson,
+            {
+              type: 'application/json',
+            },
+          )
         return this.toDDplay()
-      // case 'common.ass':
+      // case DM_format.CommonAss:
       //   return this.toASS()
       default: {
         const message = '(err) Unknown format or unsupported now!'
