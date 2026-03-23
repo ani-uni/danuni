@@ -1,6 +1,6 @@
 import 'reflect-metadata/lite'
 
-import { isJSON, isObject, isString } from 'class-validator'
+import { isJSON, isString } from 'class-validator'
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import JSONbig from 'json-bigint'
 import type { Options as AssGenOptions, CanvasCtx } from './ass-gen'
@@ -630,7 +630,7 @@ export class UniPool {
       }
     }
     let errmesg
-    if (isObject(file)) {
+    if (typeof file === 'object' || Array.isArray(file)) {
       if (file instanceof ArrayBuffer || file instanceof Uint8Array) {
         // pure-bin (pb)
         if (mod.includes('bin')) {
