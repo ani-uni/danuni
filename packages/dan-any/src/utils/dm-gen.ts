@@ -479,7 +479,7 @@ export class UniDM {
     if (!this.SOID) this.SOID = def.SOID
     if (!this.progress) this.progress = def.progress
     if (!this.mode) this.mode = def.mode
-    if (!this.fontsize) this.fontsize = def.mode
+    if (!this.fontsize) this.fontsize = def.fontsize
     if (!this.color) this.color = def.color
     if (!this.senderID) this.senderID = def.senderID
     if (!this.content) this.content = def.content
