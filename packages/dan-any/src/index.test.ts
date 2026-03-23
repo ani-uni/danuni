@@ -95,6 +95,17 @@ describe('转化自', () => {
     UniPool.import(ddplay, undefined, 'test-ddplay.json')
     // expect(imp2).toEqual(imp)
   })
+  it('min[双向]', () => {
+    const pool = UniPool.fromBiliXML(xml)
+    const min = pool.minify()
+    console.info(min)
+    const imp = UniPool.import(min)
+    expect(imp.fmt).toBe('danuni.min.json')
+    // 该适配器ctime始终为now，无法双向测试
+    // expect(imp.pool).toEqual(pool)
+    UniPool.import(min, undefined, 'test-danuni.min.json')
+    // expect(imp2).toEqual(imp)
+  })
 })
 
 describe('共通值', () => {
