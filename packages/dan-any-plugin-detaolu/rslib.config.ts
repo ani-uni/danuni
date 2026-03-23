@@ -8,7 +8,7 @@ export default defineConfig({
     {
       format: 'esm',
       output: {
-        filename: { js: 'index.js' },
+        filename: { js: '[name].js' },
         target: 'node',
       },
       dts: true,
@@ -16,7 +16,7 @@ export default defineConfig({
     {
       format: 'umd',
       output: {
-        filename: { js: 'index.umd.min.js' },
+        filename: { js: '[name].umd.min.js' },
         target: 'web',
       },
       dts: true,
