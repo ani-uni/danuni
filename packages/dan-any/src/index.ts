@@ -26,6 +26,7 @@ import { ListDanResponseSchema } from './proto/gen/danuni/danmaku/v1/danmaku_pb'
 
 import { UniDM } from './utils/dm-gen'
 import * as UniDMTools from './utils/dm-gen'
+import { fileParser } from './utils/fileParser'
 import { UniID as ID } from './utils/id-gen'
 import * as UniIDTools from './utils/id-gen'
 import * as platform from './utils/platform'
@@ -44,6 +45,8 @@ interface DanUniConvertTip {
   version: string
   data?: string
 }
+
+export type DM_JSON_DanuniMin = Partial<UniDMTools.UniDMObj>[]
 
 export interface DM_XML_Bili {
   i: {
@@ -445,15 +448,124 @@ export class UniPool {
   minify() {
     return this.dans.map((d) => d.minify())
   }
-  // TODO 支持传入文件ext加速解析
   static import(
     file: unknown,
     options?: Options,
     /**
-     * 加载指定解析模块，为空则全选
+     * 加载指定解析模块，为空则全选，为字符串则视为文件名解析加载模块
      */
-    mod?: ('json' | 'str' | 'bin')[],
+    mod?: string | ('json' | 'str' | 'bin')[],
   ): { pool: UniPool; fmt: DM_format } {
+    const handlers = {
+      [DM_format.DanuniJson]: (json: UniDM[]) => ({
+        pool: new UniPool(json, options),
+        fmt: DM_format.DanuniJson,
+      }),
+      [DM_format.DanuniMinJson]: (json: DM_JSON_DanuniMin) => ({
+        pool: this.fromMin(json, options),
+        fmt: DM_format.DanuniMinJson,
+      }),
+      [DM_format.DanuniPbBin]: (
+        file: ArrayBuffer | Uint8Array<ArrayBufferLike>,
+      ) => ({
+        pool: this.fromPb(file),
+        fmt: DM_format.DanuniPbBin,
+      }),
+      [DM_format.BiliXml]: (file: string) => ({
+        pool: this.fromBiliXML(file, options),
+        fmt: DM_format.BiliXml,
+      }),
+      [DM_format.BiliPbBin]: (
+        file: ArrayBuffer | Uint8Array<ArrayBufferLike>,
+      ) => ({
+        pool: this.fromBiliGrpc(file),
+        fmt: DM_format.BiliPbBin,
+      }),
+      [DM_format.BiliCmdPbBin]: (
+        file: ArrayBuffer | Uint8Array<ArrayBufferLike>,
+      ) => ({
+        pool: this.fromBiliCommandGrpc(file),
+        fmt: DM_format.BiliCmdPbBin,
+      }),
+      [DM_format.BiliUpJson]: (json: DM_JSON_BiliUp) => ({
+        pool: this.fromBiliUp(json, options),
+        fmt: DM_format.BiliUpJson,
+      }),
+      [DM_format.DplayerJson]: (
+        json: DM_JSON_Dplayer & {
+          danuni?: DanUniConvertTip
+        },
+      ) => ({
+        pool: this.fromDplayer(
+          json,
+          json.danuni?.data ?? '',
+          undefined,
+          options,
+        ),
+        fmt: DM_format.DplayerJson,
+      }),
+      [DM_format.ArtplayerJson]: (
+        json: DM_JSON_Artplayer & {
+          danuni?: DanUniConvertTip
+        },
+      ) => ({
+        pool: this.fromArtplayer(
+          json,
+          json.danuni?.data ?? '',
+          undefined,
+          options,
+        ),
+        fmt: DM_format.ArtplayerJson,
+      }),
+      [DM_format.DdplayJson]: (
+        json: DM_JSON_DDPlay & {
+          danuni?: DanUniConvertTip
+        },
+      ) => ({
+        pool: this.fromDDPlay(json, json.danuni?.data ?? '', options),
+        fmt: DM_format.DdplayJson,
+      }),
+      [DM_format.CommonAss]: (file: string) => ({
+        pool: this.fromASS(file, options),
+        fmt: DM_format.CommonAss,
+      }),
+    }
+
+    if (typeof mod === 'string') {
+      const fn = mod
+      // 直接按照默认模式处理匹配后缀的文件
+      try {
+        if (fn.endsWith(DM_format.DanuniJson)) {
+          return handlers[DM_format.DanuniJson](fileParser(file, 'json'))
+        } else if (fn.endsWith(DM_format.DanuniMinJson))
+          return handlers[DM_format.DanuniMinJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.DanuniPbBin))
+          return handlers[DM_format.DanuniPbBin](fileParser(file, 'bin'))
+        else if (fn.endsWith(DM_format.BiliXml))
+          return handlers[DM_format.BiliXml](fileParser(file, 'string'))
+        else if (fn.endsWith(DM_format.BiliPbBin))
+          return handlers[DM_format.BiliPbBin](fileParser(file, 'bin'))
+        else if (fn.endsWith(DM_format.BiliCmdPbBin))
+          return handlers[DM_format.BiliCmdPbBin](fileParser(file, 'bin'))
+        else if (fn.endsWith(DM_format.BiliUpJson))
+          return handlers[DM_format.BiliUpJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.DplayerJson))
+          return handlers[DM_format.DplayerJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.ArtplayerJson))
+          return handlers[DM_format.ArtplayerJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.DdplayJson))
+          return handlers[DM_format.DdplayJson](fileParser(file, 'json'))
+        else if (fn.endsWith(DM_format.CommonAss))
+          return handlers[DM_format.CommonAss](fileParser(file, 'string'))
+      } catch {}
+      // 按照后缀设定启用模块
+      const ext = fn.split('.').pop()?.toLowerCase()
+      if (ext) {
+        if (ext === 'json') mod = ['json']
+        else if (['xml', 'ass'].includes(ext)) mod = ['str']
+        else if (['binpb', 'bin', 'so'].includes(ext)) mod = ['bin']
+      }
+    }
     if (!mod) mod = ['json', 'str', 'bin']
     const err = '无法识别该文件，请手动指定格式！'
     const parseJSON = (
@@ -464,42 +576,23 @@ export class UniPool {
     ): { pool: UniPool; fmt: DM_format } | undefined => {
       try {
         if (Array.isArray(json) && json.every((d) => d.SOID)) {
-          return { pool: new UniPool(json, options), fmt: DM_format.DanuniJson }
+          return handlers[DM_format.DanuniMinJson](json) // 使用兼容性参数，danuni.min.json解析器可以解析danuni.json
         } else if (json.danmuku && json.danmuku.every((d) => d.text)) {
-          return {
-            pool: this.fromArtplayer(
-              json,
-              json.danuni?.data ?? '',
-              undefined,
-              options,
-            ),
-            fmt: DM_format.ArtplayerJson,
-          }
+          return handlers[DM_format.ArtplayerJson](json)
         } else if (
           json.count &&
           json.comments &&
           Array.isArray(json.comments) &&
           json.comments.every((d) => d.m)
         ) {
-          return {
-            pool: this.fromDDPlay(json, json.danuni?.data ?? '', options),
-            fmt: DM_format.DdplayJson,
-          }
+          return handlers[DM_format.DdplayJson](json)
         } else if (
           json.code == 0 &&
           json.data &&
           Array.isArray(json.data) &&
           json.data.every((d) => Array.isArray(d))
         ) {
-          return {
-            pool: this.fromDplayer(
-              json,
-              json.danuni?.data ?? '',
-              undefined,
-              options,
-            ),
-            fmt: DM_format.DplayerJson,
-          }
+          return handlers[DM_format.DplayerJson](json)
         } else if (
           json.code == 0 &&
           json.message == '0' &&
@@ -509,10 +602,7 @@ export class UniPool {
           Array.isArray(json.data.result) &&
           json.data.result.every((d) => d.id && d.oid)
         ) {
-          return {
-            pool: this.fromBiliUp(json, options),
-            fmt: DM_format.BiliUpJson,
-          }
+          return handlers[DM_format.BiliUpJson](json)
         }
       } catch {}
     }
@@ -532,14 +622,10 @@ export class UniPool {
         try {
           const xmlParser = new XMLParser({ ignoreAttributes: false })
           const xml = xmlParser.parse(file)
-          if (xml?.i?.d)
-            return {
-              pool: this.fromBiliXML(file, options),
-              fmt: DM_format.BiliXml,
-            }
+          if (xml?.i?.d) return handlers[DM_format.BiliXml](file)
         } catch {}
         try {
-          return { pool: this.fromASS(file, options), fmt: DM_format.CommonAss }
+          return handlers[DM_format.CommonAss](file)
         } catch {}
       }
     }
@@ -549,16 +635,13 @@ export class UniPool {
         // pure-bin (pb)
         if (mod.includes('bin')) {
           try {
-            return { pool: this.fromPb(file), fmt: DM_format.DanuniPbBin }
+            return handlers[DM_format.DanuniPbBin](file)
           } catch {}
           try {
-            return { pool: this.fromBiliGrpc(file), fmt: DM_format.BiliPbBin }
+            return handlers[DM_format.BiliPbBin](file)
           } catch {}
           try {
-            return {
-              pool: this.fromBiliCommandGrpc(file),
-              fmt: DM_format.BiliCmdPbBin,
-            }
+            return handlers[DM_format.BiliCmdPbBin](file)
           } catch {}
         }
         // str-bin (pure-str + json-str)
@@ -614,6 +697,9 @@ export class UniPool {
         else throw new Error(message)
       }
     }
+  }
+  static fromMin(json: DM_JSON_DanuniMin, options?: Options) {
+    return new UniPool(json.map((d: any) => UniDM.create(d, options)))
   }
   static fromPb(bin: Uint8Array | ArrayBuffer, options?: Options) {
     const data = fromBinary(ListDanResponseSchema, new Uint8Array(bin))

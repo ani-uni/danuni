@@ -37,6 +37,8 @@ describe('转化自', () => {
     const imp = UniPool.import(xml)
     expect(imp.fmt).toBe('bili.xml')
     expect(imp.pool).toEqual(pool)
+    const imp2 = UniPool.import(xml, undefined, 'test-bili.xml')
+    expect(imp2).toEqual(imp)
   })
   it('artplayer(json)', () => {
     const json = {
@@ -56,7 +58,10 @@ describe('转化自', () => {
     console.info(pool)
     const imp = UniPool.import(json)
     expect(imp.fmt).toBe('artplayer.json')
+    // 该适配器ctime始终为now，无法双向测试
     // expect(imp.pool).toEqual(pool)
+    UniPool.import(json, undefined, 'test-artplayer.json')
+    // expect(imp2).toEqual(imp)
   })
   it('ass[双向]', () => {
     const canvas = createCanvas(50, 50)
@@ -67,6 +72,8 @@ describe('转化自', () => {
     const imp = UniPool.import(ass)
     expect(imp.fmt).toBe('common.ass')
     expect(imp.pool).toEqual(pool)
+    const imp2 = UniPool.import(ass, undefined, 'test-common.ass')
+    expect(imp2).toEqual(imp)
   })
   it('pb[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
@@ -75,6 +82,8 @@ describe('转化自', () => {
     const imp = UniPool.import(pb)
     expect(imp.fmt).toBe('danuni.binpb')
     expect(imp.pool).toEqual(pool)
+    const imp2 = UniPool.import(pb, undefined, 'test-danuni.binpb')
+    expect(imp2).toEqual(imp)
   })
   it('DDplay[双向]', () => {
     const pool = UniPool.fromBiliXML(xml)
@@ -82,7 +91,9 @@ describe('转化自', () => {
     console.info(UniPool.fromDDPlay(ddplay, '1'))
     const imp = UniPool.import(ddplay)
     expect(imp.fmt).toBe('ddplay.json')
-    // expect(imp.pool).toEqual(pool)
+    // 该适配器ctime始终为now，无法双向测试
+    UniPool.import(ddplay, undefined, 'test-ddplay.json')
+    // expect(imp2).toEqual(imp)
   })
 })
 
