@@ -687,8 +687,8 @@ export class UniPool {
     }
     throw new Error(errmesg ?? err)
   }
-  convert2<T extends Convert2Format>(
-    format: T,
+  convert2(
+    format: DM_format,
     file_wrapper: true,
     continue_on_error?: boolean,
   ): File
