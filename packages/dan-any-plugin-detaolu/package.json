@@ -30,10 +30,6 @@
     "build:types": "tsc"
   },
   "dependencies": {
-    "@dan-uni/dan-any": "workspace:^",
-    "fs-extra": "^11.3.3"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "^11.0.4"
+    "@dan-uni/dan-any": "workspace:^"
   }
 }
