@@ -866,16 +866,17 @@ export class UniPool {
     avoidSenderIDWithAt?: boolean
   }): string {
     const genCID = (id?: string) => {
-      const UniID = id ? ID.fromString(id) : ID.fromNull()
-      if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
-        const cid = UniID.id.replaceAll(
-          `def_${platform.PlatformVideoSource.Bilibili}+`,
-          '',
-        )
-
-        if (cid) return cid
-      }
-      return !options?.cid || id
+      if (id) {
+        const UniID = ID.fromString(id)
+        if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
+          const cid = UniID.id.replaceAll(
+            `def_${platform.PlatformVideoSource.Bilibili}+`,
+            '',
+          )
+          if (cid) return cid
+        }
+        return options?.cid || id
+      } else return options?.cid || ID.fromNull().toString()
     }
     if (options?.avoidSenderIDWithAt) {
       const ok = this.dans.every((d) =>
