@@ -463,9 +463,6 @@ export class UniPool {
     }
     return new UniPool(result, this.options, this.info)
   }
-  minify() {
-    return this.dans.map((d) => d.minify())
-  }
   static import(
     file: unknown,
     options?: Options,
@@ -775,6 +772,9 @@ export class UniPool {
         else throw new Error(message)
       }
     }
+  }
+  minify() {
+    return this.dans.map((d) => d.minify())
   }
   static fromMin(json: DM_JSON_DanuniMin, options?: Options) {
     return new UniPool(json.map((d: any) => UniDM.create(d, options)))
