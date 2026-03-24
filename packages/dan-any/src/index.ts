@@ -865,8 +865,8 @@ export class UniPool {
      */
     avoidSenderIDWithAt?: boolean
   }): string {
-    const genCID = (id: string) => {
-      const UniID = ID.fromString(id)
+    const genCID = (id?: string) => {
+      const UniID = id ? ID.fromString(id) : ID.fromNull()
       if (UniID.domain === platform.PlatformVideoSource.Bilibili) {
         const cid = UniID.id.replaceAll(
           `def_${platform.PlatformVideoSource.Bilibili}+`,
@@ -892,7 +892,7 @@ export class UniPool {
       },
       i: {
         chatserver: 'chat.bilibili.com',
-        chatid: genCID(this.dans[0].SOID),
+        chatid: genCID(this.dans[0]?.SOID),
         mission: 0,
         maxlimit: this.dans.length,
         state: 0,
@@ -995,7 +995,7 @@ export class UniPool {
       code: 0,
       danuni: {
         ...DanUniConvertTipTemplate,
-        data: this.dans[0].SOID.split('@')[0],
+        data: this.dans[0]?.SOID.split('@')[0],
       },
       data: this.dans.map((dan) => {
         const d = dan.toDplayer()
@@ -1032,7 +1032,7 @@ export class UniPool {
     return {
       danuni: {
         ...DanUniConvertTipTemplate,
-        data: this.dans[0].SOID.split('@')[0],
+        data: this.dans[0]?.SOID.split('@')[0],
       },
       danmuku: this.dans.map((dan) => {
         const d = dan.toArtplayer()
@@ -1074,7 +1074,7 @@ export class UniPool {
     )
   }
   toDDPlay(): DM_JSON_DDPlay & { danuni?: DanUniConvertTip } {
-    const episodeId = this.dans[0].SOID.split('@')[0].replaceAll(
+    const episodeId = this.dans[0]?.SOID.split('@')[0].replaceAll(
       `def_${platform.PlatformDanmakuOnlySource.DanDanPlay}+`,
       '',
     )

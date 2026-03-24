@@ -31,6 +31,15 @@
 - [dan-any-plugin-detaolu](https://github.com/ani-uni/danuni/tree/master/packages/dan-any-plugin-detaolu): 基于pakku.js的弹幕过滤器
 - `src/plugins`下的插件 `bili`(B站弹幕相关) `stats`(统计相关)，内部附有使用文档
 
+## 转换提示
+
+使用该库可以不失去任何关键信息地导入常见格式的弹幕，并已附加字段的形式保留部分弹幕格式专有的信息；但将弹幕转换为第三方格式时，由于其设计上无法封装附加信息，会导致不可避免的信息损失。  
+如果需要以最为可靠的方式传送弹幕，请尽量使用 `danuni.json` / `danuni.binpb` 进行导出分发。  
+
+由于设计上想尽可能多地保留原始信息，将弹幕转换为第三方格式的弹幕时，可能在非常用字段上与官方格式不完全相同，若有极强的兼容性需求，请手动开启对应转换函数的兼容性选项。  
+
+*致开发者： 若导入后检测到 `UniPool.info.fromConverted` 为true ，建议提示用户不要再对该弹幕文件再次进行转换，否则可能导致解析错误*  
+
 ## 特殊字段提示
 
 ### ASS Raw 字段
