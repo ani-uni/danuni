@@ -36,7 +36,7 @@
     "base16384": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
-    "fast-xml-parser": "^5.5.8",
+    "fast-xml-parser": "^5.5.9",
     "hh-mm-ss": "^1.2.0",
     "json-bigint": "^1.0.0",
     "jssha": "^3.3.1",
