@@ -17,7 +17,6 @@
 /* eslint-disable one-var */
 /* eslint-disable import/no-mutable-exports */
 /* eslint-disable no-var */
-/* eslint-disable prettier/prettier */
 
 /** @nocollapse */ var Module = function (moduleArg = {}) {
   var moduleRtn
