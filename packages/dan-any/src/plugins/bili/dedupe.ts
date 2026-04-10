@@ -10,7 +10,7 @@ function main(that: UniPool) {
   that.dans.forEach((d) => {
     if (d.platform !== PlatformVideoSource.Bilibili)
       throw new Error('bili-dedupe: 仅支持B站(主站)的弹幕')
-    if (!d.extra.bili?.dmid)
+    if (!d.extra.bili?.dmid && !d.extra.bili?.command?.id)
       throw new Error('bili-dedupe: 弹幕缺少bili extra dmid字段')
   })
   const map = new Map<bigint, UniDM>()
