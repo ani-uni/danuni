@@ -859,6 +859,10 @@ export class UniPool {
      */
     cid?: bigint
     /**
+     * 跳过command类型的特殊弹幕
+     */
+    skipBiliCommand?: boolean
+    /**
      * 当仅含有来自bili的弹幕时，启用将保持发送者标识不含`@`
      * @description
      * bili的弹幕含midHash(crc)，不启用该处使用senderID填充，启用则去除`@bili`部分，提高兼容性
@@ -884,6 +888,8 @@ export class UniPool {
       )
       if (!ok) throw new Error('存在其他来源的senderID，请关闭该功能再试！')
     }
+    let ds = this.dans.map((dan) => dan.toBiliXML(options))
+    if (options?.skipBiliCommand) ds = ds.filter((d) => d !== null)
     const builder = new XMLBuilder({ ignoreAttributes: false })
     return builder.build({
       '?xml': {
@@ -900,7 +906,7 @@ export class UniPool {
         real_name: 0,
         source: 'k-v',
         danuni: { ...DanUniConvertTipTemplate, data: this.getShared('SOID') },
-        d: this.dans.map((dan) => dan.toBiliXML(options)),
+        d: ds,
       },
     })
   }

@@ -241,7 +241,7 @@ interface ExtraBili {
   pool?: number //原弹幕池
   dmid?: bigint //原弹幕ID
   attr?: number //原弹幕属性
-  mid?: bigint //发送者mid(仅创作中心源)
+  mid?: bigint //发送者mid(仅创作中心源、command弹幕)
   adv?: string
   code?: string
   bas?: string
@@ -938,6 +938,9 @@ export class UniDM {
         platform: PlatformVideoSource.Bilibili,
         extra: {
           bili: {
+            dmid: args.id,
+            attr: args.attr,
+            mid: args.mid,
             command: args,
           },
         },
