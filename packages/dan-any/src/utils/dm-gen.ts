@@ -932,7 +932,7 @@ export class UniDM {
         senderID: senderID.toString(),
         // content: args.content,
         ctime: new Date(`${args.ctime} GMT+0800`), // 无视本地时区，按照B站的东8区计算时间
-        weight: 10,
+        weight: 11,
         pool: Pools.Adv,
         attr: [DMAttr.Protect],
         platform: PlatformVideoSource.Bilibili,
