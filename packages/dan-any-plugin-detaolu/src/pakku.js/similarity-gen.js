@@ -1,5 +1,24 @@
-/* eslint-disable @eslint-community/eslint-comments/no-unlimited-disable */
-/* eslint-disable */
+/* eslint-disable import/no-default-export */
+/* eslint-disable unicorn/prefer-number-properties */
+/* eslint-disable object-shorthand */
+/* eslint-disable block-scoped-var */
+/* eslint-disable unicorn/catch-error-name */
+/* eslint-disable getter-return */
+/* eslint-disable no-setter-return */
+/* eslint-disable prefer-template */
+/* eslint-disable unicorn/throw-new-error */
+/* eslint-disable unicorn/new-for-builtins */
+/* eslint-disable unicorn/prefer-code-point */
+/* eslint-disable unicorn/no-negated-condition */
+/* eslint-disable no-console */
+/* eslint-disable unicorn/consistent-function-scoping */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable vars-on-top */
+/* eslint-disable one-var */
+/* eslint-disable import/no-mutable-exports */
+/* eslint-disable no-var */
+/* eslint-disable prettier/prettier */
+
 /** @nocollapse */ var Module = function (moduleArg = {}) {
   var moduleRtn
 

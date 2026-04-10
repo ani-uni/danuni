@@ -109,6 +109,7 @@ export const DEFAULT_CONFIG = {
 }
 
 export type Config = Partial<typeof DEFAULT_CONFIG>
+type ResolvedConfig = typeof DEFAULT_CONFIG
 
 interface DanmuIr {
   obj: DanmuObject
@@ -224,80 +225,88 @@ const WIDTH_TABLE = new Map(
 /**
  * 反套路
  */
-const detaolu = (inp: string, config: Config): [boolean, string] => {
+function detaolu_meta(
+  config: ResolvedConfig,
+): (text: string) => [boolean, string] {
   const TRIM_ENDING = config.TRIM_ENDING
   const TRIM_SPACE = config.TRIM_SPACE
   const TRIM_WIDTH = config.TRIM_WIDTH
-  const FORCELIST = (config?.FORCELIST ?? DEFAULT_CONFIG.FORCELIST).map(
+  const FORCELIST = config.FORCELIST.map(
     ([pattern, repl]) => [new RegExp(pattern, 'giu'), repl] as [RegExp, string],
   )
   const FORCELIST_BREAK_ON_MATCH = !config.FORCELIST_CONTINUE_ON_MATCH
 
-  let len = inp.length
-  let text = ''
+  return (inp: string) => {
+    let len = inp.length
+    let text = ''
 
-  if (TRIM_ENDING) {
-    while (ENDING_CHARS.has(inp.charAt(len - 1)))
-      // assert str.charAt(-1)===''
-      len--
-    if (len === 0)
-      // all chars are ending chars, do nothing
-      len = inp.length
-  }
-
-  if (TRIM_WIDTH) {
-    for (let i = 0; i < len; i++) {
-      const c = inp.charAt(i)
-      text += WIDTH_TABLE.get(c) || c
+    if (TRIM_ENDING) {
+      while (ENDING_CHARS.has(inp.charAt(len - 1)))
+        // assert str.charAt(-1)===''
+        len--
+      if (len === 0)
+        // all chars are ending chars, do nothing
+        len = inp.length
     }
-  } else {
-    text = inp.slice(0, len)
-  }
 
-  if (TRIM_SPACE) {
-    // text = text
-    //   .replace(TRIM_EXTRA_SPACE_RE, ' ')
-    //   .replace(TRIM_CJK_SPACE_RE, '$1')
-    text = text
-      .replaceAll(/[ \u3000]+/g, ' ')
-      .replaceAll(
-        /([\u3000-\u9FFF\uFF00-\uFFEF]) (?=[\u3000-\u9FFF\uFF00-\uFFEF])/g,
-        '$1',
-      )
-  }
-
-  let taolu_matched = false
-  for (const taolu of FORCELIST) {
-    if (taolu[0].test(text)) {
-      text = text.replace(taolu[0], taolu[1])
-      taolu_matched = true
-      if (FORCELIST_BREAK_ON_MATCH) break
+    if (TRIM_WIDTH) {
+      for (let i = 0; i < len; i++) {
+        const c = inp.charAt(i)
+        text += WIDTH_TABLE.get(c) || c
+      }
+    } else {
+      text = inp.slice(0, len)
     }
-  }
 
-  return [taolu_matched, text]
+    if (TRIM_SPACE) {
+      // text = text
+      //   .replace(TRIM_EXTRA_SPACE_RE, ' ')
+      //   .replace(TRIM_CJK_SPACE_RE, '$1')
+      text = text
+        .replaceAll(/[ \u3000]+/g, ' ')
+        .replaceAll(
+          /([\u3000-\u9FFF\uFF00-\uFFEF]) (?=[\u3000-\u9FFF\uFF00-\uFFEF])/g,
+          '$1',
+        )
+    }
+
+    let taolu_matched = false
+    for (const taolu of FORCELIST) {
+      if (taolu[0].test(text)) {
+        text = text.replace(taolu[0], taolu[1])
+        taolu_matched = true
+        if (FORCELIST_BREAK_ON_MATCH) break
+      }
+    }
+
+    return [taolu_matched, text]
+  }
 }
 
 /**
  * 白名单处理
  */
-const whitelisted = (text: string, config: Config) => {
-  const WHITELIST = (config?.WHITELIST ?? DEFAULT_CONFIG.WHITELIST).map(
-    (x) => new RegExp(x[0], 'iu'),
-  )
-  if (WHITELIST.length === 0) return false
-  else return WHITELIST.some((re) => re.test(text))
+function whitelisted_meta(config: ResolvedConfig): (text: string) => boolean {
+  const WHITELIST = config.WHITELIST.map((x) => new RegExp(x[0], 'iu'))
+
+  if (WHITELIST.length === 0) return () => false
+
+  return (text: string) => WHITELIST.some((re) => re.test(text))
 }
 
 /**
  * 黑名单处理
  */
-const blacklisted = (text: string, config: Config) => {
-  const BLACKLIST = (config?.BLACKLIST ?? DEFAULT_CONFIG.BLACKLIST).map((x) =>
+function blacklisted_meta(
+  config: ResolvedConfig,
+): (text: string) => string | null {
+  const BLACKLIST = config.BLACKLIST.map((x) =>
     x[0] ? new RegExp(x[1]) : x[1].toLowerCase(),
   )
-  if (BLACKLIST.length === 0) return null
-  else {
+
+  if (BLACKLIST.length === 0) return () => null
+
+  return (text: string) => {
     const lower = text.toLowerCase()
     for (const pattern of BLACKLIST) {
       const matched =
@@ -339,11 +348,22 @@ function select_median_length(strs: string[]): string {
   return sorted[mid]
 }
 
+function u8array_to_arraybuffer(array: Uint8Array): ArrayBuffer {
+  return array.buffer.slice(
+    array.byteOffset,
+    array.byteOffset + array.byteLength,
+  ) as ArrayBuffer
+}
+
 async function load_wasm(wasm_mod?: ArrayBuffer) {
-  await sim_init(
-    wasm_mod ??
-      (await fs.readFile(new URL('similarity-gen.wasm', import.meta.url))),
-  )
+  if (wasm_mod) {
+    await sim_init(wasm_mod)
+    return
+  }
+
+  const wasm_path = new URL('similarity-gen.wasm', import.meta.url).pathname
+  const wasm_u8 = await fs.readFile(wasm_path)
+  await sim_init(u8array_to_arraybuffer(wasm_u8))
 }
 
 function make_ptr_idx(idx: int, is_next_chunk: boolean): int {
@@ -355,9 +375,11 @@ async function merge(
   // next_chunk: DanmuChunk<DanmuObject>,
   config: Config = DEFAULT_CONFIG,
 ): Promise<DanmuClusterOutput> {
+  const local_config: ResolvedConfig = { ...DEFAULT_CONFIG, ...config }
+
   await load_wasm()
 
-  begin_chunk(config)
+  begin_chunk(local_config)
 
   const ret: DanmuClusterOutput = {
     clusters: [],
@@ -419,6 +441,10 @@ async function merge(
     }
   }
 
+  const detaolu = detaolu_meta(local_config)
+  const whitelisted = whitelisted_meta(local_config)
+  const blacklisted = blacklisted_meta(local_config)
+
   function obj_to_ir(
     objs: DanmuObject[],
     s: Stats | null,
@@ -426,7 +452,7 @@ async function merge(
   ): DanmuIr[] {
     return objs
       .map((obj, idx) => {
-        if (!config.PROC_POOL1 && obj.pool === 1) {
+        if (!local_config.PROC_POOL1 && obj.pool === 1) {
           if (s) {
             s.ignored_type++
             apply_single_cluster(idx, obj, '已忽略字幕弹幕，可以在选项中修改')
@@ -434,7 +460,7 @@ async function merge(
           return null
         }
         // if (!config.PROC_TYPE7 && obj.mode === 7) {
-        if (!config.PROC_TYPE7 && obj.mode === 4) {
+        if (!local_config.PROC_TYPE7 && obj.mode === 4) {
           if (s) {
             s.ignored_type++
             apply_single_cluster(idx, obj, '已忽略特殊弹幕，可以在选项中修改')
@@ -442,7 +468,7 @@ async function merge(
           return null
         }
         // if (!config.PROC_TYPE4 && obj.mode === 4) {
-        if (!config.PROC_TYPE4 && obj.mode === 1) {
+        if (!local_config.PROC_TYPE4 && obj.mode === 1) {
           if (s) {
             s.ignored_type++
             apply_single_cluster(idx, obj, '已忽略底部弹幕，可以在选项中修改')
@@ -473,7 +499,7 @@ async function merge(
 
         // if (obj.mode !== 8 && obj.mode !== 9) {
         if (obj.mode !== 4) {
-          const matched = blacklisted(disp_str, config)
+          const matched = blacklisted(disp_str)
           if (matched) {
             if (s) {
               s.deleted_blacklist++
@@ -489,7 +515,7 @@ async function merge(
             return null
           }
         }
-        if (whitelisted(disp_str, config)) {
+        if (whitelisted(disp_str)) {
           if (s) {
             s.ignored_whitelist++
             apply_single_cluster(idx, obj, '命中白名单')
@@ -497,11 +523,11 @@ async function merge(
           return null
         }
 
-        const [matched_taolu, detaolued] = detaolu(disp_str, config)
+        const [matched_taolu, detaolued] = detaolu(disp_str)
 
         if (matched_taolu) {
           if (s) s.num_taolu_matched++
-          if (config.FORCELIST_APPLY_SINGULAR)
+          if (local_config.FORCELIST_APPLY_SINGULAR)
             obj = {
               ...obj,
               content: detaolued,
@@ -523,7 +549,7 @@ async function merge(
 
   const nearby_danmus: Queue<DanmuIr[]> = new Queue()
 
-  const THRESHOLD_MS = (config?.THRESHOLD ?? DEFAULT_CONFIG.THRESHOLD) * 1000
+  const THRESHOLD_MS = local_config.THRESHOLD * 1000
 
   for (const dm of danmus) {
     while (true) {
