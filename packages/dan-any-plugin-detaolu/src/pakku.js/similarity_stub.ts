@@ -27,7 +27,7 @@ export function begin_chunk(config: Config) {
       config.CROSS_MODE,
     )
   } catch (error) {
-    throw new Error(`wasm error (begin_chunk):\n${error}`)
+    throw new Error(`wasm error (begin_chunk):\n${error}`, { cause: error })
   }
 }
 
@@ -35,7 +35,9 @@ export function begin_index_lock() {
   try {
     module._begin_index_lock()
   } catch (error) {
-    throw new Error(`wasm error (begin_index_lock):\n${error}`)
+    throw new Error(`wasm error (begin_index_lock):\n${error}`, {
+      cause: error,
+    })
   }
 }
 
@@ -55,14 +57,16 @@ export function detect_similarity(
   try {
     module.stringToUTF16(str, ptr_buf, MAX_STRING_LEN * 2)
   } catch (error) {
-    throw new Error(`wasm error (write str buf): ${str}\n${error}`)
+    throw new Error(`wasm error (write str buf): ${str}\n${error}`, {
+      cause: error,
+    })
   }
 
   let ret: number
   try {
     ret = module._check_similar(mode, index_l)
   } catch (error) {
-    throw new Error(`wasm error (similar): ${str}\n${error}`)
+    throw new Error(`wasm error (similar): ${str}\n${error}`, { cause: error })
   }
 
   if (ret === 0)
