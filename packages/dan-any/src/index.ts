@@ -208,7 +208,7 @@ export const convert2Formats = [
   DM_format.DplayerJson,
   DM_format.ArtplayerJson,
   DM_format.DDPlayJson,
-]
+] as const
 export type Convert2Formats =
   | DM_format.DanuniJson
   | DM_format.DanuniMinJson
