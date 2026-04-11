@@ -200,7 +200,16 @@ export interface Options {
   dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
 
-type Convert2Format =
+export const Conver2Formats = [
+  DM_format.DanuniJson,
+  DM_format.DanuniMinJson,
+  DM_format.DanuniPbBin,
+  DM_format.BiliXml,
+  DM_format.DplayerJson,
+  DM_format.ArtplayerJson,
+  DM_format.DDPlayJson,
+]
+export type Convert2Formats =
   | DM_format.DanuniJson
   | DM_format.DanuniMinJson
   | DM_format.DanuniPbBin
@@ -684,12 +693,12 @@ export class UniPool {
     }
     throw new Error(errmesg ?? err)
   }
-  convert2(
-    format: DM_format,
+  convert2<T extends Exclude<DM_format, Convert2Formats>>(
+    format: T,
     file_wrapper: true,
     continue_on_error?: boolean,
   ): File
-  convert2<T extends Convert2Format>(
+  convert2<T extends Convert2Formats>(
     format: T,
     file_wrapper?: false,
     continue_on_error?: boolean,
@@ -698,7 +707,7 @@ export class UniPool {
     format: DM_format,
     file_wrapper = false,
     continue_on_error = false,
-  ): File | Convert2ResultMap[Convert2Format] | string {
+  ): File | Convert2ResultMap[Convert2Formats] | string {
     switch (format) {
       case DM_format.DanuniJson:
         if (file_wrapper)
