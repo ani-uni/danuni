@@ -200,7 +200,7 @@ export interface Options {
   dmid?: boolean | number | UniIDTools.DMIDGenerator
 }
 
-export const Conver2Formats = [
+export const convert2Formats = [
   DM_format.DanuniJson,
   DM_format.DanuniMinJson,
   DM_format.DanuniPbBin,
