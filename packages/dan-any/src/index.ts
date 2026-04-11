@@ -693,7 +693,7 @@ export class UniPool {
     }
     throw new Error(errmesg ?? err)
   }
-  convert2<T extends Exclude<DM_format, Convert2Formats>>(
+  convert2<T extends Convert2Formats>(
     format: T,
     file_wrapper: true,
     continue_on_error?: boolean,
@@ -707,7 +707,7 @@ export class UniPool {
     format: DM_format,
     file_wrapper = false,
     continue_on_error = false,
-  ): File | Convert2ResultMap[Convert2Formats] | string {
+  ): File | Convert2ResultMap[Convert2Formats] {
     switch (format) {
       case DM_format.DanuniJson:
         if (file_wrapper)
