@@ -32,11 +32,11 @@
     "buf": "buf generate"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.11.0",
+    "@bufbuild/protobuf": "^2.12.0",
     "base16384": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
-    "fast-xml-parser": "^5.5.11",
+    "fast-xml-parser": "^5.7.3",
     "hh-mm-ss": "^1.2.0",
     "json-bigint": "^1.0.0",
     "jssha": "^3.3.1",
@@ -44,12 +44,12 @@
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
-    "@bufbuild/buf": "^1.67.0",
-    "@bufbuild/protoc-gen-es": "^2.11.0",
+    "@bufbuild/buf": "^1.69.0",
+    "@bufbuild/protoc-gen-es": "^2.12.0",
     "@types/hh-mm-ss": "^1.2.3",
     "@types/json-bigint": "^1.0.4",
     "@types/luxon": "^3.7.1",
     "canvas": "^3.2.3",
-    "protobufjs": "^8.0.1"
+    "protobufjs": "^8.2.0"
   }
 }
