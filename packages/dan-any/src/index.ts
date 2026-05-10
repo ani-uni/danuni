@@ -841,7 +841,13 @@ export class UniPool {
     )
   }
   static fromBiliXML(xml: string, options?: Options) {
-    const parser = new XMLParser({ ignoreAttributes: false })
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      isArray: (_name, jpath, _isLeafNode, _isAttribute) => {
+        if (jpath === 'i.d') return true
+        return false
+      },
+    })
     const oriData: DM_XML_Bili & { i: { danuni?: DanUniConvertTip } } =
       parser.parse(xml)
     const dans = oriData.i.d
