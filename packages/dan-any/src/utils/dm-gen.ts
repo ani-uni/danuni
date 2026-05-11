@@ -1029,6 +1029,7 @@ export class UniDM {
       mode,
       color: this.color,
       content: this.content,
+      border: this.extra.artplayer?.border,
       style: this.extra.artplayer?.style,
     }
   }
