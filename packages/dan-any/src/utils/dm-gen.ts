@@ -999,9 +999,13 @@ export class UniDM {
       if (extra)
         extra = {
           ...extra,
-          artplayer: { ...extra.artplayer, style: args.style },
+          artplayer: {
+            ...extra.artplayer,
+            border: args.border,
+            style: args.style,
+          },
         }
-      else extra = { artplayer: { style: args.style } }
+      else extra = { artplayer: { border: args.border, style: args.style } }
     }
     return this.create(
       {
