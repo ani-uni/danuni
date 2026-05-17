@@ -29,21 +29,21 @@ async function detaolu(that: UniPool, config?: DeTaoLuConfig) {
       }
       const progess = pool.dans.map((d) => d.progress)
       return UniDM.create({
-        SOID: pool.shared.SOID ?? pool.dans[0].SOID,
+        SOID: pool.getShared('SOID') ?? pool.dans[0].SOID,
         progress: dans[0].danuni_dan.progress,
         mode:
-          pool.shared.mode ??
+          pool.getShared('mode') ??
           (isAllBottomMode(pool)
             ? UniDMTools.Modes.Bottom
             : UniDMTools.Modes.Top),
         fontsize: dans.length > 0 ? 36 : 25,
-        color: pool.shared.color ?? pool.most.color,
+        color: pool.getShared('color') ?? pool.getMost('color').val,
         senderID: 'detaolu[bot]@dan-any',
         content: p.chosen_str,
         weight: 10,
-        pool: pool.shared.pool ?? pool.most.pool,
+        pool: pool.getShared('pool') ?? pool.getMost('pool').val,
         attr: [UniDMTools.DMAttr.Protect],
-        platform: pool.shared.platform ?? pool.most.platform,
+        platform: pool.getShared('platform') ?? pool.getMost('platform').val,
         extra: {
           danuni: {
             merge: {
