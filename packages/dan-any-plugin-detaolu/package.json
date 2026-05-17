@@ -1,6 +1,6 @@
 {
   "name": "@dan-uni/dan-any-plugin-detaolu",
-  "version": "1.4.0",
+  "version": "1.4.8",
   "description": "A filter, dedupe and anti-spam plugin of dan-any, a danmaku transformer lib, based on pakku.js.",
   "author": "rinne",
   "license": "GPL-3.0-or-later",
